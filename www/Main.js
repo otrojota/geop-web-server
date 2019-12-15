@@ -1,4 +1,4 @@
-const leftWidth = 300;
+const leftWidth = 340;
 const topHeight = 44;
 
 class Main extends ZCustomController {
@@ -21,6 +21,7 @@ class Main extends ZCustomController {
         if (this.leftOpen) {
             this.left.size = {width:leftWidth, height:h}
             this.left.show();
+            this.left.doResize();
             this.top.pos = {left:leftWidth + 1, top:0};
             this.top.size = {width:w - leftWidth - 1, height:topHeight}
             this.mapa.pos = {left:leftWidth + 1, top:0};
@@ -33,6 +34,7 @@ class Main extends ZCustomController {
             this.mapa.size = {width:w, height:h}
         }
         this.top.doResize();
+        this.mapa.doResize();
     }
 
     onTop_alternaMenu() {

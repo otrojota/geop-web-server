@@ -54,9 +54,26 @@ body {
     font-size: 11px;
 }
 
-.mapa {}
 .panel-izquierda {
     background-color: white;
-    border-right: 2px solid gray;
     box-shadow: 10px 0px 35px 0px rgba(0,0,0,0.75);
+}
+.opcion-izquierda {
+    padding:6px;
+    text-align: center;
+    font-size: 10px;    
+    cursor: pointer;
+}
+.opcion-izquierda img {
+    opacity: 0.6;
+}
+.opcion-izquierda.activa img {
+    opacity: 1;
+}
+.opcion-izquierda.activa {
+    color:rgb(61, 164, 233);
+    opacity: 1;
+}
+.opcion-izquierda div {
+     margin-top:6px;
 }

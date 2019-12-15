@@ -1,40 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Sixbell - Perfilamiento de Usuarios">
-  <meta name="author" content="Zonar">
-  <title>GEOPortal</title>  
-  <!-- Fonts -->
-  <link rel="stylesheet" href="fontawesome-free-5.11.2-web/css/all.min.css" >
-  <!-- Bootstrap -->
-  <link type="text/css" href="bootstrap-4.4.1-dist/css/bootstrap.min.css" rel="stylesheet">
-  <link type="text/css" href="css/z-pops.css" rel="stylesheet">
-  <link type="text/css" href="css/geoportal.css" rel="stylesheet">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="Sixbell - Perfilamiento de Usuarios">
+        <meta name="author" content="Zonar">
+        <title>GEOPortal</title>  
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fontawesome-free-5.11.2-web/css/all.min.css" >
+        <!-- Bootstrap -->
+        <link type="text/css" href="bootstrap-4.4.1-dist/css/bootstrap.min.css" rel="stylesheet">
+        <link type="text/css" href="css/z-pops.css" rel="stylesheet">
+        <link type="text/css" href="css/geoportal.css" rel="stylesheet">
+        <link href="leaflet/leaflet.css" rel="stylesheet" />
+        <!-- Leaflet + TURF + Konva-->
+        <script src="leaflet/leaflet.js" type="text/javascript"></script>
+        <script src="js/Leaflet.VarTileLayer.GL.js" type="text/javascript"></script>
+        <script src="js/Leaflet.CustomLayer.js" type="text/javascript"></script>
+        <script src="js/turf.min.js" type="text/javascript"></script>
+        <script src="js/konva.min.js" type="text/javascript"></script>
+        <!-- Core -->
+        <script src="js/jquery.min.js"></script>
+        <script src="js/popper.min.js"></script>
+        <script src="js/tooltip.min.js"></script>
+        <script src="bootstrap-4.4.1-dist/js/bootstrap.min.js"></script>
+        <!-- Z-Client -->
+        <script src="js/z-client.js"></script>
+        <script src="js/z-pops.js"></script>
+        <!-- ZVC -->
+        <script src="zvc/zvc.js"></script>
+        <script src="zvc/zvc-bootstrap-dialogs.js"></script>
+        <script src="zvc/zvc-bootstrap-table.js"></script>
+        <!-- GeoPortal -->
+        <script src="js/geoportal.js"></script>
+        <script src="js/geoportal-mapa.js"></script>
+        <script src="js/geoportal-preferencias.js"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", async _ => {                
+                ZVC.options.debug.events = false;
+                let root = await ZVC.fromElement("main");
+            });
+        </script>
+    </head>
 
-  <!-- Core -->
-  <script src="js/jquery.min.js"></script>
-  <script src="js/popper.min.js"></script>
-  <script src="js/tooltip.min.js"></script>
-  <script src="bootstrap-4.4.1-dist/js/bootstrap.min.js"></script>
-  <!-- Z-Clinet -->
-  <script src="js/z-client.js"></script>
-  <script src="js/z-pops.js"></script>
-  <!-- ZVC -->
-  <script src="zvc/zvc.js"></script>
-  <script src="zvc/zvc-bootstrap-dialogs.js"></script>
-  <script src="zvc/zvc-bootstrap-table.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", async _ => {                
-        ZVC.options.debug.events = false;
-        let root = await ZVC.fromElement("main");
-    });
-</script>
-</head>
-
-<body>  
-  <div id="main" data-z-component="./Main" style="position: absolute;"></div>
-</body>
-
+    <body>  
+        <div id="main" data-z-component="./Main" style="position: absolute;"></div>
+    </body>
 </html>

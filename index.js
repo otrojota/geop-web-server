@@ -8,8 +8,9 @@ async function createHTTPServer() {
     const bodyParser = require('body-parser');
     const http = require('http');
     const conf = config.getConfig();
+    const places = require("./servicios/Places");
     
-    //zServer.registerModule("seg", seguridad);
+    zServer.registerModule("plc", places);
     
     app.use("/", express.static(__dirname + "/www"));
 
