@@ -1,5 +1,5 @@
-<div>
-    <form id="leftM" class="top-menu-left form-inline pt-1 float-left" style="margin-top:-8px; height:48px;">
+<div style="position: absolute;">
+    <form id="leftM" class="top-menu-left form-inline pt-1" style="position: absolute; margin-top:-8px; height:48px; top:0; left:0; ">
         <i id="cmdAlternaMenu" class="fas fa-bars fa-lg float-left ml-2" style="cursor: pointer;" data-z-clickable="true"></i>
         <input id="edBuscarUbicacion" type="text" placeholder="Buscar Ubicación"
             data-z-autochange-delay="300" 
@@ -8,7 +8,7 @@
         <i id="iconoBuscar" class="fas fa-search" style="margin-left: -22px; color: gray;"></i>
     </form>
 
-    <form id="centerM" class="top-menu-center form-inline pt-1 float-left" style="margin-top:-8px; height:48px;">
+    <form id="centerM" class="top-menu-center form-inline pt-1" style="position: absolute; margin-top:-8px; height:48px; top:0;">
         <button id="cmdAgregarAMapa" type="button" class="btn btn-sm btn-outline-dark text-white ml-1" style="width: 100px; line-height: 14px; border:none;">
             <span class="icono-opcion-encabezado float-left" style="background-color: #1779ba;">
                 <i class="fas fa-globe-americas"></i>
@@ -34,8 +34,9 @@
             <span class="texto-opcion-encabezado">Estaciones Monitoreo</span>
         </button>
     </form>
+    <div id="panelAgregar" data-z-component="./PanelAgregar" style="position: absolute;"></div>
 
-    <form id="rightM" class="top-menu-right form-inline pt-1 float-right" style="margin-top:-8px; height:48px;">
+    <form id="rightM" class="top-menu-right form-inline pt-1" style="position: absolute; margin-top:-8px; height:48px; top:0; ">
         <i id="cmdZoomIn" class="far fa-plus-square fa-lg float-left ml-3" style="cursor: pointer;" data-z-clickable="true"></i>
         <i id="cmdZoomOut" class="far fa-minus-square fa-lg float-left ml-2" style="cursor: pointer;" data-z-clickable="true"></i>
         <i id="cmdCuenta" class="far fa-user-circle fa-lg float-right ml-3" style="cursor: pointer;" data-z-clickable="true"></i>

@@ -9,10 +9,21 @@ async function createHTTPServer() {
     const http = require('http');
     const conf = config.getConfig();
     const places = require("./servicios/Places");
+    const capas = require("./servicios/Capas");
+    const plugins = require("./servicios/Plugins");
     
+    let loadedPlugins = await plugins.init();
+    capas.init();
+
     zServer.registerModule("plc", places);
+    zServer.registerModule("ly", capas);    
+    zServer.registerModule("plug", plugins);
     
     app.use("/", express.static(__dirname + "/www"));
+
+    loadedPlugins.forEach(p => {
+        app.use("/" + p.codigo, express.static(p.basePath + "/www"));
+    });
 
     app.use(bodyParser.urlencoded({extended:true}));
     app.use(bodyParser.json({limit:"50mb"}));

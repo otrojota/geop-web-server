@@ -1,8 +1,22 @@
 class Top extends ZCustomController {
+    onThis_init() {
+        this.mostrandoAgregar = false;
+        this.panelAgregar.hide();
+    }
+    alternaPanelAgregar() {
+        this.mostrandoAgregar = !this.mostrandoAgregar;
+        if (this.mostrandoAgregar) {
+            this.panelAgregar.refresca();
+            this.panelAgregar.show();
+        }
+        else this.panelAgregar.hide();
+    }
+    onPanelAgregar_alterna() {this.alternaPanelAgregar()}
+    onCmdAgregarAMapa_click() {this.alternaPanelAgregar()}
     doResize() {
         let {width, height} = this.size;
-        let w = width - this.leftM.size.width - this.rightM.size.width - this.centerM.size.width;
-        this.centerM.view.style["margin-left"] = (w/2) + "px";
+        this.rightM.view.style.left = (width - this.rightM.size.width) + "px";
+        this.centerM.view.style.left = (width / 2 - this.centerM.size.width / 2) + "px";
     }
     onCmdAlternaMenu_click() {
         this.triggerEvent("alternaMenu");

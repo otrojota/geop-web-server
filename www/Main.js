@@ -5,7 +5,7 @@ class Main extends ZCustomController {
     onThis_init() {
         this.leftOpen = true;
     }
-    onThis_activated() {
+    async onThis_activated() {
         $(window).resize(() => {            
 	        this.doResize();
         });
@@ -13,6 +13,7 @@ class Main extends ZCustomController {
         this.top.pos = {left:0, top:0};
         this.mapa.pos = {left:0, top:0};
         this.doResize();
+        await window.geoportal.init();
     }
     doResize() {
         let w = window.innerWidth;

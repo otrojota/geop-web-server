@@ -192,4 +192,8 @@ class MapaGeoPortal {
         let z = this.map.getZoom();
         if (z > 1) this.map.setZoom(z-1);
     }
+    getLimites() {
+        let b = this.map.getBounds();
+        return {lng0:b.getWest(), lat0:b.getNorth(), lng1:b.getEast(), lat1:b.getSouth()}
+    }
 }

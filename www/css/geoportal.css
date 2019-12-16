@@ -58,6 +58,14 @@ body {
     background-color: white;
     box-shadow: 10px 0px 35px 0px rgba(0,0,0,0.75);
 }
+.titulo-panel-izquierda {
+    background-color: #2c3e50; 
+    color:white;
+    height: 34px;
+    font-size: 16px;
+    text-align: center;
+    padding-top:5px;
+}
 .opcion-izquierda {
     padding:6px;
     text-align: center;
@@ -76,4 +84,69 @@ body {
 }
 .opcion-izquierda div {
      margin-top:6px;
+}
+
+.panel-agregar {
+    width:250px;
+    background-color: rgba(224, 224, 224, 0.9);
+    box-shadow: 9px 11px 19px -8px rgba(0,0,0,0.75);
+    color:black;
+    font-size: 12px;
+}
+.titulo-agregar {
+    background-color: #2c3e50; 
+    color:white;
+    height: 34px;
+    font-size: 16px;
+}
+.icono-agregar {
+    background-color: #1779ba;
+    color:white;    
+    padding-left:6px;
+    padding-right:6px;
+    padding-top:2px;
+    padding-bottom:2px;
+    border-radius: 5px;
+    margin-top:-2px;
+}
+.agregar-item-container {
+    display: flex;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+.agregar-item-active {
+    color: #1779ba;
+}
+.agregar-item-label {
+    width: 100%;
+    margin-left: 4px;
+    margin-right: 4px;
+}
+.agregar-item-icon {
+    width: 16px;
+    color: #1779ba;
+}
+.agregar-item-icon img {
+    width: 16px;
+}
+.agregar-item-icon i {
+    width: 16px;
+}
+.agregar-item-icon-invert {
+    filter: invert(1);
+}
+
+.tabla-items-capas {
+    font-size: 12px;    
+}
+.seleccionador-item {
+    cursor:pointer;
+}
+.nombre-item {
+    cursor:pointer;
+}
+.nombre-item:hover {
+    text-decoration: underline;
 }
