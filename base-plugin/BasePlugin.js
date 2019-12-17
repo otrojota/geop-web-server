@@ -5,7 +5,8 @@ class BasePlugin extends global.PluginGeoPortal {
     getClientScripts() {
         return [
             "js/base-plugin.js",
-            "js/visualizador-isolineas.js"
+            "js/visualizador-isolineas.js",
+            "js/visualizador-isobandas.js"
         ]
     }
 }

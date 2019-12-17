@@ -32,6 +32,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
     }
     refresca() {
         this.lyCurvas.clearLayers();
+        this.panelMarkers.innerHTML = "";
         this.capa.getPreConsulta((err, preconsulta) => {
             if (err) {
                 console.error(err);
@@ -42,7 +43,6 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         })
     }
     refresca2() {
-        console.log("preconsulta desde visualizador", this.preconsulta);
         let min = this.preconsulta.min, max = this.preconsulta.max;
         if (min === max) throw "No hay datos";
         let step = this.config.step;
@@ -54,12 +54,13 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         }
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
-        this.capa.resuelveConsulta("isolineas", args, (err, geoJSON) => {
+        this.capa.resuelveConsulta("isolineas", args, (err, ret) => {
             if (err) {
                 console.error(err);
                 return;
             }
-            this.geoJSON = geoJSON;
+            this.geoJSON = ret.isolineas;
+            this.marcadores = ret.marcadores;
             this.repinta();
         });;
     }
@@ -67,6 +68,11 @@ class VisualizadorIsolineas extends VisualizadorCapa {
     repinta() {
         this.lyCurvas.clearLayers();
         this.lyCurvas.addData(this.geoJSON);
+        this.marcadores.forEach(m => {
+            let icon = L.divIcon({className: 'iso-label', html:"" + m.value});
+            let marker = L.marker([m.lat, m.lng], {icon:icon, opacity:1.0, pane:this.panelMarkers.id});
+            marker.addTo(window.geoportal.mapa.map);
+        })
     }
 }
 
