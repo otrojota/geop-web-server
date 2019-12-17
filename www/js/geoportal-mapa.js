@@ -131,7 +131,7 @@ class MapaGeoPortal {
             idxCapa = 55;
         } else {
             idBase = capa.idBasePanel;
-            idxCapa = this.capas.findIndex(c => c === capa);
+            idxCapa = window.geoportal.capas.capas.findIndex(c => c === capa);
             if (idxCapa < 0) throw "No se encontró la capa";        
         }         
         let p = this.creaPanel(idBase + "-" + codigoPanel);
@@ -140,12 +140,27 @@ class MapaGeoPortal {
         this.recalculaZIndex(p);
         return p;
     }
+    creaIdPanelesCapa() {
+        return "ly-" + (this.siguienteIdPanel++);
+    }
     creaPanel(nombre) {
         let p = this.map.createPane(nombre);
         p.id = nombre;
         p.style.pointerEvents = "none";
         return p;
     }
+    eliminaCapaMapa(layer) {
+        let pane = layer.options.pane;
+        this.map.removeLayer(layer);
+        if (pane) {
+            let paneElement = document.getElementById(pane);
+            this.eliminaPanelMapa(paneElement);
+        }
+    }
+    eliminaPanelMapa(pane) {
+        L.DomUtil.remove(pane);        
+    }
+
     recalculaZIndex(p) {
         let idxCapa = parseInt(p.getAttribute("data-idx-capa"));
         let zIndex = parseInt(p.getAttribute("data-z-index"));
@@ -194,6 +209,6 @@ class MapaGeoPortal {
     }
     getLimites() {
         let b = this.map.getBounds();
-        return {lng0:b.getWest(), lat0:b.getNorth(), lng1:b.getEast(), lat1:b.getSouth()}
+        return {lng0:b.getWest(), lat0:b.getSouth(), lng1:b.getEast(), lat1:b.getNorth()}
     }
 }

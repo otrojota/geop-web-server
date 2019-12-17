@@ -2,8 +2,11 @@ class Capa {
     constructor(spec) {
         this.spec = spec;
         this.nivel = spec.nivelInicial?spec.nivelInicial:0;
+        if (spec.opacidad === undefined) spec.opacidad = 80;
         this.visualizadoresActivos = {};
         this.preconsulta = null;
+        this.idBasePanel = window.geoportal.mapa.creaIdPanelesCapa();
+        this.panelesMapa = [];
     }
     get codigo() {return this.spec.codigo}
     get codigoProveedor() {return this.spec.codigoProveedor}
@@ -18,7 +21,9 @@ class Capa {
     get unidad() {return this.spec.unidad}
     get icono() {return this.spec.icono}
     get urlIcono() {return this.spec.urlIcono}
+    get opacidad() {return this.spec.opacidad}
 
+    registraPanelMapa(p) {this.panelesMapa.push(p)}
     getVisualizadoresAplicables() {
         let ret = [];
         window.geoportal.capas.clasesVisualizadores.forEach(c => {
@@ -98,6 +103,21 @@ class Capa {
                 this.listenersPreconsulta.forEach(cb => cb(err));    
             })
             .finally(_ => this.preConsultando = false);
+    }
+
+    resuelveConsulta(formato, args, callback) {
+        let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor);        
+        fetch(prov.url + "/consulta", {
+            method:"POST", 
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body:JSON.stringify({formato:formato, args:args})
+        })
+        .then(res => {
+            res.json().then(j => callback(null, j)).catch(err => callback(err));
+        })
+        .catch(err => callback(err))
     }
 }
 
