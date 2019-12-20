@@ -25,38 +25,35 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         this.lyBandas = L.geoJSON([], {            
             style:this.styleFunction,
             pane:this.panelBandas.id
-        }).addTo(window.geoportal.mapa.map);        
-        this.worker = cw((arg, cb) => {
-            try {
-                let url = arg.url;
-                let config = arg.config;
-                let baseURL = arg.baseURL;
-                importScripts("base/js/shapefile-0.6.6.js", "../js/geoportal-escalas.js");                
-                shapefile.read(url)
-                    .then(geoJSON => {
-                        EscalaGeoportal.creaDesdeConfig(config.escala, baseURL)
-                            .then(escala => {
-                                escala.actualizaLimites(arg.min, arg.max);
-                                geoJSON.features.forEach(f => {
-                                    let value = (f.properties.minValue + f.properties.maxValue) / 2;
-                                    f.properties.value = value;
-                                    f.properties.color = escala.getColor(value);
-                                    f.properties.type = "isoband";
-                                });
-                                this.geoJSON = geoJSON;
-                                cb({isobandas:geoJSON});
-                            })
-                            .catch(err => cb({error:err})); 
-                    })
-                    .catch(err => cb({error:err}));
-                } catch(err) {
-                    cb(err);
-                }
-        });
+        }).addTo(window.geoportal.mapa.map);
+        this.worker = new Worker("base/js/heavy-workers.js");
+        this.worker.onmessage = e => this.workerMessage(e.data);
+        this.workerOpIndex = 0;
+        this.workerCallbacks = [];
     }
     async destruye() {
         window.geoportal.mapa.eliminaCapaMapa(this.lyBandas);
-        this.worker.close().then(_ => this.worker = null);
+        if (this.worker) this.worker.terminate();
+        this.worker = undefined;
+    }
+    doInWorker(operation, data) {
+        return new Promise((onOk, onError) => {
+            this.workerCallbacks[this.workerOpIndex] = {onOk:onOk, onError:onError};
+            this.worker.postMessage({operation:operation, operationId:this.workerOpIndex++, data:data});
+        });
+    }
+    workerMessage(data) {
+        let cb = this.workerCallbacks[data.id];
+        if (!cb) {
+            console.error("Respuesta de worker sin callback:" + data.id);
+            return;
+        }
+        delete this.workerCallbacks[data.id];
+        if (data.error) {
+            cb.onError(data.error);
+        } else {
+            cb.onOk(data.data);
+        }        
     }
     refresca() {
         this.lyBandas.clearLayers();
@@ -82,7 +79,7 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         step /= this.config.resolucion;
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
-        //args.incremento = 4;
+        console.log("incremento isobandas:" + step);
         let t0 = new Date();
         console.log("consultando ...");
         this.capa.resuelveConsulta("isobandas", args, (err, ret) => {
@@ -94,7 +91,8 @@ class VisualizadorIsobandas extends VisualizadorCapa {
             let shpURL = this.capa.getURLResultado(ret.fileName);
             let baseURL = window.location.origin + window.location.pathname;
             if (baseURL.endsWith("/")) baseURL = baseURL.substr(0, baseURL.length - 1);
-            this.worker.data({url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
+            //this.worker.data({url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
+            this.doInWorker("getIsobandas", {url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
                 .then(ret => {
                     if (ret.error) {
                         console.error(ret.error);

@@ -106,8 +106,10 @@ class EsquemaURL extends EscalaGeoportal {
                 return r.color;
             }
             return this.busquedaBinaria(v, newI, i+1, i1);
+        } else if (isNaN(v)) {
+            return null;
         } else {
-            console.error("Error en búsqueda binaria .. condición no manejada");
+            console.error("Error en búsqueda binaria .. condición no manejada", r, v);
             return r.color;
         }
     }

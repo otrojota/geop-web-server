@@ -39,7 +39,7 @@ async function createHTTPServer() {
         var port = conf.webServer.http.port;
         httpServer = http.createServer(app);
         httpServer.listen(port, function () {
-            console.log("[POMeO] HTTP Server iniciado en puerto " + port);
+            console.log("[GEOPortal] HTTP Server iniciado en puerto " + port);
         });
     }
 }

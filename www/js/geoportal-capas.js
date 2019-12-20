@@ -13,6 +13,7 @@ class Capa {
         this.idBasePanel = window.geoportal.mapa.creaIdPanelesCapa();
         this.panelesMapa = [];
         this.nextIdConsulta = 1;
+        this.invalida(); // iniciar
     }
     get codigo() {return this.config.codigo}
     get codigoProveedor() {return this.config.codigoProveedor}
@@ -80,15 +81,14 @@ class Capa {
         if (this.preConsultando && this.listenersPreconsulta) {
             this.listenersPreconsulta.forEach(cb => cb("preconsulta cancelada"));
         }
-        if (this.consultando && this.listenersConsulta) {
+        if (this.listenersConsulta) {
             this.listenersConsulta.forEach(cb => cb("consulta cancelada"));
         }
         this.preconsulta = null;
-        this.resultadoConsulta = null;
         this.listenersPreconsulta = null;
-        this.listenersPreconsulta = null;
+        this.listenersConsulta = [];
         this.preConsultando = false;
-        this.consultando = false;
+        this.nextIdConsulta++;
         this.listaVisualizadoresActivos.forEach(visualizador => visualizador.refresca());
     }
     getURLResultado(fileName) {
@@ -108,7 +108,6 @@ class Capa {
         this.listenersPreconsulta = [callback];
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor);
         let b = window.geoportal.mapa.getLimites();
-        this.nextIdConsulta++;
         let idConsulta = this.nextIdConsulta;
         fetch(prov.url + "/preconsulta?capa=" + this.codigo + "&lng0=" + b.lng0 + "&lat0=" + b.lat0 + "&lng1=" + b.lng1 + "&lat1=" + b.lat1 + "&tiempo=" + window.geoportal.tiempo + "&nivel=" + this.nivel)
             .then(res => {
@@ -136,18 +135,8 @@ class Capa {
     }
 
     resuelveConsulta(formato, args, callback) {
-        if (this.resultadoConsulta) {
-            callback(null, this.resultadoConsulta);
-            return;
-        }
-        if (this.consultando) {
-            this.listenersConsulta.push(callback);
-            return;
-        }
-        this.consultando = true;
-        this.listenersConsulta = [callback];
+        this.listenersConsulta.push(callback);
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor); 
-        this.nextIdConsulta++;
         let idConsulta = this.nextIdConsulta;       
         fetch(prov.url + "/consulta", {
             method:"POST", 
@@ -159,16 +148,18 @@ class Capa {
         .then(res => {
             if (idConsulta != this.nextIdConsulta) return;
             res.json().then(j => {
-                this.resultadoConsulta = j;
-                this.listenersConsulta.forEach(cb => cb(null, j));                
+                callback(null, j);
             }).catch(err => {
-                this.listenersConsulta.forEach(cb => cb(err));
+                callback(err);
             });
         })
         .catch(err => {
-            this.listenersConsulta.forEach(cb => cb(err));
+            callback(err);
         })
-        .finally(_ => this.consultando = false)
+        .finally(_ => {
+            let idx = this.listenersConsulta.indexOf(callback);
+            if (idx >= 0) this.listenersConsulta.splice(idx,1);
+        })
 
     }
 }

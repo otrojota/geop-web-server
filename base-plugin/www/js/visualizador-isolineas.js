@@ -25,35 +25,35 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             style:this.styleFunction,
             pane:this.panelCurvas.id
         }).addTo(window.geoportal.mapa.map);
-        this.worker = cw((url, cb) => {
-            try {
-                importScripts("base/js/shapefile-0.6.6.js");
-                shapefile.read(url)
-                    .then(geoJSON => {
-                        let marcadores = [];
-                        geoJSON.features.forEach(f => {
-                            if (f.geometry.type == "LineString") {
-                                let v = Math.round(f.properties.value * 100) / 100;
-                                let n = f.geometry.coordinates.length;
-                                let med = parseInt((n - 0.1) / 2);
-                                let p0 = f.geometry.coordinates[med], p1 = f.geometry.coordinates[med+1];
-                                let lng = (p0[0] + p1[0]) / 2;
-                                let lat = (p0[1] + p1[1]) / 2;
-                                marcadores.push({lat:lat, lng:lng, value:v});
-                            }
-                        });
-                        cb({isolineas:geoJSON, marcadores:marcadores});
-                    })
-                    .catch(err => cb({error:err}));
-                } catch(err) {
-                    cb(err);
-                }
-        });
+        this.worker = new Worker("base/js/heavy-workers.js");
+        this.worker.onmessage = e => this.workerMessage(e.data);
+        this.workerOpIndex = 0;
+        this.workerCallbacks = [];
     }
     async destruye() {
         window.geoportal.mapa.eliminaCapaMapa(this.lyCurvas);
         window.geoportal.mapa.eliminaPanelMapa(this.panelMarkers);
-        this.worker.close().then(_ => this.worker = null);
+        if (this.worker) this.worker.terminate();
+        this.worker = undefined;
+    }
+    doInWorker(operation, data) {
+        return new Promise((onOk, onError) => {
+            this.workerCallbacks[this.workerOpIndex] = {onOk:onOk, onError:onError};
+            this.worker.postMessage({operation:operation, operationId:this.workerOpIndex++, data:data});
+        });
+    }
+    workerMessage(data) {
+        let cb = this.workerCallbacks[data.id];
+        if (!cb) {
+            console.error("Respuesta de worker sin callback:" + data.id);
+            return;
+        }
+        delete this.workerCallbacks[data.id];
+        if (data.error) {
+            cb.onError(data.error);
+        } else {
+            cb.onOk(data.data);
+        }        
     }
     refresca() {
         this.lyCurvas.clearLayers();
@@ -73,12 +73,13 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         let step = this.config.step;
         if (this.config.autoStep || step === undefined) {
             step = Math.pow(10, parseInt(Math.log10(max - min) - 1));
-            while (parseInt((max - min) / step) > 30) step *= 2;
+            while (parseInt((max - min) / step) > 10) step *= 2;
         } else {
             if ((max - min) / step > 50) throw "Demasiadas Líneas, aumente el incremento"
         }
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
+        console.log("incremento isolineas:" + step);
         let t0 = new Date();
         console.log("consultando ...");
         this.capa.resuelveConsulta("isolineas", args, (err, ret) => {
@@ -88,7 +89,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             }
             console.log("respuesta en " + (new Date() - t0) + "[ms]", ret)
             let shpURL = this.capa.getURLResultado(ret.fileName);
-            this.worker.data(shpURL)
+            this.doInWorker("getIsolineas", {url:shpURL})
                 .then(ret => {
                     if (ret.error) {
                         console.error(ret.error);
@@ -98,6 +99,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
                     this.marcadores = ret.marcadores;
                     this.repinta();
                 })
+                .catch(err => console.error(error));
         });;
     }
 
