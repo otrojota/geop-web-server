@@ -12,7 +12,7 @@ class EscalaGeoportal {
     static getBibliotecaEscalas() {
         return EscalaGeoportal.biblioteca;
     }
-    static creaDesdeConfig(config) {
+    static creaDesdeConfig(config, urlPrepend) {
         if (config.tipo == "hsl") {
             let escala = new LinealHSL(config);
             return escala.init();
@@ -20,7 +20,7 @@ class EscalaGeoportal {
             let escala = new Transparente(config);
             return escala.init();
         } else if (config.tipo == "esquemaPG") {
-            let escala = new EsquemaPG(config);
+            let escala = new EsquemaPG(config, urlPrepend);
             return escala.init();
         } else if (config.tipo == "agua-tierra") {
             let escala = new AguaTierra(config);
@@ -62,13 +62,14 @@ class LinealHSL extends EscalaGeoportal{
 }
 
 class EsquemaURL extends EscalaGeoportal {
-    constructor(config) {
+    constructor(config, urlPrepend) {
         super(config);
+        this.urlPrepend = urlPrepend;
     }
 
     init() {
         return new Promise((resolve, reject) => {
-            fetch(this.config.url).then(r => {
+            fetch((this.urlPrepend?this.urlPrepend:"") + this.config.url).then(r => {
                 r.text().then(txt => {
                     this.parseaEsquema(txt)
                     resolve(this);                
@@ -120,8 +121,8 @@ class EsquemaURL extends EscalaGeoportal {
     }
 }
 class EsquemaPG extends EsquemaURL {
-    constructor(config) {
-        super(config);
+    constructor(config, urlPrepend) {
+        super(config, urlPrepend);
     }
     
     parseaEsquema(txt) {

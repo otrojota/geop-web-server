@@ -25,10 +25,38 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         this.lyBandas = L.geoJSON([], {            
             style:this.styleFunction,
             pane:this.panelBandas.id
-        }).addTo(window.geoportal.mapa.map);
+        }).addTo(window.geoportal.mapa.map);        
+        this.worker = cw((arg, cb) => {
+            try {
+                let url = arg.url;
+                let config = arg.config;
+                let baseURL = arg.baseURL;
+                importScripts("base/js/shapefile-0.6.6.js", "../js/geoportal-escalas.js");                
+                shapefile.read(url)
+                    .then(geoJSON => {
+                        EscalaGeoportal.creaDesdeConfig(config.escala, baseURL)
+                            .then(escala => {
+                                escala.actualizaLimites(arg.min, arg.max);
+                                geoJSON.features.forEach(f => {
+                                    let value = (f.properties.minValue + f.properties.maxValue) / 2;
+                                    f.properties.value = value;
+                                    f.properties.color = escala.getColor(value);
+                                    f.properties.type = "isoband";
+                                });
+                                this.geoJSON = geoJSON;
+                                cb({isobandas:geoJSON});
+                            })
+                            .catch(err => cb({error:err})); 
+                    })
+                    .catch(err => cb({error:err}));
+                } catch(err) {
+                    cb(err);
+                }
+        });
     }
     async destruye() {
         window.geoportal.mapa.eliminaCapaMapa(this.lyBandas);
+        this.worker.close().then(_ => this.worker = null);
     }
     refresca() {
         this.lyBandas.clearLayers();
@@ -54,25 +82,27 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         step /= this.config.resolucion;
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
-        this.capa.resuelveConsulta("isobandas", args, (err, geoJSON) => {
+        //args.incremento = 4;
+        let t0 = new Date();
+        console.log("consultando ...");
+        this.capa.resuelveConsulta("isobandas", args, (err, ret) => {
             if (err) {
                 console.error(err);
                 return;
             }
-            // Aplicar color
-            EscalaGeoportal.creaDesdeConfig(this.config.escala)
-                .then(escala => {
-                    escala.actualizaLimites(min, max);
-                    geoJSON.features.forEach(f => {
-                        let value = (f.properties.minValue + f.properties.maxValue) / 2;
-                        f.properties.value = value;
-                        f.properties.color = escala.getColor(value);
-                        f.properties.type = "isoband";
-                    });
-                    this.geoJSON = geoJSON;
+            console.log("respuesta en " + (new Date() - t0) + "[ms]", ret)
+            let shpURL = this.capa.getURLResultado(ret.fileName);
+            let baseURL = window.location.origin + window.location.pathname;
+            if (baseURL.endsWith("/")) baseURL = baseURL.substr(0, baseURL.length - 1);
+            this.worker.data({url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
+                .then(ret => {
+                    if (ret.error) {
+                        console.error(ret.error);
+                        return;
+                    }
+                    this.geoJSON = ret.isobandas;
                     this.repinta();
-                })
-                .catch(err => console.error(err));            
+                })           
         });;
     }
 

@@ -6,7 +6,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             autoStep:true
         }
         let conf = $.extend(defaultConfig, config);
-        super("isolineas", capa, conf);
+        super("isolineas", capa, conf);        
     }
     static aplicaACapa(capa) {
         return capa.tipo == "raster" && capa.formatos.isolineas;
@@ -25,10 +25,35 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             style:this.styleFunction,
             pane:this.panelCurvas.id
         }).addTo(window.geoportal.mapa.map);
+        this.worker = cw((url, cb) => {
+            try {
+                importScripts("base/js/shapefile-0.6.6.js");
+                shapefile.read(url)
+                    .then(geoJSON => {
+                        let marcadores = [];
+                        geoJSON.features.forEach(f => {
+                            if (f.geometry.type == "LineString") {
+                                let v = Math.round(f.properties.value * 100) / 100;
+                                let n = f.geometry.coordinates.length;
+                                let med = parseInt((n - 0.1) / 2);
+                                let p0 = f.geometry.coordinates[med], p1 = f.geometry.coordinates[med+1];
+                                let lng = (p0[0] + p1[0]) / 2;
+                                let lat = (p0[1] + p1[1]) / 2;
+                                marcadores.push({lat:lat, lng:lng, value:v});
+                            }
+                        });
+                        cb({isolineas:geoJSON, marcadores:marcadores});
+                    })
+                    .catch(err => cb({error:err}));
+                } catch(err) {
+                    cb(err);
+                }
+        });
     }
     async destruye() {
         window.geoportal.mapa.eliminaCapaMapa(this.lyCurvas);
         window.geoportal.mapa.eliminaPanelMapa(this.panelMarkers);
+        this.worker.close().then(_ => this.worker = null);
     }
     refresca() {
         this.lyCurvas.clearLayers();
@@ -54,25 +79,37 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         }
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
+        let t0 = new Date();
+        console.log("consultando ...");
         this.capa.resuelveConsulta("isolineas", args, (err, ret) => {
             if (err) {
                 console.error(err);
                 return;
             }
-            this.geoJSON = ret.isolineas;
-            this.marcadores = ret.marcadores;
-            this.repinta();
+            console.log("respuesta en " + (new Date() - t0) + "[ms]", ret)
+            let shpURL = this.capa.getURLResultado(ret.fileName);
+            this.worker.data(shpURL)
+                .then(ret => {
+                    if (ret.error) {
+                        console.error(ret.error);
+                        return;
+                    }
+                    this.geoJSON = ret.isolineas;
+                    this.marcadores = ret.marcadores;
+                    this.repinta();
+                })
         });;
     }
 
     repinta() {
         this.lyCurvas.clearLayers();
-        this.lyCurvas.addData(this.geoJSON);
+        this.lyCurvas.addData(this.geoJSON);        
         this.marcadores.forEach(m => {
             let icon = L.divIcon({className: 'iso-label', html:"" + m.value});
             let marker = L.marker([m.lat, m.lng], {icon:icon, opacity:1.0, pane:this.panelMarkers.id});
             marker.addTo(window.geoportal.mapa.map);
         })
+        
     }
 }
 

@@ -131,7 +131,7 @@ class MapaGeoPortal {
             idxCapa = 55;
         } else {
             idBase = capa.idBasePanel;
-            idxCapa = window.geoportal.capas.capas.findIndex(c => c === capa);
+            idxCapa = window.geoportal.capas.getCapas().findIndex(c => c === capa);
             if (idxCapa < 0) throw "No se encontró la capa";        
         }         
         let p = this.creaPanel(idBase + "-" + codigoPanel);

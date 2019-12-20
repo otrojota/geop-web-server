@@ -11,16 +11,17 @@ class Capas extends ZCustomController {
     }
 
     refresca() {
+        console.log("refrescando desde grupos", window.geoportal.capas.grupos);
         this.mapaItems = {};
         this.items = [];
-        for (let i=window.geoportal.capas.capas.length - 1; i>=0; i--) {
-            let c = window.geoportal.capas.capas[i];
+        for (let i=0; i<window.geoportal.capas.grupos.length; i++) {
+            let grupo = window.geoportal.capas.getGrupo(i);
             let item = {
-                tipo:"capa",
+                tipo:"grupo",
                 indice:i,
-                nombre:c.nombre,
-                icono:c.urlIcono,
-                items:c.getItems()
+                nombre:grupo.nombre,
+                icono:"img/iconos/carpeta-abierta.svg",
+                items:grupo.getItems()
             }
             this.items.push(item);
         }
