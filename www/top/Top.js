@@ -15,8 +15,18 @@ class Top extends ZCustomController {
     onCmdAgregarAMapa_click() {this.alternaPanelAgregar()}
     doResize() {
         let {width, height} = this.size;
-        this.rightM.view.style.left = (width - this.rightM.size.width) + "px";
-        this.centerM.view.style.left = (width / 2 - this.centerM.size.width / 2) + "px";
+        let delta1 = width - (this.leftM.size.width + this.rightM.size.width);
+        if (delta1 > (this.centerM.size.width + 20)) {
+            // desktop
+            this.rightM.view.style.left = (width - this.rightM.size.width) + "px";
+            this.centerM.view.style.left = (this.leftM.size.width + delta1 / 2 - this.centerM.size.width / 2) + "px";
+            this.centerM.view.style.top = 0;
+        } else {
+            // mobile
+            this.rightM.view.style.left = (width - this.rightM.size.width) + "px";
+            this.centerM.view.style.left = (width / 2 - this.centerM.size.width / 2) + "px";
+            this.centerM.view.style.top = this.leftM.size.height + "px";
+        }
     }
     onCmdAlternaMenu_click() {
         this.triggerEvent("alternaMenu");

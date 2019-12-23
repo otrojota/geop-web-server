@@ -39,10 +39,10 @@ class Capa {
         return ret;
     }
     crea() {
-        this.visualizadoresActivos.forEach(v => v.crea());
+        this.listaVisualizadoresActivos.forEach(v => v.crea());
     }
     destruye() {
-        this.visualizadoresActivos.forEach(v => v.destruye());
+        this.listaVisualizadoresActivos.forEach(v => v.destruye());
     }
     getItems() {
         let items = [];
@@ -56,8 +56,8 @@ class Capa {
                 nombre:v.nombre,
                 icono:v.icono,
                 urlIcono:urlIcono,
-                seleccionable:true,
-                seleccionado:this.visualizadoresActivos[v.codigo]?true:false,
+                activable:true,
+                activo:this.visualizadoresActivos[v.codigo]?true:false,
                 capa:this
             })
         });
@@ -183,7 +183,10 @@ class GrupoCapas {
         this.activo = activo?true:false;
     }
     addCapa(capa) {this.capas.push(capa)}
-    removeCapa(index) {this.capas.splice(index,1)}
+    removeCapa(idx) {
+        this.capas[idx].destruye();
+        this.capas.splice(idx,1)
+    }
     getCapa(idx) {return this.capas[idx]}
     activa() {
         this.activo = true
@@ -203,7 +206,9 @@ class GrupoCapas {
                 nombre:capa.nombre,
                 icono:capa.urlIcono,
                 grupoActivo:this.activo,
+                eliminable:true,
                 indice:i,
+                grupo:this,
                 items:capa.getItems()
             })
         }
@@ -245,8 +250,15 @@ class Capas {
         this.grupos[idx].activa();
     }
     getGrupo(idx) {return this.grupos[idx]}
-    addGrupo(grupo) {this.grupos.push(grupo)}
-    removeGrupo(idx) {this.grupos.splice(idx, 1)}
+    addGrupo(grupo) {
+        this.grupos.push(grupo)
+        this.activaGrupo(this.grupos.length - 1);
+    }
+    removeGrupo(idx) {
+        let grupo = this.grupos[idx];
+        this.grupos.splice(idx, 1);
+        if (grupo.activo) this.activaGrupo(0);
+    }
 }
 
 window.geoportal.capas = new Capas();

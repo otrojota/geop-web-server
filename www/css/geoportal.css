@@ -140,6 +140,7 @@ body {
 
 .tabla-items-capas {
     font-size: 12px;    
+    width: 100%
 }
 .seleccionador-item {
     cursor:pointer;
