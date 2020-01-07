@@ -160,7 +160,14 @@ class Capa {
             let idx = this.listenersConsulta.indexOf(callback);
             if (idx >= 0) this.listenersConsulta.splice(idx,1);
         })
+    }
 
+    async refresca() {
+        let proms = this.listaVisualizadoresActivos.reduce((lista, v) => {
+            lista.push(v.refresca());
+            return lista;
+        }, []);
+        await Promise.all(proms);
     }
 }
 
@@ -181,6 +188,7 @@ class GrupoCapas {
         this.nombre = nombre;
         this.capas = [];
         this.activo = activo?true:false;
+        this.abierto = true;
     }
     addCapa(capa) {this.capas.push(capa)}
     removeCapa(idx) {
@@ -188,12 +196,25 @@ class GrupoCapas {
         this.capas.splice(idx,1)
     }
     getCapa(idx) {return this.capas[idx]}
-    activa() {
+    async activa() {
         this.activo = true
-        this.capas.forEach(capa => capa.crea());
+        let proms = this.capas.reduce((lista, capa) => {
+            lista.push(capa.crea());
+            return lista;
+        }, []);
+        await Promise.all(proms);
+        proms = this.capas.reduce((lista, capa) => {
+            lista.push(capa.refresca());
+            return lista;
+        }, []);
+        await Promise.all(proms);
     }
-    desactiva() {
-        this.capas.forEach(capa => capa.destruye())
+    async desactiva() {
+        let proms = this.capas.reduce((lista, capa) => {
+            lista.push(capa.destruye());
+            return lista;
+        }, []);
+        await Promise.all(proms);
         this.activo = false
     }
     getItems() {
@@ -208,7 +229,8 @@ class GrupoCapas {
                 grupoActivo:this.activo,
                 eliminable:true,
                 indice:i,
-                grupo:this,
+                grupo:this,                
+                abierto:capa.abierto,
                 items:capa.getItems()
             })
         }
@@ -227,6 +249,7 @@ class Capas {
     }
     add(config) {
         let capa = new Capa(config);
+        capa.abierto = true;
         this.getGrupoActivo().addCapa(capa);
         if (this.listener) this.listener.onCapaAgregada(capa);
         return capa;
@@ -245,19 +268,19 @@ class Capas {
         this.getCapas().forEach(capa => capa.invalida());
     }
     getGrupoActivo() {return this.grupos.find(g => g.activo)}
-    activaGrupo(idx) {        
-        this.getGrupoActivo().desactiva();
-        this.grupos[idx].activa();
+    async activaGrupo(idx) {
+        if (this.getGrupoActivo()) await this.getGrupoActivo().desactiva();        
+        await this.grupos[idx].activa();
     }
     getGrupo(idx) {return this.grupos[idx]}
-    addGrupo(grupo) {
+    async addGrupo(grupo) {
         this.grupos.push(grupo)
-        this.activaGrupo(this.grupos.length - 1);
+        await this.activaGrupo(this.grupos.length - 1);
     }
-    removeGrupo(idx) {
+    async removeGrupo(idx) {
         let grupo = this.grupos[idx];
         this.grupos.splice(idx, 1);
-        if (grupo.activo) this.activaGrupo(0);
+        if (grupo.activo) await this.activaGrupo(0);
     }
 }
 
