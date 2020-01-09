@@ -25,7 +25,8 @@ class Capas extends ZCustomController {
                 icono:grupo.abierto?"img/iconos/carpeta-abierta.svg":"img/iconos/carpeta-cerrada.svg",
                 abierto:grupo.abierto,
                 activo:grupo.activo,
-                items:grupo.getItems()
+                items:grupo.getItems(),
+                item:grupo
             }
             this.items.push(item);
         }
@@ -95,6 +96,7 @@ class Capas extends ZCustomController {
                     }
                     this.refresca();
                 }
+                if (tr.getAttribute("data-grupo-activo") == "true") this.seleccionaItem(item);
             }
         });
     }
@@ -108,7 +110,7 @@ class Capas extends ZCustomController {
             if (!indicePadre && i > 0) {
                 html += "<tr><td colspan='4' style='height:10px;'></td></tr>";
             }
-            html += "<tr data-indice-nivel='" + indiceNivel + "' style='" + (grupoInactivo?"opacity:0.5;":"") + "'>";            
+            html += "<tr data-indice-nivel='" + indiceNivel + "' style='" + (grupoInactivo?"opacity:0.5;":"") + "' data-grupo-activo='" + (!grupoInactivo) + "' >";            
             html += "<td style='width:14px; text-align:left;'>";
             if (subitems.length) {
                 if (item.abierto) {
@@ -179,6 +181,18 @@ class Capas extends ZCustomController {
         let g = new GrupoCapas("Nuevo Grupo de Capas");
         await window.geoportal.capas.addGrupo(g);
         this.refresca();
+    }
+
+    doResize() {
+        let s = this.size;
+        console.log("size", s);
+
+    }
+
+    seleccionaItem(item) {
+        console.log("seleccionaItem", item);
+        let grupoActivo = window.geoportal.capas.getGrupoActivo();
+        grupoActivo.itemActivo = item.item;
     }
 }
 ZVC.export(Capas);

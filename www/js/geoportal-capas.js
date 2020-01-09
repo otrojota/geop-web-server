@@ -1,5 +1,13 @@
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 class Capa {
     constructor(config) {
+        this.id = uuidv4();
         this.config = config;
         this.nivel = config.nivelInicial?config.nivelInicial:0;
         if (config.opacidad === undefined) config.opacidad = 80;
@@ -58,6 +66,7 @@ class Capa {
                 urlIcono:urlIcono,
                 activable:true,
                 activo:this.visualizadoresActivos[v.codigo]?true:false,
+                item:this.visualizadoresActivos[v.codigo],
                 capa:this
             })
         });
@@ -169,10 +178,20 @@ class Capa {
         }, []);
         await Promise.all(proms);
     }
+
+    getPanelesPropiedades() {
+        let paneles = [{
+            titulo:"Propiedades de la Capa",
+            path:"left/PropCapa"
+        }];
+        console.log("config", config);
+        return paneles;
+    }
 }
 
 class VisualizadorCapa {
     constructor(codigo, capa, config) {
+        this.id = uuidv4();
         this.codigo = codigo;
         this.capa = capa;
         this.config = config;
@@ -185,6 +204,7 @@ class VisualizadorCapa {
 
 class GrupoCapas {
     constructor(nombre, activo) {
+        this.id = uuidv4();
         this.nombre = nombre;
         this.capas = [];
         this.activo = activo?true:false;
@@ -229,8 +249,9 @@ class GrupoCapas {
                 grupoActivo:this.activo,
                 eliminable:true,
                 indice:i,
-                grupo:this,                
+                grupo:this,
                 abierto:capa.abierto,
+                item:capa,
                 items:capa.getItems()
             })
         }

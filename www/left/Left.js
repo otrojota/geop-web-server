@@ -41,17 +41,20 @@ class Left extends ZCustomController {
         if (this.opcionesLoader.content.doResize) this.opcionesLoader.content.doResize();
     }
     async activaOpcion(opcion) {
+        let controller;
         switch(opcion) {
             case "sesion":
-                return await this.opcionesLoader.load("./Sesion");
+                controller = await this.opcionesLoader.load("./Sesion");
                 break;
             case "preferencias":
-                return await this.opcionesLoader.load("./Preferencias");
+                controller = await this.opcionesLoader.load("./Preferencias");
                 break;
             case "capas":
-                return await this.opcionesLoader.load("./Capas");
+                controller = await this.opcionesLoader.load("./Capas");
                 break;
         }
+        this.doResize();
+        return controller;
     }
 }
 ZVC.export(Left);
