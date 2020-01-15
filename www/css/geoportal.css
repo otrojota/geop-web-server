@@ -151,3 +151,33 @@ body {
 .nombre-item:hover {
     text-decoration: underline;
 }
+.fila-item-capa {
+    color: #000000;
+}
+.fila-item-capa-activo {
+    color: blue;
+}
+
+.panel-propiedades-fijo {
+    border: 1px solid gray;
+}
+.titulo-panel-propiedades {
+    background-color: #aebbc9;
+    color: white;
+    font-size: 11px;
+}
+.titulo-subpanel-propiedades {
+    background-color: #e6edf3;
+    color: rgb(32, 32, 32);
+    font-size: 11px;
+    margin-right: 3px;
+}
+.contenido-subpanel-propiedades {
+    font-size: 80%;
+}
+.editor-subpanel-propiedades {
+    font-size: 80%;
+}
+.etiqueta-subpanel-propiedades {
+    padding-top:4px;
+}

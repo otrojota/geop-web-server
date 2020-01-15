@@ -21,6 +21,11 @@ class Capa {
         this.idBasePanel = window.geoportal.mapa.creaIdPanelesCapa();
         this.panelesMapa = [];
         this.nextIdConsulta = 1;
+        this.configPanel = {
+            flotante:false,
+            height:140, width:200,
+            configSubPaneles:{}
+        }
         this.invalida(); // iniciar
     }
     get codigo() {return this.config.codigo}
@@ -52,6 +57,7 @@ class Capa {
     destruye() {
         this.listaVisualizadoresActivos.forEach(v => v.destruye());
     }
+    getVisualizador(codigo) {return this.visualizadoresActivos[codigo]}
     getItems() {
         let items = [];
         let vis = this.getVisualizadoresAplicables();
@@ -179,13 +185,17 @@ class Capa {
         await Promise.all(proms);
     }
 
+    /* Panel de Propiedades */
     getPanelesPropiedades() {
         let paneles = [{
-            titulo:"Propiedades de la Capa",
-            path:"left/PropCapa"
+            codigo:"props",
+            path:"left/propiedades/PropCapa"
         }];
-        console.log("config", config);
         return paneles;
+    }
+
+    getTituloPanel() {
+        return this.nombre;
     }
 }
 
@@ -209,6 +219,12 @@ class GrupoCapas {
         this.capas = [];
         this.activo = activo?true:false;
         this.abierto = true;
+        this.itemActivo = this;
+        this.configPanel = {
+            flotante:false,
+            height:120, width:200,
+            configSubPaneles:{}
+        }
     }
     addCapa(capa) {this.capas.push(capa)}
     removeCapa(idx) {
@@ -257,6 +273,18 @@ class GrupoCapas {
         }
         return lista;
     }
+
+    /* Panel de Propiedades */
+    getPanelesPropiedades() {
+        let paneles = [{
+            codigo:"props",
+            path:"left/propiedades/PropGrupo"
+        }];
+        return paneles;
+    }
+    getTituloPanel() {
+        return this.nombre;
+    }
 }
 
 class Capas {
@@ -272,6 +300,7 @@ class Capas {
         let capa = new Capa(config);
         capa.abierto = true;
         this.getGrupoActivo().addCapa(capa);
+        this.getGrupoActivo().itemActivo = capa;
         if (this.listener) this.listener.onCapaAgregada(capa);
         return capa;
     }
