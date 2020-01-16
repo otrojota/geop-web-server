@@ -27,15 +27,20 @@ class Main extends ZCustomController {
             this.top.size = {width:w - leftWidth - 1, height:topHeight}
             this.mapa.pos = {left:leftWidth + 1, top:0};
             this.mapa.size = {width:w - leftWidth - 1, height:h}
+            this.central.pos = {left:leftWidth + 1, top:0};
+            this.central.size = {width:w - leftWidth - 1, height:h}
         } else {
             this.left.hide();
             this.top.pos = {left:0, top:0};
             this.top.size = {width:w, height:topHeight}
             this.mapa.pos = {left:0, top:0};
             this.mapa.size = {width:w, height:h}
+            this.central.pos = {left:0, top:0};
+            this.central.size = {width:w, height:h}
         }
         this.top.doResize();
         this.mapa.doResize();
+        this.central.doResize();
     }
 
     onTop_alternaMenu() {

@@ -17,6 +17,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         this.panelCurvas.style.opacity = this.capa.opacidad / 100;
         this.capa.registraPanelMapa(this.panelCurvas);
         this.panelMarkers = window.geoportal.mapa.creaPanelMapa(this.capa, "markers", 7);
+        this.panelMarkers.style.opacity = this.capa.opacidad / 100;
         this.capa.registraPanelMapa(this.panelMarkers);
         this.styleFunction = feature => {
             return {color: this.config.lineColor, weight: this.config.lineWidth, opacity: 1.0}
@@ -111,7 +112,11 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             let marker = L.marker([m.lat, m.lng], {icon:icon, opacity:1.0, pane:this.panelMarkers.id});
             marker.addTo(window.geoportal.mapa.map);
         })
-        
+    }
+
+    cambioOpacidadCapa(opacidad) {
+        this.panelCurvas.style.opacity = this.capa.opacidad / 100;
+        this.panelMarkers.style.opacity = this.capa.opacidad / 100;
     }
 }
 

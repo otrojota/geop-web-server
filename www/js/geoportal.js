@@ -5,6 +5,7 @@ class GeoPortal {
         let dt = new Date()
         dt.setHours(0); dt.setMinutes(0); dt.setSeconds(0); dt.setMilliseconds(0);
         this.tiempo = dt.getTime();
+        this.listenersEdicion = [];
     }
     loadScripts() {
         return new Promise((resolve, reject) => {
@@ -128,6 +129,21 @@ class GeoPortal {
     // Eventos
     movioMapa() {
         this.capas.movioMapa();
+    }
+    addListenerEdicion(listener) {
+        this.listenersEdicion.push(listener);
+    }
+    removeListenerEdicion(listener) {
+        let idx = this.listenersEdicion.indexOf(listener);
+        if (idx >= 0) this.listenersEdicion.splice(idx,1);
+    }
+    editoObjeto(tipo, objeto) {
+        this.listenersEdicion.forEach(l => l(tipo, objeto));
+    }
+    setTiempo(tiempo) {
+        this.tiempo = tiempo;
+        console.log("geoportal.setTimpo", tiempo);
+        this.capas.getCapas().forEach(capa => capa.cambioTiempo())
     }
 }
 

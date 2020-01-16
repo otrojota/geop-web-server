@@ -108,6 +108,9 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         this.lyBandas.clearLayers();
         this.lyBandas.addData(this.geoJSON);
     }
+    cambioOpacidadCapa(opacidad) {
+        this.panelBandas.style.opacity = opacidad / 100;
+    }
 }
 
 window.geoportal.capas.registraVisualizador("base", "isobandas", VisualizadorIsobandas, "Isobandas", "base/img/isobandas.svg");

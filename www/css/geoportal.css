@@ -181,3 +181,63 @@ body {
 .etiqueta-subpanel-propiedades {
     padding-top:4px;
 }
+
+.central {
+    pointer-events: none;
+}
+
+#panelTiempo {    
+    border:1px solid gray;
+    border-radius: 5px;
+    padding:4px;
+    background-color: rgba(0,0,0,0.3);
+    box-shadow: 9px 11px 19px -8px rgba(0,0,0,0.75);
+    pointer-events: all;
+    cursor: pointer;
+    z-index: 6000;
+}
+#tiempoProgress {
+    background-color: gray;
+}
+#tiempoAvance {
+    background-color: white;
+    transition: 0.2s ease-out;
+}
+.dia {
+    font-size: 11px;
+    line-height: 12px;    
+    border-right: 1px solid rgb(26, 25, 25);
+    color: white;
+    text-shadow: 0 0 2px black;
+    text-align: center;
+}
+#panelTiempoActual {
+    border:1px solid gray;
+    border-radius: 5px;
+    padding:4px;
+    background-color: rgba(0,0,0,0.4);
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+    font-size: 11px;
+    color: white;
+    text-shadow: 0 0 2px black;  
+    z-index: 6000;  
+}
+
+.bootstrap-datetimepicker-widget {
+    font-size: 90%;
+    pointer-events: all;
+    text-shadow: none;
+    background-color: rgba(255,255,255,0.9);
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+}
+.iso-label {
+    color:black;
+    text-shadow: 2px 0 0 #fff, -2px 0 0 #fff, 0 2px 0 #fff, 0 -2px 0 #fff, 1px 1px #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+    font-size: 13px;
+}
+.tooltip {
+    z-index: 6100;
+}
+.noUi-touch-area {
+    background-color: #1779ba;
+}

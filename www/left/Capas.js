@@ -2,6 +2,12 @@ class Capas extends ZCustomController {
     onThis_init() {
         this.mostrandoPanelPropiedades = false;
         this.refresca();
+        window.geoportal.addListenerEdicion((tipo, objeto) => {
+            let td = this.cntItems.find(".nombre-item[data-id-item='" + objeto.id + "']");
+            if (td) {
+                if (objeto.nombre) td.innerText = objeto.nombre;
+            }
+        });
     }
     capaAgregada(capa) {
         this.refresca();
@@ -193,7 +199,7 @@ class Capas extends ZCustomController {
                 html += "&nbsp;";
             }
             html += "</td>";
-            html += "<td class='" + (nombreSeleccionable?"nombre-item":"") + "' style='padding-left:" + (nivel * 8) + "px;'>" + item.nombre + "</td>";
+            html += "<td class='" + (nombreSeleccionable?"nombre-item":"") + "' style='padding-left:" + (nivel * 8) + "px;' " + (item.item?"data-id-item='" + item.item.id + "'":"") + ">" + item.nombre + "</td>";
             html += "<td>";
             if (item.eliminable && (!grupoInactivo || item.tipo == "grupo") && !(item.tipo == "grupo" && items.length == 1)) {
                 html += "<i class='far fa-trash-alt eliminador-item' style='cursor: pointer; '></i>";

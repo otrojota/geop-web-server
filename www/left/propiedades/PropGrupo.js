@@ -20,6 +20,7 @@ class PropGrupo extends ZCustomController {
     onEdNombre_change() {
         this.grupo.nombre = this.edNombre.value;
         this.options.contenedor.cambioNombre();
+        window.geoportal.editoObjeto("grupo", this.grupo);
     }
     refresca() {
         if (this.config.abierto) {

@@ -8,9 +8,9 @@ function uuidv4() {
 class Capa {
     constructor(config) {
         this.id = uuidv4();
-        this.config = config;
-        this.nivel = config.nivelInicial?config.nivelInicial:0;
-        if (config.opacidad === undefined) config.opacidad = 80;
+        this.config = JSON.parse(JSON.stringify(config));
+        this.nivel = this.config.nivelInicial?config.nivelInicial:0;
+        if (this.config.opacidad === undefined) this.config.opacidad = 80;
         this.visualizadoresActivos = {};
         this.preConsultando = false;
         this.consultando = false;
@@ -34,6 +34,7 @@ class Capa {
     get niveles() {return this.config.niveles}
     get nivelInicial() {return this.config.nivelInicial}
     get nombre() {return this.config.nombre}
+    set nombre(n) {this.config.nombre = n}
     get origen() {return this.config.origen}
     get grupos() {return this.config.grupos}
     get temporal() {return this.config.temporal}
@@ -42,6 +43,7 @@ class Capa {
     get icono() {return this.config.icono}
     get urlIcono() {return this.config.urlIcono}
     get opacidad() {return this.config.opacidad}
+    set opacidad(o) {this.config.opacidad = o; this.cambioOpacidad()}
 
     registraPanelMapa(p) {this.panelesMapa.push(p)}
     getVisualizadoresAplicables() {
@@ -197,6 +199,14 @@ class Capa {
     getTituloPanel() {
         return this.nombre;
     }
+
+    cambioOpacidad() {
+        this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
+    }
+    cambioTiempo() {
+        if (!this.temporal) return;
+        this.refresca();
+    }
 }
 
 class VisualizadorCapa {
@@ -210,6 +220,9 @@ class VisualizadorCapa {
     async crea() {}
     async destruye() {}
     async refresca() {}
+    cambioOpacidadCapa(opacidad) {
+        console.log("cambioOpacidad no se sobreescribió");
+    }
 }
 
 class GrupoCapas {
