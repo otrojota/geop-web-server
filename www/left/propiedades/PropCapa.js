@@ -2,7 +2,7 @@ class PropCapa extends ZCustomController {
     onThis_init(options) {      
         this.codigo = "props";  
         this.options = options;
-        this.capa = options.item;        
+        this.capa = options.item;                
     }    
     async destruye() {}
     get config() {
@@ -22,7 +22,7 @@ class PropCapa extends ZCustomController {
         this.options.contenedor.cambioNombre();
         window.geoportal.editoObjeto("capa", this.capa);
     }
-    refresca() {        
+    refresca() {              
         if (!this.edOpacidad.view.noUiSlider) {
             noUiSlider.create(this.edOpacidad.view, {
                 start: this.capa.opacidad,

@@ -25,26 +25,28 @@ class PanelPropiedades extends ZCustomController {
         this.contenedorPaneles.size = {width: s.width, height: s.height - 27}
     }
     async destruye() {
-        console.log("destruyendo panel de propiedades");
         for (let i=0; i<this.paneles.length; i++) {
             await this.paneles[i].destruye();
+            await this.paneles[i].deactivate();
         }
         this.contenedorPaneles.view.innerHTML = "";
     }
     async crea() {
         this.paneles = [];
         let paneles = this.item.getPanelesPropiedades();
+        let html = paneles.reduce((html, panel) => {
+            html += "<div id='panprop-" + panel.codigo + "' class='subpanel-propiedades' data-z-component='" + panel.path + "'></div>";
+            return html;
+        }, "");
+        this.contenedorPaneles.html = html;
         for (let i=0; i<paneles.length; i++) {
             let panel = paneles[i];
-            let html = "<div id='panprop-" + panel.codigo + "' class='subpanel-propiedades' data-z-component='" + panel.path + "'></div>";
-            this.contenedorPaneles.view.innerHTML += html;
             let subPanelContainer = this.contenedorPaneles.find("#panprop-" + panel.codigo);
             let controller = await ZVC.fromElement(subPanelContainer, {item:this.item, contenedor:this});
             this.paneles.push(controller);
         }
     }
     async creaDesde(item) {
-        console.log("creando panel desde item", item);
         if (this.item) {
             if (item) {
                 if (item.id != this.item.id) await this.destruye();

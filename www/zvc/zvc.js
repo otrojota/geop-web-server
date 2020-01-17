@@ -197,7 +197,7 @@ class ZController {
         return this.view.style.display != "none";
     }
     hasClass(className) {
-        return this.view.classList.includes(className);
+        return this.view.classList.contains(className);
     }
     addClass(classNames) {
         classNames.split(" ").forEach(n => this.view.classList.add(n));

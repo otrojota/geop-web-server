@@ -142,7 +142,6 @@ class GeoPortal {
     }
     setTiempo(tiempo) {
         this.tiempo = tiempo;
-        console.log("geoportal.setTimpo", tiempo);
         this.capas.getCapas().forEach(capa => capa.cambioTiempo())
     }
 }

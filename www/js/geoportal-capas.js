@@ -21,9 +21,10 @@ class Capa {
         this.idBasePanel = window.geoportal.mapa.creaIdPanelesCapa();
         this.panelesMapa = [];
         this.nextIdConsulta = 1;
+        this.tiempoFijo = null;
         this.configPanel = {
             flotante:false,
-            height:140, width:200,
+            height:180, width:200,
             configSubPaneles:{}
         }
         this.invalida(); // iniciar
@@ -33,6 +34,7 @@ class Capa {
     get formatos() {return this.config.formatos}
     get niveles() {return this.config.niveles}
     get nivelInicial() {return this.config.nivelInicial}
+    get tieneNiveles() {return this.niveles && this.niveles.length > 1}
     get nombre() {return this.config.nombre}
     set nombre(n) {this.config.nombre = n}
     get origen() {return this.config.origen}
@@ -126,7 +128,8 @@ class Capa {
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor);
         let b = window.geoportal.mapa.getLimites();
         let idConsulta = this.nextIdConsulta;
-        fetch(prov.url + "/preconsulta?capa=" + this.codigo + "&lng0=" + b.lng0 + "&lat0=" + b.lat0 + "&lng1=" + b.lng1 + "&lat1=" + b.lat1 + "&tiempo=" + window.geoportal.tiempo + "&nivel=" + this.nivel)
+        let tiempo = this.tiempoFijo?this.tiempoFijo:window.geoportal.tiempo;
+        fetch(prov.url + "/preconsulta?capa=" + this.codigo + "&lng0=" + b.lng0 + "&lat0=" + b.lat0 + "&lng1=" + b.lng1 + "&lat1=" + b.lat1 + "&tiempo=" + tiempo + "&nivel=" + this.nivel)
             .then(res => {
                 if (idConsulta != this.nextIdConsulta) return;
                 if (res.status != 200) {
@@ -193,6 +196,18 @@ class Capa {
             codigo:"props",
             path:"left/propiedades/PropCapa"
         }];
+        if (this.tieneNiveles) {
+            paneles.push({
+                codigo:"niveles",
+                path:"left/propiedades/NivelCapa"
+            })
+        }
+        if (this.temporal) {
+            paneles.push({
+                codigo:"fecha",
+                path:"left/propiedades/FechaCapa"
+            })
+        }
         return paneles;
     }
 
@@ -205,6 +220,9 @@ class Capa {
     }
     cambioTiempo() {
         if (!this.temporal) return;
+        this.refresca();
+    }
+    cambioNivel() {
         this.refresca();
     }
 }

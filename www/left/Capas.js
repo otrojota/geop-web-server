@@ -117,7 +117,7 @@ class Capas extends ZCustomController {
             }
         });
         let itemActivo = window.geoportal.capas.getGrupoActivo().itemActivo;
-        console.log("Capas.refreca itemActivo", itemActivo);
+        console.log("Capas.refreca itemActivo", itemActivo);        
         if (itemActivo.configPanel) {
             if (itemActivo.id == this.panelPropiedades.idItem) {
                 this.panelPropiedades.refresca();
@@ -132,7 +132,7 @@ class Capas extends ZCustomController {
             this.panelPropiedades.creaDesde(null);
             this.panelPropiedades.hide();
             this.doResize();
-        }
+        }        
     }
 
     getHTMLItems(items, nivel, indicePadre, inactivo) {
@@ -146,7 +146,6 @@ class Capas extends ZCustomController {
             if (!indicePadre && i > 0) {
                 html += "<tr><td colspan='4' style='height:10px;'></td></tr>";
             }
-            if (!item.item) console.error(item);
             let claseFila = (item.item && item.item.id == idItemActivo)?"fila-item-capa-activo":"fila-item-capa";
             html += "<tr class='" + claseFila + "' data-indice-nivel='" + indiceNivel + "' style='" + (grupoInactivo?"opacity:0.5;":"") + "' data-grupo-activo='" + (!grupoInactivo) + "' >";            
             html += "<td style='width:14px; text-align:left;'>";

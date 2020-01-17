@@ -19,11 +19,13 @@ class Left extends ZCustomController {
         window.geoportal.capas.setListener(null);
     }
     async capaAgregada(capa) {
-        (await this.selecciona("capas")).capaAgregada(capa);
+        if (this.opcionActiva == "capas") this.panelActivo.capaAgregada(capa);
+        else (await this.selecciona("capas")); // Refresh al abrir
 
     }
     async capaRemovida(capa) {
-        (await this.selecciona("capas")).capaRemovida(capa);
+        if (this.opcionActiva == "capas") this.panelActivo.capaRemovida(capa);
+        else (await this.selecciona("capas")); // Refresh al abrir
     }
 
     async selecciona(opcion) {
@@ -32,6 +34,7 @@ class Left extends ZCustomController {
         this.find(".opcion-izquierda[data-opcion='" + opcion + "']").classList.add("activa");
         let controller = await this.activaOpcion(opcion);
         this.opcionActiva = opcion;
+        this.panelActivo = controller;
         return controller;
     }
     doResize() {
