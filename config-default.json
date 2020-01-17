@@ -1,5 +1,33 @@
 {
     "webServer":{
         "http":{"port":8085}
-    }
+    },
+    "hereAPIKey":"eG2NCop0Fa_k1JUQUaiZvkt-pQKlSlYODS_UwKqaD6c",
+    "proveedores":[{
+        "codigo":"gfs4",
+        "url_bak":"http://localhost:8081",
+        "url":"http://www.pomeo.cl:8081"
+    }],
+    "plugins":["./base-plugin/BasePlugin.js"],
+    "grupos":[{
+        "codigo":"oceanografia", "nombre":"Oceanografía", "icono":"fas fa-water", "subgrupos":[{
+            "codigo":"olas", "nombre":"Oleaje", "icono":"fas fa-folder-open"
+        }]
+    }, {
+        "codigo":"meteorologia", "nombre":"Meteorología", "icono":"fas fa-sun"
+    }, {
+        "codigo":"geologia", "nombre":"Geología", "icono":"fas fa-gem"
+    }, {
+        "codigo":"pesca-artesanal", "nombre":"Pesca Artesanal", "icono":"fas fa-fish"
+    }, {
+        "codigo":"deportes-nauticos", "nombre":"Deportes Náuticos", "icono":"fas fa-life-ring"
+    }, {
+        "codigo":"color-oceano", "nombre":"Color Océano", "icono":"fas fa-globe"
+    }, {
+        "codigo":"satelital", "nombre":"Información Satelital", "icono":"fas fa-satellite"
+    }, {
+        "codigo":"aux", "nombre":"POMeO - Capas Auxiliares", "icono":"img/origenes/auxiliary.svg"
+    }, {
+        "codigo":"cl-estaciones", "nombre":"Chile - Estaciones", "icono":"img/origenes/chile.svg"
+    }]
 }

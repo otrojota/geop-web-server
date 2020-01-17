@@ -219,7 +219,7 @@ class Capa {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
     }
     cambioTiempo() {
-        if (!this.temporal) return;
+        if (!this.temporal || this.tiempoFijo) return;
         this.refresca();
     }
     cambioNivel() {
