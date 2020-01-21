@@ -1,0 +1,33 @@
+<div>
+    <i id="imgAbierto" class="float-left far fa-minus-square mx-1 mt-1" data-z-clickable="true" style="cursor: pointer;"></i>
+    <div id="titulo" class="py-1 titulo-subpanel-propiedades"></div>
+</div>
+<div id="contenido" class="contenido-subpanel-propiedades container-fluid">
+    <div class="row mt-1">
+        <div class="col-3">
+            <label class="etiqueta-subpanel-propiedades mb-0">Escala</label>
+        </div>
+        <div class="col-9">
+            <select id="edTipoEscala" data-z-id-field="nombre" data-z-label-field="nombre" class="custom-select custom-select-sm" style="font-size: 80%;"></select>
+        </div>
+    </div>
+    <div class="row mt-1">
+        <div class="col">
+            <div id="edAutomatica" data-z-component="common/CheckBox" data-label="Escala Automática" class="etiqueta-subpanel-propiedades mb-0"></div>
+        </div>
+    </div>
+    <div class="row mt-1">
+        <div class="col">
+            <div id="previewEscala" style="height: 20px;"></div>
+        </div>
+    </div>
+    <div class="row mt-1">
+        <div class="col-5">
+            <input id="edMin" type="number" class="form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+        </div>
+        <div class="col-2"></div>
+        <div class="col-5">
+            <input id="edMax" type="number" class="text-right form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+        </div>
+    </div>
+</div>

@@ -27,6 +27,7 @@ class Capa {
             height:180, width:200,
             configSubPaneles:{}
         }
+        this.workingListeners = []; // {accion:"start"|"finish", listener:function}
         this.invalida(); // iniciar
     }
     get codigo() {return this.config.codigo}
@@ -46,6 +47,16 @@ class Capa {
     get urlIcono() {return this.config.urlIcono}
     get opacidad() {return this.config.opacidad}
     set opacidad(o) {this.config.opacidad = o; this.cambioOpacidad()}
+
+    addWorkingListener(accion, listener) {
+        this.workingListeners.push({accion:accion, listener:listener});
+    }
+    removeWorkingListener(listener) {
+        let idx = this.workingListeners.findIndex(l => l.listener == listener);
+        if (idx >= 0) this.workingListeners.splice(idx,1);
+    }
+    startWorking() {this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())}
+    finishWorking() {this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())}
 
     registraPanelMapa(p) {this.panelesMapa.push(p)}
     getVisualizadoresAplicables() {
@@ -86,6 +97,7 @@ class Capa {
         let clase = window.geoportal.capas.clasesVisualizadores.find(vis => vis.codigo == v.codigo).clase;
         this.visualizadoresActivos[v.codigo] = new (clase)(this, {});
         await this.visualizadoresActivos[v.codigo].crea();
+        window.geoportal.capas.getGrupoActivo().itemActivo = this.visualizadoresActivos[v.codigo];
         this.visualizadoresActivos[v.codigo].refresca();
     }
     desactivaVisualizador(codigo) {
@@ -123,6 +135,7 @@ class Capa {
             this.listenersPreconsulta.push(callback);
             return;
         }
+        this.startWorking();
         this.preConsultando = true;
         this.listenersPreconsulta = [callback];
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor);
@@ -151,10 +164,14 @@ class Capa {
                 console.error(error);
                 this.listenersPreconsulta.forEach(cb => cb(err));    
             })
-            .finally(_ => this.preConsultando = false);
+            .finally(_ => {
+                this.preConsultando = false;
+                this.finishWorking();
+            });
     }
 
     resuelveConsulta(formato, args, callback) {
+        this.startWorking();
         this.listenersConsulta.push(callback);
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor); 
         let idConsulta = this.nextIdConsulta;       
@@ -179,6 +196,7 @@ class Capa {
         .finally(_ => {
             let idx = this.listenersConsulta.indexOf(callback);
             if (idx >= 0) this.listenersConsulta.splice(idx,1);
+            this.finishWorking();
         })
     }
 
@@ -232,12 +250,22 @@ class VisualizadorCapa {
         this.id = uuidv4();
         this.codigo = codigo;
         this.capa = capa;
-        this.config = config;
+        this.config = config;   
+        this.workingListeners = []; // {accion:"start"|"finish", listener:function}     
     }
     static aplicaACapa(capa) {return false;}
     async crea() {}
     async destruye() {}
     async refresca() {}
+    addWorkingListener(accion, listener) {
+        this.workingListeners.push({accion:accion, listener:listener});
+    }
+    removeWorkingListener(listener) {
+        let idx = this.workingListeners.findIndex(l => l.listener == listener);
+        if (idx >= 0) this.workingListeners.splice(idx,1);
+    }
+    startWorking() {this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())}
+    finishWorking() {this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())}
     cambioOpacidadCapa(opacidad) {
         console.log("cambioOpacidad no se sobreescribió");
     }

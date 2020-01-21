@@ -12,7 +12,17 @@ class EscalaGeoportal {
     static getBibliotecaEscalas() {
         return EscalaGeoportal.biblioteca;
     }
+    static porNombre(nombre, urlPrepend) {
+        let config = EscalaGeoportal.getBibliotecaEscalas().find(e => e.nombre == nombre);
+        if (!config) throw "No se encontró la escala '" + nombre + "'";
+        return EscalaGeoportal.creaDesdeConfig(config, urlPrepend);
+    }
     static creaDesdeConfig(config, urlPrepend) {
+        if (!urlPrepend) {
+            let baseURL = window.location.origin + window.location.pathname;
+            if (baseURL.endsWith("/")) baseURL = baseURL.substr(0, baseURL.length - 1);
+            urlPrepend = baseURL;
+        }
         if (config.tipo == "hsl") {
             let escala = new LinealHSL(config);
             return escala.init();
@@ -81,8 +91,11 @@ class EsquemaURL extends EscalaGeoportal {
         let v;
         if (this.min == this.max) v = 0;
         else v = (valor - this.min) / (this.max - this.min);
+        /*
         if (v < 0) v = 0;
         if (v > 1) v = 1;
+        */
+       if (v < 0 || v > 1) return "rgba(0,0,0,0)";
         let i = parseInt(this.rangos.length / 2);
         return this.busquedaBinaria(v, i, 0, this.rangos.length - 1);
     }
@@ -93,7 +106,6 @@ class EsquemaURL extends EscalaGeoportal {
             let newI = parseInt(i0 + (i - i0) / 2);
             if (newI == i) {
                 console.error("Error en búsqueda binaria .. rango menor inválido");
-                console.log(v, i, i0, i1);
                 return r.color;
             }
             return this.busquedaBinaria(v, newI, i0, i-1);
@@ -102,7 +114,6 @@ class EsquemaURL extends EscalaGeoportal {
             if (newI != parseInt(newI)) newI = 1 + parseInt(newI);
             if (newI == i) {
                 console.error("Error en búsqueda binaria .. rango mayor inválido");
-                console.log(v, i, i0, i1);
                 return r.color;
             }
             return this.busquedaBinaria(v, newI, i+1, i1);

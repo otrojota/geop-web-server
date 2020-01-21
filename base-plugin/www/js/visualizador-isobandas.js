@@ -1,19 +1,30 @@
 class VisualizadorIsobandas extends VisualizadorCapa {
     constructor(capa, config) {
         let defaultConfig = {
-            resolucion:2,
+            autoStep:2,
             escala:{
                 dinamica:true,
-                tipo:"esquemaPG",
-                url:"/js/escalas-pg/nasa-oc-sst.pg"
+                nombre:"sst - NASA OceanColor",
+                min:0, max:1
             }
         }
         let conf = $.extend(defaultConfig, config);
         super("isobandas", capa, conf);
+        this.configPanel = {
+            flotante:false,
+            height:200, width:200,
+            configSubPaneles:{}
+        }  
     }
     static aplicaACapa(capa) {
         return capa.tipo == "raster" && capa.formatos.isobandas;
     }
+
+    get autoStep() {return this.config.autoStep}
+    set autoStep(a) {this.config.autoStep = a; this.refresca()}
+    get step() {return this.config.step}
+    set step(s) {this.config.step = s; this.refresca()}
+    get escala() {return this.config.escala}    
 
     async crea() {
         this.panelBandas = window.geoportal.mapa.creaPanelMapa(this.capa, "bandas" + parseInt(Math.random() * 10000), 3);
@@ -56,9 +67,11 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         }        
     }
     refresca() {
+        this.startWorking();
         this.lyBandas.clearLayers();
         this.capa.getPreConsulta((err, preconsulta) => {
             if (err) {
+                this.finishWorking();
                 console.error(err);
                 return;
             }
@@ -67,27 +80,34 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         })
     }
     refresca2() {
-        let min = this.preconsulta.min, max = this.preconsulta.max;
-        if (min === max) throw "No hay datos";
+        let min, max;
+        if (this.config.escala.dinamica) {
+            min = this.preconsulta.min;
+            max = this.preconsulta.max;
+            this.config.escala.min = min;
+            this.config.escala.max = max;
+            if (min === max) throw "No hay datos";
+        } else {
+            min = this.config.escala.min;
+            max = this.config.escala.max;
+        }
+        
         let step = this.config.step;
         if (this.config.autoStep || step === undefined) {
             step = Math.pow(10, parseInt(Math.log10(max - min) - 1));
-            while (parseInt((max - min) / step) > 30) step *= 2;
+            while (parseInt((max - min) / step) > 60) step *= 2;
+            this.config.step = step;
         } else {
-            if ((max - min) / step > 50) throw "Demasiadas Bandas, aumente el incremento"
+            if ((max - min) / step > 100) throw "Demasiadas Bandas, aumente el incremento"
         }
-        step /= this.config.resolucion;
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
-        console.log("incremento isobandas:" + step);
-        let t0 = new Date();
-        console.log("consultando ...");
         this.capa.resuelveConsulta("isobandas", args, (err, ret) => {
             if (err) {
+                this.finishWorking();
                 console.error(err);
                 return;
             }
-            console.log("respuesta en " + (new Date() - t0) + "[ms]", ret)
             let shpURL = this.capa.getURLResultado(ret.fileName);
             let baseURL = window.location.origin + window.location.pathname;
             if (baseURL.endsWith("/")) baseURL = baseURL.substr(0, baseURL.length - 1);
@@ -95,11 +115,13 @@ class VisualizadorIsobandas extends VisualizadorCapa {
             this.doInWorker("getIsobandas", {url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
                 .then(ret => {
                     if (ret.error) {
+                        this.finishWorking();
                         console.error(ret.error);
                         return;
                     }
                     this.geoJSON = ret.isobandas;
                     this.repinta();
+                    this.finishWorking();
                 })           
         });;
     }
@@ -110,6 +132,22 @@ class VisualizadorIsobandas extends VisualizadorCapa {
     }
     cambioOpacidadCapa(opacidad) {
         this.panelBandas.style.opacity = opacidad / 100;
+    }
+
+    /* Panel de Propiedades */
+    getPanelesPropiedades() {
+        let paneles = [{
+            codigo:"props",
+            path:"base/propiedades/PropIsobandas"
+        }, {
+            codigo:"escala",
+            path:"base/propiedades/PropEscalaVisualizador"
+        }];
+        return paneles;
+    }
+
+    getTituloPanel() {
+        return this.capa.nombre + " / Isobandas";
     }
 }
 

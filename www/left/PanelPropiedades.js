@@ -13,8 +13,16 @@ class PanelPropiedades extends ZCustomController {
     get height() {
         return this.configPanel?this.configPanel.height:0;
     }
+    set height(h) {
+        if (!this.configPanel) return;
+        this.configPanel.height = h;
+    }
     get width() {
         return this.configPanel?this.configPanel.width:0;
+    }
+    set width(w) {
+        if (!this.configPanel) return;
+        this.configPanel.width = w;
     }
     doResize() {
         let s = this.size;

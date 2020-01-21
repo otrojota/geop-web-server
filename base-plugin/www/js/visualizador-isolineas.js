@@ -2,15 +2,29 @@ class VisualizadorIsolineas extends VisualizadorCapa {
     constructor(capa, config) {
         let defaultConfig = {
             lineWidth:1,
-            lineColor:"black",
+            lineColor:"#000000",
             autoStep:true
         }
         let conf = $.extend(defaultConfig, config);
-        super("isolineas", capa, conf);        
+        super("isolineas", capa, conf); 
+        this.configPanel = {
+            flotante:false,
+            height:180, width:200,
+            configSubPaneles:{}
+        }       
     }
     static aplicaACapa(capa) {
         return capa.tipo == "raster" && capa.formatos.isolineas;
     }
+
+    get lineWidth() {return this.config.lineWidth}
+    set lineWidth(w) {this.config.lineWidth = w; this.repinta();}
+    get lineColor() {return this.config.lineColor}
+    set lineColor(c) {this.config.lineColor = c; this.repinta();}
+    get autoStep() {return this.config.autoStep}
+    set autoStep(a) {this.config.autoStep = a; this.refresca()}
+    get step() {return this.config.step}
+    set step(s) {this.config.step = s; this.refresca()}
 
     async crea() {
         this.panelCurvas = window.geoportal.mapa.creaPanelMapa(this.capa, "curvas" + parseInt(Math.random() * 10000), 6);
@@ -57,10 +71,12 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         }        
     }
     refresca() {
+        this.startWorking();
         this.lyCurvas.clearLayers();
         this.panelMarkers.innerHTML = "";
         this.capa.getPreConsulta((err, preconsulta) => {
             if (err) {
+                this.finishWorking();
                 console.error(err);
                 return;
             }
@@ -75,32 +91,36 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         if (this.config.autoStep || step === undefined) {
             step = Math.pow(10, parseInt(Math.log10(max - min) - 1));
             while (parseInt((max - min) / step) > 10) step *= 2;
+            this.config.step = step;
         } else {
             if ((max - min) / step > 50) throw "Demasiadas Líneas, aumente el incremento"
         }
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
-        console.log("incremento isolineas:" + step);
         let t0 = new Date();
-        console.log("consultando ...");
         this.capa.resuelveConsulta("isolineas", args, (err, ret) => {
             if (err) {
+                this.finishWorking();
                 console.error(err);
                 return;
             }
-            console.log("respuesta en " + (new Date() - t0) + "[ms]", ret)
             let shpURL = this.capa.getURLResultado(ret.fileName);
             this.doInWorker("getIsolineas", {url:shpURL})
                 .then(ret => {
                     if (ret.error) {
+                        this.finishWorking();
                         console.error(ret.error);
                         return;
                     }
                     this.geoJSON = ret.isolineas;
                     this.marcadores = ret.marcadores;
                     this.repinta();
+                    this.finishWorking();
                 })
-                .catch(err => console.error(error));
+                .catch(err => {
+                    this.finishWorking();
+                    console.error(error);
+                });
         });;
     }
 
@@ -117,6 +137,19 @@ class VisualizadorIsolineas extends VisualizadorCapa {
     cambioOpacidadCapa(opacidad) {
         this.panelCurvas.style.opacity = this.capa.opacidad / 100;
         this.panelMarkers.style.opacity = this.capa.opacidad / 100;
+    }
+
+    /* Panel de Propiedades */
+    getPanelesPropiedades() {
+        let paneles = [{
+            codigo:"props",
+            path:"base/propiedades/PropIsolineas"
+        }];
+        return paneles;
+    }
+
+    getTituloPanel() {
+        return this.capa.nombre + " / Isolineas";
     }
 }
 

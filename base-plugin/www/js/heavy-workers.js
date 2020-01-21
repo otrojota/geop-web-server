@@ -64,8 +64,10 @@ async function getIsobandas(url, config, baseURL, min, max) {
     try {
         //importScripts("base/js/shapefile-0.6.6.js", "../js/geoportal-escalas.js");                
         let geoJSON = await shapefile.read(url);
-        let escala = await EscalaGeoportal.creaDesdeConfig(config.escala, baseURL)
-        escala.actualizaLimites(min, max);
+        //let escala = await EscalaGeoportal.creaDesdeConfig(config.escala, baseURL)
+        let escala = await EscalaGeoportal.porNombre(config.escala.nombre, baseURL);
+        escala.dinamica = config.escala.dinamica;
+        escala.actualizaLimites(min, max);        
         geoJSON.features.forEach(f => {
             let value = (f.properties.minValue + f.properties.maxValue) / 2;
             f.properties.value = value;
