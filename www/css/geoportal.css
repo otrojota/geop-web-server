@@ -161,6 +161,14 @@ body {
 .panel-propiedades-fijo {
     border: 1px solid gray;
 }
+.panel-propiedades-flotante {
+    border: 1px solid gray;
+    pointer-events: all;
+    background-color: white;
+    -webkit-box-shadow: 0px 0px 54px -26px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 54px -26px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 54px -26px rgba(0,0,0,0.75);
+}
 .titulo-panel-propiedades {
     background-color: #8c949c;
     color: white;
@@ -244,6 +252,16 @@ body {
 }
 .noUi-touch-area {
     background-color: #1779ba;
+}
+.noUi-base {
+    transform: scale(0.8);
+}
+.noUi-horizontal {
+    height: 12px;
+    margin-top: 6px;
+}
+.noUi-handle {
+    margin-top:-3px;
 }
 .hsplit {
     height:6px;

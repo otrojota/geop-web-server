@@ -41,10 +41,8 @@ class EscalaGeoportal {
 
     async init() {return this}
     actualizaLimites(min, max) {
-        if (this.dinamica) {
-            this.min = min;
-            this.max = max;
-        }
+        this.min = min;
+        this.max = max;
     }
     getColor(valor) {}
     refrescaPreview(div) {div.css({border:"1px solid red"})}

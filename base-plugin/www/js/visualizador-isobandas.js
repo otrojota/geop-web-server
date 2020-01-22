@@ -12,7 +12,7 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         super("isobandas", capa, conf);
         this.configPanel = {
             flotante:false,
-            height:200, width:200,
+            height:200, width:300,
             configSubPaneles:{}
         }  
     }

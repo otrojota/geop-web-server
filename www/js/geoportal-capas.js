@@ -24,7 +24,7 @@ class Capa {
         this.tiempoFijo = null;
         this.configPanel = {
             flotante:false,
-            height:180, width:200,
+            height:180, width:300,
             configSubPaneles:{}
         }
         this.workingListeners = []; // {accion:"start"|"finish", listener:function}
@@ -281,9 +281,10 @@ class GrupoCapas {
         this.itemActivo = this;
         this.configPanel = {
             flotante:false,
-            height:120, width:200,
+            height:120, width:300,
             configSubPaneles:{}
         }
+        this.panelesFlotantes = [];
     }
     addCapa(capa) {this.capas.push(capa)}
     removeCapa(idx) {
@@ -303,14 +304,16 @@ class GrupoCapas {
             return lista;
         }, []);
         await Promise.all(proms);
+        await this.creaPanelesFlotantes();
     }
-    async desactiva() {
+    async desactiva() {        
         let proms = this.capas.reduce((lista, capa) => {
             lista.push(capa.destruye());
             return lista;
         }, []);
         await Promise.all(proms);
         this.activo = false
+        await this.destruyePanelesFlotantes();
     }
     getItems() {
         let lista = [];
@@ -331,6 +334,50 @@ class GrupoCapas {
             })
         }
         return lista;
+    }
+
+    getPanelesFlotantes() {
+        return this.panelesFlotantes;
+    }
+    async creaPanelFlotante(item) {
+        let panel = await window.geoportal.admPanelesFlotantes.addPanelFlotante(item);
+        this.panelesFlotantes.push(panel);
+    }
+    async destruyePanelFlotante(item) {
+        let idx = this.panelesFlotantes.findIndex(p => p.item.id == item.id);
+        if (idx < 0) {
+            console.error("No se encontró el panel flotante", item);
+            return;
+        };
+        await window.geoportal.admPanelesFlotantes.removePanelFlotante(this.panelesFlotantes[idx]);        
+        this.panelesFlotantes.splice(idx, 1);
+    }
+    agregaItemsConPanelFlotante(item, items) {
+        if (item.configPanel && item.configPanel.flotante) {
+            items.push(item);
+        }
+        if (item.getItems) {
+            let subitems = item.getItems();
+            subitems.forEach(subitem => {
+                if (subitem.item) {
+                    this.agregaItemsConPanelFlotante(subitem.item, items)
+                }
+            })
+        }
+    }
+    async creaPanelesFlotantes() {
+        let items = [];
+        this.agregaItemsConPanelFlotante(this, items);
+        for (let i=0; i<items.length; i++) {
+            let item = items[i];
+            await this.creaPanelFlotante(item);
+        }
+    }
+    async destruyePanelesFlotantes() {
+        while (this.panelesFlotantes.length) {
+            let panel = this.panelesFlotantes[0];
+            await this.destruyePanelFlotante(panel.item);
+        }
     }
 
     /* Panel de Propiedades */

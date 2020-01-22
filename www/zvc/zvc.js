@@ -217,7 +217,8 @@ class ZController {
     enable() {this.view.disabled = false}   
     disable() {this.view.disabled = true}
     isEnabled() {return this.view.disableb?false:true}
-    get pos() {let r = this.view.getBoundingClientRect(); return {left:r.left, top:r.top}}
+    //get pos() {let r = this.view.getBoundingClientRect(); return {left:r.left, top:r.top}}
+    get pos() {return {left:parseFloat(this.view.style.left), top:parseFloat(this.view.style.top)}}
     set pos(p) {this.view.style.left = p.left + "px"; this.view.style.top = p.top + "px"}
     get size() {return {width:this.view.clientWidth, height:this.view.clientHeight}}
     set size(s) {this.view.style.width = s.width + "px"; this.view.style.height = s.height + "px"}
