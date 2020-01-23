@@ -157,6 +157,9 @@ body {
 .fila-item-capa-activo {
     color: blue;
 }
+.abridor {
+    cursor: pointer;
+}
 
 .panel-propiedades-fijo {
     border: 1px solid gray;
@@ -269,4 +272,26 @@ body {
     cursor: ns-resize;
     touch-action: none;
     user-select: none;
+}
+
+.panel-agregar-objeto {
+    top:50px;
+    width:250px;
+    left:0;
+    background-color: rgba(224, 224, 224, 0.9);
+    box-shadow: 9px 11px 19px -8px rgba(0,0,0,0.75);
+    color:black;
+    font-size: 12px;
+}
+.titulo-agregar-objeto {
+    background-color: #2c3e50; 
+    color:white;
+    height: 34px;
+    font-size: 16px;
+}
+.contenido-agregar-objeto {
+    font-size: 12px;
+    min-height: 30px;
+    font-style: italic;
+    margin:6px;
 }

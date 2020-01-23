@@ -25,7 +25,7 @@ class PropEscalaVisualizador extends ZCustomController {
         }
         return this.visualizador.configPanel.configSubPaneles[this.codigo];
     }
-    onImgAbierto_click() {
+    onFilaTitulo_click() {
         this.config.abierto = !this.config.abierto;
         this.refresca();
     }

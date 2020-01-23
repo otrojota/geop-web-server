@@ -1,6 +1,7 @@
 class Central extends ZCustomController {
     onThis_init() {
         window.geoportal.admPanelesFlotantes = this;
+        window.geoportal.panelCentral = this;
         this.$view = $(this.view);        
         this.edTiempoActual.$view = $(this.edTiempoActual.view);
         this.tooltip.$view = $(this.tooltip.view);
@@ -59,11 +60,6 @@ class Central extends ZCustomController {
         this.tiempoActual = window.TimeUtils.now.startOf("hour");
         this.tiempoInicial = this.tiempoActual.clone().subtract(2, "days").startOf("day");
         this.refrescaTiempo();
-        
-        /*
-        window.pomeo.on("showTooltip", (x, y, contenido) => this.showTooltip(x, y, contenido));
-        window.pomeo.on("hideTooltip", _ => this.hideTooltip())
-        */
     }
 
     showTooltip(x, y, contenido) {        
@@ -143,12 +139,13 @@ class Central extends ZCustomController {
         let panel = await ZVC.fromElement(div);
         await panel.creaDesde(item);
         this.ajustaPanelFlotante(panel);
+        panel.inicializaScroll();
         return panel;
     }
     async removePanelFlotante(panel) {
         await panel.destruye();
         await panel.deactivate();
         this.cntPanelesFlotantes.view.removeChild(panel.view);
-    }
+    }    
 }
 ZVC.export(Central);

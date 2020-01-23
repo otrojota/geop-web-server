@@ -113,17 +113,29 @@ class GeoPortal {
             return nodo;
         }).filter(nodo => (nodo.items.length > 0));
         let arbol = [];
-        if (grupos.length) {
-            arbol.push({
-                code:"grupo", icon:"fas fa-folder fa-lg", label:"Buscar por Grupo", items:grupos
-            })
-        }
+        grupos.forEach(itemGrupo => {
+            arbol.push(itemGrupo);
+        })
+        arbol.push({code:"sep"});
         if (origenes.length) {
             arbol.push({
                 code:"origen", icon:"img/iconos/satelite.svg", label:"Por Origen de la Información", items:origenes
             })
         }
+        arbol.push({code:"sep"});
+        arbol.push({
+            code:"espec", icon:"img/iconos/process.svg", label:"Capas Especiales", items:[
+                {code:"objetos-usuario", icon:"img/iconos/user-tools.svg", label:"Objetos de Usuario"}
+            ]
+        })
         return arbol;
+    }
+
+    showTooltip(x, y, contenido) {
+        this.panelCentral.showTooltip(x, y, contenido);
+    }
+    hideTooltip() {
+        this.panelCentral.hideTooltip();
     }
 
     // Eventos
@@ -143,6 +155,40 @@ class GeoPortal {
     setTiempo(tiempo) {
         this.tiempo = tiempo;
         this.capas.getCapas().forEach(capa => capa.cambioTiempo())
+    }
+
+    // Edición de Objetos
+    iniciaAgregarObjeto(code) {
+        this.agregandoObjeto = code;
+        this.panelTop.iniciaAgregarObjeto(code);
+        this.mapa.setCursorAgregandoObjeto();
+    }
+    cancelaAgregarObjeto() {
+        if (this.agregandoObjeto) {            
+            this.agregandoObjeto = null;
+            this.mapa.resetCursor();
+            ObjetoGeoportal.cancelaAgregarObjeto();
+            this.panelTop.cancelaAgregarObjeto();
+            this.mapa.resetCursor();
+        }
+    }
+    finalizaAgregarObjeto(objeto) {
+        this.agregandoObjeto = null;
+        this.mapa.resetCursor();
+        this.panelTop.agregoObjeto(objeto);
+    }
+
+    // Interacciones
+    mapClick(puntoMapa, puntoCanvas) {
+        console.log("click", puntoMapa, puntoCanvas);
+        if (this.agregandoObjeto) {
+            ObjetoGeoportal.handleMouseClick(puntoMapa, puntoCanvas);
+        }
+    }
+    mapMouseMove(puntoMapa, puntoCanvas) {
+        if (this.agregandoObjeto) {
+            ObjetoGeoportal.handleMouseMove(puntoMapa, puntoCanvas);
+        }
     }
 }
 

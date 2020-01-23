@@ -1,9 +1,8 @@
 class Capas extends ZCustomController {
-    onThis_init() {
-        window.capasController = this;
+    async onThis_init() {        
         this.mostrandoPanelPropiedades = false;
         this.workingListeners = [];  // {item:capa|visualizador, listener:function}
-        this.refresca();
+        await this.refresca();
         window.geoportal.addListenerEdicion((tipo, objeto) => {
             let td = this.cntItems.find(".nombre-item[data-id-item='" + objeto.id + "']");
             if (td) {
@@ -22,17 +21,24 @@ class Capas extends ZCustomController {
             }            
         });
     }
-    capaAgregada(capa) {
-        this.refresca();
+    onThis_activated() {
+        window.capasController = this;
     }
-    capaRemovida(capa) {
-        this.refresca();
+    onThis_deactivated() {
+        window.capasController = null;
+    }
+    async capaAgregada(capa) {
+        await this.refresca();
+    }
+    async capaRemovida(capa) {
+        await this.refresca();
     }
 
-    refresca() {
+    async refresca() {
         this.workingListeners.forEach(l => l.item.removeWorkingListener(l.listener));
         this.workingListeners = [];
         this.mapaItems = {};
+        this.mapaItemsPorId = {};
         this.items = [];
         for (let i=0; i<window.geoportal.capas.grupos.length; i++) {
             let grupo = window.geoportal.capas.getGrupo(i);
@@ -118,10 +124,10 @@ class Capas extends ZCustomController {
                 if (item.items && item.items.length) {
                     if (item.tipo == "grupo") {
                         let grupo = window.geoportal.capas.getGrupo(item.indice);
-                        grupo.abierto = !grupo.abierto;
+                        //grupo.abierto = !grupo.abierto;
                     } else if (item.tipo == "capa") {
                         let capa = item.grupo.capas[item.indice];
-                        capa.abierto = !capa.abierto;
+                        //capa.abierto = !capa.abierto;
                     }
                     refrescar = true;
                 }
@@ -132,23 +138,32 @@ class Capas extends ZCustomController {
                 if (refrescar) this.refresca();
             }
         });
-        this.refrescaPanelPropiedades();
+        this.cntItems.findAll(".abridor").forEach(e => {
+            e.onclick = _ => {
+                let idItem = e.getAttribute("data-id-item");
+                let item = this.mapaItemsPorId[idItem];
+                item.abierto = !item.abierto;
+                this.refresca();
+            }
+        });
+        await this.refrescaPanelPropiedades();
     }
 
-    refrescaPanelPropiedades() {
+    async refrescaPanelPropiedades() {
         let itemActivo = window.geoportal.capas.getGrupoActivo().itemActivo;
         if (itemActivo.configPanel && !itemActivo.configPanel.flotante) {
             if (itemActivo.id == this.panelPropiedades.idItem) {
-                this.panelPropiedades.refresca();
+                await this.panelPropiedades.refresca();
             } else {
-                this.panelPropiedades.creaDesde(itemActivo).then(_ => this.doResize())   
+                await this.panelPropiedades.creaDesde(itemActivo)
                 this.mostrandoPanelPropiedades = true;
                 this.panelPropiedades.show();
                 this.doResize();
+                this.panelPropiedades.inicializaScroll();
             }
         } else if (this.mostrandoPanelPropiedades) {
             this.mostrandoPanelPropiedades = false;
-            this.panelPropiedades.creaDesde(null);
+            await this.panelPropiedades.creaDesde(null);
             this.panelPropiedades.hide();
             this.doResize();
         }   
@@ -162,6 +177,7 @@ class Capas extends ZCustomController {
             let subitems = item.items?item.items:[];
             let indiceNivel = "" + (indicePadre?(indicePadre + "-" + i):i)
             this.mapaItems[indiceNivel] = item;
+            if (item.item) this.mapaItemsPorId[item.item.id] = item.item;
             if (!indicePadre && i > 0) {
                 html += "<tr><td colspan='4' style='height:10px;'></td></tr>";
             }
@@ -170,15 +186,19 @@ class Capas extends ZCustomController {
             html += "<td style='width:14px; text-align:left;'>";
             if (subitems.length) {
                 if (item.abierto) {
-                    html += "<i class='fas fa-lg fa-caret-down'></i>";
+                    html += "<i class='fas fa-lg fa-caret-down abridor' " + (item.item?"data-id-item='" + item.item.id + "'":"") + "></i>";
                 } else {
-                    html += "<i class='fas fa-lg fa-caret-right'></i>";
+                    html += "<i class='fas fa-lg fa-caret-right abridor' " + (item.item?"data-id-item='" + item.item.id + "'":"") + "></i>";
                 }
             } else {
                 html += "";
             }
             html += "</td>";
-            html += "<td style='width:22px;'><img src='" + item.icono + "' style='width:18px; padding-right:2px; '/></td>";
+            if (item.items && item.items.length) {
+                html += "<td style='width:22px;'><img src='" + item.icono + "' class='abridor' " + (item.item?"data-id-item='" + item.item.id + "'":"") + " style='width:18px; padding-right:2px; '/></td>";
+            } else {
+                html += "<td style='width:22px;'><img src='" + item.icono + "' style='width:18px; padding-right:2px; '/></td>";
+            }
             html += "<td style='width:20px; border-left: 1px solid gray; padding-left:2px; '>";
             let nombreSeleccionable = true;
             if (item.seleccionable || item.activable) {
@@ -242,6 +262,12 @@ class Capas extends ZCustomController {
                 };
                 this.workingListeners.push({item:item.item, listener:finishWorkingListener});
                 item.item.addWorkingListener("finish", finishWorkingListener);
+                let refrescarWorkingListener = async _ => {
+                    console.log("recibe refrescar con itemActivo", window.geoportal.capas.getGrupoActivo().itemActivo);
+                    await this.refresca();
+                };
+                this.workingListeners.push({item:item.item, listener:refrescarWorkingListener});
+                item.item.addWorkingListener("refrescar", refrescarWorkingListener);
             }
             html += "</tr>";            
             if (subitems.length && item.abierto) {

@@ -19,7 +19,7 @@ class PanelAgregar extends ZCustomController {
             if (item.items) {
                 this.buscaItemsEnNivel(item.items, filtro, found, added);
             } else {
-                if (!added[item.code] && item.label.toLowerCase().indexOf(filtro) >= 0) {
+                if (!added[item.code] && item.label && item.label.toLowerCase().indexOf(filtro) >= 0) {
                     found.push(item);
                     added[item.code] = true;
                 }
@@ -52,6 +52,7 @@ class PanelAgregar extends ZCustomController {
     }
     refresca() {
         this.items = window.geoportal.getArbolAgregarAMapa();
+        console.log("PanelAgregar.items", this.items);
         this.doShow(this.items);
     }
     doShow(items) {
@@ -85,13 +86,17 @@ class PanelAgregar extends ZCustomController {
     paintItems(items) {
         let html = "";
         items.forEach(item => {
-            html += "<div class='agregar-item-container' data-code='" + item.code + "'>";
-            html += this.getIconHTML(item);
-            html += this.getLabelHTML(item);
-            if (item.items) {
-                html += "<i class='fas fa-caret-right float-right ml-2 mt-1'></i>";
+            if (item.code == "sep") {
+                html += "<hr class='my-1' />";
+            } else {
+                html += "<div class='agregar-item-container' data-code='" + item.code + "'>";
+                html += this.getIconHTML(item);
+                html += this.getLabelHTML(item);
+                if (item.items) {
+                    html += "<i class='fas fa-caret-right float-right ml-2 mt-1'></i>";
+                }
+                html += "</div>";
             }
-            html += "</div>";
         });
         this.cntOpcionesAgregar.html = html;
         this.cntOpcionesAgregar.findAll(".agregar-item-container").forEach(cnt => {
@@ -149,6 +154,8 @@ class PanelAgregar extends ZCustomController {
     doClick(code, item) {
         if (item.tipo == "capa") {
             window.geoportal.capas.add(item.capa);
+        } else if (item.code == "objetos-usuario") {
+            window.geoportal.capas.addObjetosUsuario();
         }
     }
 }

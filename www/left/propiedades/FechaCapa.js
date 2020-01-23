@@ -13,7 +13,7 @@ class FechaCapa extends ZCustomController {
         }
         return this.capa.configPanel.configSubPaneles[this.codigo];
     }
-    onImgAbierto_click() {
+    onFilaTitulo_click() {
         this.config.abierto = !this.config.abierto;
         this.refresca();
     }    

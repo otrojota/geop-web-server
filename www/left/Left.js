@@ -1,5 +1,6 @@
 class Left extends ZCustomController {
     onThis_init() {
+        window.geoportal.panelLeft = this;
         this.opcionActiva = "sesion";
         this.findAll(".opcion-izquierda").forEach(op => {
             op.onclick = e => {
@@ -10,8 +11,8 @@ class Left extends ZCustomController {
     }
     onThis_activated() {
         this.listener = {
-            onCapaAgregada:capa => this.capaAgregada(capa),
-            onCapaRemovida:capa => this.capaRemovida(capa)
+            onCapaAgregada:async capa => await this.capaAgregada(capa),
+            onCapaRemovida:async capa => await this.capaRemovida(capa)
         }
         window.geoportal.capas.setListener(this.listener);
     }
@@ -19,12 +20,12 @@ class Left extends ZCustomController {
         window.geoportal.capas.setListener(null);
     }
     async capaAgregada(capa) {
-        if (this.opcionActiva == "capas") this.panelActivo.capaAgregada(capa);
+        if (this.opcionActiva == "capas") await this.panelActivo.capaAgregada(capa);
         else (await this.selecciona("capas")); // Refresh al abrir
 
     }
     async capaRemovida(capa) {
-        if (this.opcionActiva == "capas") this.panelActivo.capaRemovida(capa);
+        if (this.opcionActiva == "capas") await this.panelActivo.capaRemovida(capa);
         else (await this.selecciona("capas")); // Refresh al abrir
     }
 

@@ -1,7 +1,10 @@
 class Top extends ZCustomController {
     onThis_init() {
-        this.mostrandoAgregar = false;
+        window.geoportal.panelTop = this;
+        this.mostrandoAgregar = false;        
         this.panelAgregar.hide();
+        this.mostrandoAgregarObjeto = false;        
+        this.panelAgregarObjeto.hide();
     }
     alternaPanelAgregar() {
         this.mostrandoAgregar = !this.mostrandoAgregar;
@@ -65,6 +68,41 @@ class Top extends ZCustomController {
                 }
             }
         ).show();
+    }
+
+    onCmdAgregarObjeto_click() {
+        this.zpop = new ZPop(this.cmdAgregarObjeto.view, 
+            [{
+                code:"punto", icon:"img/iconos/punto.svg", label:"Agregar Punto"
+            }, {
+                code:"ruta", icon:"img/iconos/ruta.svg", label:"Agregar Ruta"
+            }, {
+                code:"area", icon:"img/iconos/area.svg", label:"Agregar Área Rectangular"
+            }],
+            {
+                vMargin:16, hMargin:-2, 
+                onClick:code => {
+                    window.geoportal.iniciaAgregarObjeto(code);
+                    return true;
+                }
+            }
+        ).show();
+    }
+
+    async iniciaAgregarObjeto(tipo) {
+        if (this.mostrandoPanelAgregar) await this.alternaPanelAgregar();
+        this.mostrandoPanelAgregarObjeto = true;
+        this.panelAgregarObjeto.show();
+        this.panelAgregarObjeto.refresca();
+        this.doResize();
+    }
+    cancelaAgregarObjeto() {
+        this.mostrandoPanelAgregarObjeto = false;
+        this.panelAgregarObjeto.hide();
+    }
+    agregoObjeto(objeto) {
+        this.mostrandoPanelAgregarObjeto = false;
+        this.panelAgregarObjeto.hide();
     }
 }
 ZVC.export(Top);

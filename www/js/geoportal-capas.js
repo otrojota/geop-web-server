@@ -27,7 +27,8 @@ class Capa {
             height:180, width:300,
             configSubPaneles:{}
         }
-        this.workingListeners = []; // {accion:"start"|"finish", listener:function}
+        this.workingListeners = []; // {accion:"start"|"finish"|"refrescar", listener:function}
+        this.objetos = null;
         this.invalida(); // iniciar
     }
     get codigo() {return this.config.codigo}
@@ -47,6 +48,7 @@ class Capa {
     get urlIcono() {return this.config.urlIcono}
     get opacidad() {return this.config.opacidad}
     set opacidad(o) {this.config.opacidad = o; this.cambioOpacidad()}
+    get esObjetosUsuario() {return this.config.esObjetosUsuario?true:false}    
 
     addWorkingListener(accion, listener) {
         this.workingListeners.push({accion:accion, listener:listener});
@@ -57,6 +59,12 @@ class Capa {
     }
     startWorking() {this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())}
     finishWorking() {this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())}
+    async triggerRefrescar() {
+        let listeners = this.workingListeners.filter(l => l.accion == "refrescar");
+        for (let i=0; i<listeners.length; i++) {
+            await listeners[i].listener();
+        }
+    }
 
     registraPanelMapa(p) {this.panelesMapa.push(p)}
     getVisualizadoresAplicables() {
@@ -91,6 +99,20 @@ class Capa {
                 capa:this
             })
         });
+        if (this.objetos) {
+            this.objetos.forEach(o => {
+                items.push({
+                    tipo:"objeto",
+                    codigo:o.id,
+                    nombre:o.nombre,
+                    icono:o.getIcono(),
+                    urlIcono:o.getIcono(),
+                    activable:false,
+                    item:o,
+                    capa:this
+                })
+            })
+        }
         return items;
     }
     async activaVisualizador(v) {
@@ -206,6 +228,13 @@ class Capa {
             return lista;
         }, []);
         await Promise.all(proms);
+    }
+
+    async addObjetoUsuario(o) {
+        if (!this.objetos) this.objetos = [];
+        o.capa = this;
+        this.objetos.push(o);
+        await this.triggerRefrescar();
     }
 
     /* Panel de Propiedades */
@@ -408,6 +437,27 @@ class Capas {
         this.getGrupoActivo().addCapa(capa);
         this.getGrupoActivo().itemActivo = capa;
         if (this.listener) this.listener.onCapaAgregada(capa);
+        return capa;
+    }
+    async addObjetosUsuario() {
+        let config = {
+            id:uuidv4(),
+            nombre:"Mis Objetos Agregados",
+            configPanel:{
+                flotante:false,
+                height:180, width:300,
+                configSubPaneles:{}
+            },
+            urlIcono:"img/iconos/user-tools.svg",
+            esObjetosUsuario:true,
+            opacidad:100,
+            formatos:{objetosUsuario:true}
+        }
+        let capa = new Capa(config);
+        capa.abierto = true;
+        this.getGrupoActivo().addCapa(capa);
+        this.getGrupoActivo().itemActivo = capa;
+        if (this.listener) await this.listener.onCapaAgregada(capa);
         return capa;
     }
     remove(idx) {

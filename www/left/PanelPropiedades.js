@@ -151,6 +151,15 @@ class PanelPropiedades extends ZCustomController {
             this.paneles.push(controller);
         }
     }
+    inicializaScroll() {
+        console.log("inicializando scroll en", this.item.configPanel.scrollTop);
+        if (this.item.configPanel.scrollTop) {
+            this.contenedorPaneles.view.scrollTop = this.item.configPanel.scrollTop;
+        }
+        this.contenedorPaneles.view.onscroll = _ => {
+            this.item.configPanel.scrollTop = this.contenedorPaneles.view.scrollTop;
+        }    
+    }
     async creaDesde(item) {
         if (this.item) {
             if (item) {
@@ -162,20 +171,14 @@ class PanelPropiedades extends ZCustomController {
         this.item = item;        
         if (!this.item) return;
         await this.crea();
-        this.refresca();
-        setTimeout(_ => {
-            if (this.item.configPanel.scrollTop) {
-                this.contenedorPaneles.view.scrollTop = this.item.configPanel.scrollTop;
-                console.log("creado con scroll", this.item.configPanel.scrollTop)
-            }
-            this.contenedorPaneles.view.onscroll = _ => {
-                this.item.configPanel.scrollTop = this.contenedorPaneles.view.scrollTop;
-            }    
-        }, 100);
+        await this.refresca();            
     }
-    refresca() {
+    async refresca() {
+        if (!this.item) return;
         this.titulo.text = this.item.getTituloPanel();
-        this.paneles.forEach(p => p.refresca())
+        for (let i=0; i<this.paneles.length; i++) {
+            await this.paneles[i].refresca();
+        }
     }
     cambioNombre() {
         this.titulo.text = this.item.getTituloPanel();

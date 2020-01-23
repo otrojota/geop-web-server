@@ -96,13 +96,66 @@ class MapaGeoPortal {
                 pane:this.panelEtiquetas
             });
         }
+
+        // Objetos      
+        let div = document.createElement("DIV");
+        div.style["pointer-events"] = "all";
+        this.konvaStage = new Konva.Stage({
+            container:div,
+            width:200,
+            height:200
+        });
+        this.konvaLayer = new Konva.Layer();  
+        this.konvaLayerEfectos = new Konva.Layer();  
+        this.konvaLayerAgregando = new Konva.Layer();  
+        this.konvaStage.add(this.konvaLayerEfectos);    
+        this.konvaStage.add(this.konvaLayer);
+        this.konvaStage.add(this.konvaLayerAgregando);
+                
+        this.lyEfectos = new L.customLayer({
+            container:div,
+            minZoom:0, maxZoom:18, opacity:1, visible:true, zIndex:1500,
+            pane:this.creaPanelMapa("efectos", "base", 0)
+        })
+        this.lyEfectos.on("layer-render", _ => {
+            //console.log("render efectos");
+        });        
+
+        this.lyObjetos = new L.customLayer({
+            container:div,
+            minZoom:0, maxZoom:18, opacity:1, visible:true, zIndex:1500,
+            pane:this.creaPanelMapa("objetos", "base", 1)
+        })
+        this.lyObjetos.on("layer-render", _ => {
+            this.dibujaObjetos();
+        });
+
         this.lyBase.addTo(this.map);
         this.lyBordes.addTo(this.map);
+        this.lyEfectos.addTo(this.map);
+        this.lyObjetos.addTo(this.map);
         if (window.geoportal.preferencias.mapa.etiquetas) {
             this.lyLabels.addTo(this.map);
         }
+
         this.initialized = true;
-        this.doResize();
+        
+        this.map.on("click", e => {
+            if (this.ignoreNextClick) {
+                this.ignoreNextClick = false;
+                return;
+            }
+            let lat = e.latlng.lat;
+            let lng = e.latlng.lng;
+            let point = this.map.latLngToContainerPoint([lat, lng]);
+            window.geoportal.mapClick({lat:lat, lng:lng}, {x:point.x, y:point.y});
+        });
+        this.map.on("mousemove", e => {
+            let lat = e.latlng.lat;
+            let lng = e.latlng.lng;
+            let point = this.map.latLngToContainerPoint([lat, lng]);
+            window.geoportal.mapMouseMove({lat:lat, lng:lng}, {x:point.x, y:point.y});
+        });
     }
 
     getMapa(codigo) {
@@ -210,5 +263,62 @@ class MapaGeoPortal {
     getLimites() {
         let b = this.map.getBounds();
         return {lng0:b.getWest(), lat0:b.getSouth(), lng1:b.getEast(), lat1:b.getNorth()}
+    }
+
+    setCursorAgregandoObjeto() {
+        this.lyObjetos.options.pane.style.cursor = "crosshair";
+    }
+    resetCursor() {
+        this.lyObjetos.options.pane.style.removeProperty("cursor");
+    }
+    async agregaObjeto(o) {
+        console.log("agregando objeto", o);
+        // Buscar capa de objetos de usuario activa
+        let grupoActivo = window.geoportal.capas.getGrupoActivo();
+        let itemActivo = grupoActivo.itemActivo;
+        let capa = null;
+        console.log("itemActivo", itemActivo);
+        if (itemActivo instanceof GrupoCapas) {
+            console.log("es grupo");
+        } else if (itemActivo instanceof Capa) {
+            console.log("es capa");
+            capa = itemActivo;
+        } else if (itemActivo instanceof VisualizadorCapa) {
+            console.log("es visualizador");
+            capa = itemActivo.capa;
+        } else {
+            console.log("es otro");
+            if (itemActivo.capa) {
+                capa = itemActivo.capa;
+                console.log("con capa", capa);
+            }
+        }
+        let capaObjetosUsuario = null;
+        if (capa && capa.esObjetosUsuario) {
+            capaObjetosUsuario = capa;
+        } else {
+            capaObjetosUsuario = grupoActivo.capas.find(c => c.esObjetosUsuario);
+            if (!capaObjetosUsuario) {
+                capaObjetosUsuario = await window.geoportal.capas.addObjetosUsuario();
+            }
+        }
+        o.id = uuidv4();
+        capaObjetosUsuario.addObjetoUsuario(o);
+        window.geoportal.panelTop.agregoObjeto();
+        grupoActivo.itemActivo = o;
+        console.log("llamando refrescar con itemActivo", window.geoportal.capas.getGrupoActivo().itemActivo);
+        if (!window.capasController) {
+            await window.geoportal.panelLeft.selecciona("capas");
+        }
+        window.capasController.refresca();
+        window.geoportal.finalizaAgregarObjeto();
+    }
+    dibujaObjetos() {
+        console.log("dibujando objetos...");
+        this.konvaLayerEfectos.destroyChildren();
+        this.konvaLayer.destroyChildren();
+        //this.objetos.forEach(o => o.dibuja(this.konvaLayer, this.konvaLayerEfectos));
+        this.konvaLayerEfectos.draw();
+        this.konvaLayer.draw();
     }
 }
