@@ -176,6 +176,19 @@ class GeoPortal {
         this.agregandoObjeto = null;
         this.mapa.resetCursor();
         this.panelTop.agregoObjeto(objeto);
+        this.mapa.dibujaObjetos();
+    }
+    objetoSeleccionado(objeto) {
+        console.log("geoportal objeto seleccionado", objeto);
+        this.capas.getGrupoActivo().itemActivo = objeto;
+        if (window.capasController) window.capasController.refresca();
+    }
+    objetoMovido(objeto) {
+        /*
+        if (objeto.seleccionado) {
+            this.panelAnalisis.movioObjeto(objeto);                
+        }
+        */
     }
 
     // Interacciones

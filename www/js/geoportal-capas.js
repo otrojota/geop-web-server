@@ -108,6 +108,7 @@ class Capa {
                     icono:o.getIcono(),
                     urlIcono:o.getIcono(),
                     activable:false,
+                    eliminable:true,
                     item:o,
                     capa:this
                 })
@@ -237,6 +238,12 @@ class Capa {
         await this.triggerRefrescar();
     }
 
+    removeObjeto(o) {
+        let idx = this.objetos.findIndex(obj => obj.id == o.id);
+        if (idx >= 0) this.objetos.splice(idx,1);
+        //await this.triggerRefrescar();
+    }
+
     /* Panel de Propiedades */
     getPanelesPropiedades() {
         let paneles = [{
@@ -264,6 +271,7 @@ class Capa {
 
     cambioOpacidad() {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
+        if (this.esObjetosUsuario) window.geoportal.mapa.dibujaObjetos();
     }
     cambioTiempo() {
         if (!this.temporal || this.tiempoFijo) return;
@@ -317,8 +325,12 @@ class GrupoCapas {
     }
     addCapa(capa) {this.capas.push(capa)}
     removeCapa(idx) {
-        this.capas[idx].destruye();
+        let capa = this.capas[idx];
+        if (capa.id == this.itemActivo.id) this.itemActivo = this;
+        let necesitaDibujar = capa.esObjetosUsuario;
+        capa.destruye();
         this.capas.splice(idx,1)
+        if (necesitaDibujar) window.geoportal.mapa.dibujaObjetos();
     }
     getCapa(idx) {return this.capas[idx]}
     async activa() {
@@ -334,6 +346,7 @@ class GrupoCapas {
         }, []);
         await Promise.all(proms);
         await this.creaPanelesFlotantes();
+        window.geoportal.mapa.dibujaObjetos();
     }
     async desactiva() {        
         let proms = this.capas.reduce((lista, capa) => {

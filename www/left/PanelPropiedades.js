@@ -152,7 +152,6 @@ class PanelPropiedades extends ZCustomController {
         }
     }
     inicializaScroll() {
-        console.log("inicializando scroll en", this.item.configPanel.scrollTop);
         if (this.item.configPanel.scrollTop) {
             this.contenedorPaneles.view.scrollTop = this.item.configPanel.scrollTop;
         }

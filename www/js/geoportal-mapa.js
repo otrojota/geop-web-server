@@ -271,26 +271,26 @@ class MapaGeoPortal {
     resetCursor() {
         this.lyObjetos.options.pane.style.removeProperty("cursor");
     }
+    getObjetos() {
+        return window.geoportal.capas.getCapas().reduce((lista, capa) => {
+            if (capa.esObjetosUsuario) lista = lista.concat(capa.objetos);
+            return lista;
+        }, [])
+    }
     async agregaObjeto(o) {
-        console.log("agregando objeto", o);
         // Buscar capa de objetos de usuario activa
         let grupoActivo = window.geoportal.capas.getGrupoActivo();
         let itemActivo = grupoActivo.itemActivo;
         let capa = null;
-        console.log("itemActivo", itemActivo);
         if (itemActivo instanceof GrupoCapas) {
-            console.log("es grupo");
+            capa = null;
         } else if (itemActivo instanceof Capa) {
-            console.log("es capa");
             capa = itemActivo;
         } else if (itemActivo instanceof VisualizadorCapa) {
-            console.log("es visualizador");
             capa = itemActivo.capa;
         } else {
-            console.log("es otro");
             if (itemActivo.capa) {
                 capa = itemActivo.capa;
-                console.log("con capa", capa);
             }
         }
         let capaObjetosUsuario = null;
@@ -306,19 +306,47 @@ class MapaGeoPortal {
         capaObjetosUsuario.addObjetoUsuario(o);
         window.geoportal.panelTop.agregoObjeto();
         grupoActivo.itemActivo = o;
-        console.log("llamando refrescar con itemActivo", window.geoportal.capas.getGrupoActivo().itemActivo);
         if (!window.capasController) {
             await window.geoportal.panelLeft.selecciona("capas");
         }
         window.capasController.refresca();
         window.geoportal.finalizaAgregarObjeto();
+        this.seleccionaObjeto(o);
     }
     dibujaObjetos() {
-        console.log("dibujando objetos...");
         this.konvaLayerEfectos.destroyChildren();
         this.konvaLayer.destroyChildren();
-        //this.objetos.forEach(o => o.dibuja(this.konvaLayer, this.konvaLayerEfectos));
+        this.getObjetos().forEach(o => o.dibuja(this.konvaLayer, this.konvaLayerEfectos));
         this.konvaLayerEfectos.draw();
         this.konvaLayer.draw();
+    }
+    seleccionaObjeto(objeto) {
+        //if (!isNaN(objeto)) objeto = this.objetos[objeto];
+        console.log("mapa selecciona objeto", objeto);
+        let objetos = this.getObjetos();
+        // desseleccionar
+        objetos.forEach(o => {
+            if (o !== objeto && o.seleccionado) o.desselecciona();
+            if (o.objetos) o.objetos.forEach(so => {
+                if (so !== objeto && so.seleccionado) so.desselecciona();
+            });
+        });
+        // seleccionar
+        objetos.forEach(o => {
+            if (o === objeto && !o.seleccionado) o.selecciona();
+            if (o.objetos) o.objetos.forEach(so => {
+                if (so === objeto && !so.seleccionado) so.selecciona();
+            });
+        })
+        window.geoportal.objetoSeleccionado(objeto);
+    }
+    movioObjeto(objeto) {
+        if (objeto.objetoPadre) {
+            objeto.objetoPadre.movioHijo(objeto);
+            return;
+        }
+        objeto.movio();
+        this.dibujaObjetos();
+        window.geoportal.objetoMovido(objeto);
     }
 }

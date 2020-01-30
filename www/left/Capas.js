@@ -34,6 +34,14 @@ class Capas extends ZCustomController {
         await this.refresca();
     }
 
+    getCapaDeItem(item) {
+        if (item instanceof GrupoCapas) return null;
+        if (item instanceof Capa) return item;
+        if (item.capa) return item.capa;
+        console.error("No se pudo determinar la capa del item", item);
+        return null;
+    }
+
     async refresca() {
         this.workingListeners.forEach(l => l.item.removeWorkingListener(l.listener));
         this.workingListeners = [];
@@ -107,8 +115,16 @@ class Capas extends ZCustomController {
                     if (window.geoportal.capas.grupos.length == 1) return;
                     await window.geoportal.capas.removeGrupo(item.indice);
                 } else if (item.tipo == "capa") {
-                    if (item.item.id == idItemActivo) grupoActivo.itemActivo = grupoActivo;
+                    let capaDeItem = this.getCapaDeItem(this.mapaItemsPorId[idItemActivo]);
+                    console.log("removienfo capa", item, " de capa ", capaDeItem);
+                    if (capaDeItem && capaDeItem.id == item.item.id) {
+                        grupoActivo.itemActivo = grupoActivo;
+                    }
                     item.grupo.removeCapa(item.indice);
+                } else if (item.tipo == "objeto") {
+                    if (item.item.id == idItemActivo) grupoActivo.itemActivo = grupoActivo;
+                    item.item.capa.removeObjeto(item.item);
+                    window.geoportal.mapa.dibujaObjetos();
                 } else {
                     throw "Tipo de item '" + item.tipo + "' no se reconoce como eliminable";
                 }
@@ -299,6 +315,10 @@ class Capas extends ZCustomController {
     seleccionaItem(item) {
         let grupoActivo = window.geoportal.capas.getGrupoActivo();
         grupoActivo.itemActivo = item.item;
+        if (item.tipo == "objeto") {            
+            window.geoportal.mapa.seleccionaObjeto(item.item);
+            window.geoportal.mapa.dibujaObjetos();
+        }
     }
 }
 ZVC.export(Capas);

@@ -50,6 +50,11 @@ class ObjetoGeoportal {
         this.objetoPadre = null;
         this.dragBoundFunc = null;
         this.capa = null;
+        this.configPanel = {
+            flotante:false,
+            height:180, width:300,
+            configSubPaneles:{}
+        }
     }
     get nombre() {return this.config.nombre}
     set nombre(n) {this.config.nombre = n}
@@ -67,6 +72,7 @@ class ObjetoGeoportal {
     getIcono() {return "img/iconos/punto.svg"}
     aseguraVisible() {}
     isVisible() {throw "isVisible no Implementado en '" + this.nombre + "'"}
+    
 }
 
 class Punto extends ObjetoGeoportal {    
@@ -94,6 +100,19 @@ class Punto extends ObjetoGeoportal {
         this.iconoEnMapa = initialConfig.iconoEnMapa;
     }
     describe() {return this.nombre}
+    /* Panel de Propiedades */
+    getPanelesPropiedades() {
+        let paneles = [{
+            codigo:"props",
+            path:"left/propiedades/PropPunto"
+        }];
+        return paneles;
+    }
+
+    getTituloPanel() {
+        return this.nombre;
+    }
+
     dibuja(konvaLayer, konvaLayerEfectos) {
         let map = window.geoportal.mapa.map;
         let point = map.latLngToContainerPoint([this.lat, this.lng]);
@@ -254,7 +273,7 @@ class Punto extends ObjetoGeoportal {
                 shadowOffsetX : 5,
                 shadowOffsetY : 5,
                 shadowBlur : 10,
-                opacity : this.iconoEnMapa?0:1,
+                opacity : (this.iconoEnMapa?0:1) * this.capa.opacidad / 100,
                 dragBoundFunc: this.dragBoundFunc
             });    
             circle.on('mouseenter', _ => {
