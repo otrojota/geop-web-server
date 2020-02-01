@@ -178,10 +178,11 @@ class GeoPortal {
         this.panelTop.agregoObjeto(objeto);
         this.mapa.dibujaObjetos();
     }
-    objetoSeleccionado(objeto) {
+    async objetoSeleccionado(objeto) {
         console.log("geoportal objeto seleccionado", objeto);
         this.capas.getGrupoActivo().itemActivo = objeto;
-        if (window.capasController) window.capasController.refresca();
+        if (window.capasController) await window.capasController.refresca();
+        await this.admAnalisis.ajustaPanelAnalisis();
     }
     objetoMovido(objeto) {
         /*

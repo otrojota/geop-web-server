@@ -116,7 +116,6 @@ class Capas extends ZCustomController {
                     await window.geoportal.capas.removeGrupo(item.indice);
                 } else if (item.tipo == "capa") {
                     let capaDeItem = this.getCapaDeItem(this.mapaItemsPorId[idItemActivo]);
-                    console.log("removienfo capa", item, " de capa ", capaDeItem);
                     if (capaDeItem && capaDeItem.id == item.item.id) {
                         grupoActivo.itemActivo = grupoActivo;
                     }
@@ -128,6 +127,7 @@ class Capas extends ZCustomController {
                 } else {
                     throw "Tipo de item '" + item.tipo + "' no se reconoce como eliminable";
                 }
+                window.geoportal.admAnalisis.ajustaPanelAnalisis();
                 this.refresca();
             }
         });
@@ -312,12 +312,14 @@ class Capas extends ZCustomController {
         }
     }
 
-    seleccionaItem(item) {
-        let grupoActivo = window.geoportal.capas.getGrupoActivo();
+    seleccionaItem(item) {        
+        let grupoActivo = window.geoportal.capas.getGrupoActivo();        
         grupoActivo.itemActivo = item.item;
         if (item.tipo == "objeto") {            
             window.geoportal.mapa.seleccionaObjeto(item.item);
             window.geoportal.mapa.dibujaObjetos();
+        } else {
+            window.geoportal.admAnalisis.ajustaPanelAnalisis();
         }
     }
 }

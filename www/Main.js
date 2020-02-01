@@ -19,9 +19,10 @@ class Main extends ZCustomController {
                 },
                 end: e => {
                     let p = this.hsplitAnalisis.pos;
-                    let s = this.panelAnalisis.size;
-                    this.panelAnalisis.size = {width:s.width, height:window.innerHeight - p.top - 6}
-                    this.doResize();
+                    if (this.panelAnalisis.objeto) {
+                        this.panelAnalisis.objeto.configAnalisis.height = window.innerHeight - p.top - 6;
+                        this.doResize();
+                    }
                 }
             }            
         });
@@ -35,13 +36,14 @@ class Main extends ZCustomController {
         this.mapa.pos = {left:0, top:0};
         this.panelAnalisis.pos = {left:0, top:200}
         this.doResize();
+        window.geoportal.admAnalisis = this;
         await window.geoportal.init();
     }
     doResize() {
         let w = window.innerWidth;
         let h = window.innerHeight;
         this.size = {width:w, height:h}
-        let altoAnalisis = this.panelAnalisis.size.height;
+        let altoAnalisis = this.panelAnalisis.objeto?this.panelAnalisis.objeto.configAnalisis.height:80;
         if (altoAnalisis > h - 30) altoAnalisis = h-30;
         if (altoAnalisis < 30) altoAnalisis = 30;
 
@@ -93,8 +95,38 @@ class Main extends ZCustomController {
         this.doResize();
     }
 
-    ajustaPanelAnalisis() {
+    async alternaAnalisis() {
+        if (this.analisisOpen) {
+            this.analisisOpen = false;
+            await this.panelAnalisis.destruye();
+            this.panelAnalisis.hide();
+            this.hsplitAnalisis.hide();
+            this.doResize();
+        } else {
+            this.analisisOpen = true;
+            await this.panelAnalisis.crea();
+            this.panelAnalisis.show();
+            this.hsplitAnalisis.show();
+            this.doResize();
+        }
+    }
 
+    async ajustaPanelAnalisis() {
+        console.log("ajustando panel análisis");
+        let grupoActivo = window.geoportal.capas.getGrupoActivo();
+        let itemActivo = grupoActivo.itemActivo;
+        if (!itemActivo || !(itemActivo instanceof ObjetoGeoportal)) {
+            if (this.analisisOpen) this.alternaAnalisis();
+            return;
+        }        
+        let analizadores = window.geoportal.capas.getAnalizadoresAplicables(itemActivo);
+        if (!analizadores.length) {
+            if (this.analisisOpen) this.alternaAnalisis();
+            return;
+        }
+        if (!this.analisisOpen) {
+            await this.alternaAnalisis();
+        }
     }
 }
 ZVC.export(Main);

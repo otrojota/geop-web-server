@@ -55,6 +55,11 @@ class ObjetoGeoportal {
             height:180, width:300,
             configSubPaneles:{}
         }
+        this.configAnalisis = {
+            height:200, width:300,
+            analizador:"no-sobreescrito",
+            analizadores:{}
+        }
     }
     get nombre() {return this.config.nombre}
     set nombre(n) {this.config.nombre = n}
@@ -72,6 +77,14 @@ class ObjetoGeoportal {
     getIcono() {return "img/iconos/punto.svg"}
     aseguraVisible() {}
     isVisible() {throw "isVisible no Implementado en '" + this.nombre + "'"}
+
+    getAnalizadoresAplicables() {
+        let ret = [];
+        window.geoportal.capas.clasesAnalizadores.forEach(c => {
+            if (c.clase.aplicaAObjeto(this)) ret.push(c);
+        })
+        return ret;
+    }
     
 }
 
@@ -83,14 +96,18 @@ class Punto extends ObjetoGeoportal {
         }
         let defaultConfig = {
             nombre:nombre,
-            analisis:{
-                datasource:"gfs.TMP_SUP",
-                visualizador:"serieTiempo"
-            },
-            movible:true, iconoEnMapa:null,
-        }
+            movible:true, iconoEnMapa:null
+        }        
         let initialConfig = $.extend({}, defaultConfig, config?config:{});
         super(initialConfig);
+        this.configAnalisis.analizador = "serie-tiempo";
+        this.configAnalisis.analizadores = {
+            "serie-tiempo":{
+                variable:"gfs4.TMP_2M",
+                tiempo:{tipo:"relativo", from:-5, to:5}
+            }
+        }
+
         this.tipo = "punto";
         this.lng = puntoMapa.lng;
         this.lat = puntoMapa.lat;
@@ -632,5 +649,19 @@ class Area extends ObjetoGeoportal {
                 L.latLng(this.lat1 + dLat, this.lng1 - dLng)
             ))
         }, 300);        
+    }
+}
+
+// Analizadores
+class AnalizadorObjeto {
+    static aplicaAObjeto(o) {
+        console.error("aplicaAObjeto no sobreescrito en Analizador");
+        return false
+    }
+
+    constructor(codigo, objeto, config) {
+        this.codigo = codigo;
+        this.objeto = objeto;
+        this.config = config;
     }
 }

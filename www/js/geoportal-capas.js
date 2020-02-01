@@ -438,6 +438,7 @@ class GrupoCapas {
 class Capas {
     constructor() {
         this.clasesVisualizadores = [];
+        this.clasesAnalizadores = [];
         this.listener = null;
         this.grupos = [new GrupoCapas("Mis Capas", true)];
     }
@@ -483,6 +484,9 @@ class Capas {
     registraVisualizador(codigoPlugin, codigo, claseVisualizador, nombre, icono) {
         this.clasesVisualizadores.push({codigoPlugin:codigoPlugin, codigo:codigo, clase:claseVisualizador, nombre:nombre, icono:icono})
     }
+    registraAnalizador(codigoPlugin, codigo, claseAnalizador, nombre, icono) {
+        this.clasesAnalizadores.push({codigoPlugin:codigoPlugin, codigo:codigo, clase:claseAnalizador, nombre:nombre, icono:icono})
+    }
     movioMapa() {
         this.getCapas().forEach(capa => capa.invalida());
     }
@@ -500,6 +504,14 @@ class Capas {
         let grupo = this.grupos[idx];
         this.grupos.splice(idx, 1);
         if (grupo.activo) await this.activaGrupo(0);
+    }
+
+    getAnalizadoresAplicables(objeto) {
+        if (!(objeto instanceof ObjetoGeoportal)) return [];
+        return this.clasesAnalizadores.reduce((lista, a) => {
+            if (a.clase.aplicaAObjeto(objeto)) lista.push(a);
+            return lista;
+        }, []);
     }
 }
 

@@ -311,7 +311,7 @@ class MapaGeoPortal {
         }
         window.capasController.refresca();
         window.geoportal.finalizaAgregarObjeto();
-        this.seleccionaObjeto(o);
+        await this.seleccionaObjeto(o);
     }
     dibujaObjetos() {
         this.konvaLayerEfectos.destroyChildren();
@@ -320,7 +320,7 @@ class MapaGeoPortal {
         this.konvaLayerEfectos.draw();
         this.konvaLayer.draw();
     }
-    seleccionaObjeto(objeto) {
+    async seleccionaObjeto(objeto) {
         //if (!isNaN(objeto)) objeto = this.objetos[objeto];
         console.log("mapa selecciona objeto", objeto);
         let objetos = this.getObjetos();
@@ -338,7 +338,7 @@ class MapaGeoPortal {
                 if (so === objeto && !so.seleccionado) so.selecciona();
             });
         })
-        window.geoportal.objetoSeleccionado(objeto);
+        await window.geoportal.objetoSeleccionado(objeto);
     }
     movioObjeto(objeto) {
         if (objeto.objetoPadre) {

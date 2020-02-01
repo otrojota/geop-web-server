@@ -6,7 +6,8 @@ class BasePlugin extends global.PluginGeoPortal {
         return [
             "js/base-plugin.js",
             "js/visualizador-isolineas.js",
-            "js/visualizador-isobandas.js"
+            "js/visualizador-isobandas.js",
+            "js/analizador-serie-tiempo.js"
         ]
     }
 }
