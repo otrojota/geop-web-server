@@ -69,7 +69,9 @@ class ObjetoGeoportal {
     destruye() {}
     movio() {}
     movioHijo(hijo) {}
-    cambioTiempo() {}
+    cambioTiempo() {
+        console.error("cambioTiempo no sobreescrito en objeto");
+    }
     getSubitems() {return []}
     selecciona() {this.seleccionado = true}
     desselecciona() {this.seleccionado = false}
@@ -105,7 +107,7 @@ class Punto extends ObjetoGeoportal {
             "serie-tiempo":{
                 variable:"gfs4.TMP_2M",
                 nivelVariable:0,
-                tiempo:{tipo:"relativo", from:-5, to:5}
+                tiempo:{tipo:"relativo", from:-2, to:4}
             }
         }
 
@@ -411,7 +413,7 @@ class Punto extends ObjetoGeoportal {
     }
 
     movio() {
-        this.recalculaValoresObservados();
+        //this.recalculaValoresObservados();
         super.movio();
     }
     cambioTiempo() {

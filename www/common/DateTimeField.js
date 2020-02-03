@@ -12,7 +12,7 @@ class DateTimeField extends ZCustomController {
         div.innerHTML = `
             <div id='${this.refId}' style='position:absolute; left:${x}px; top:${y}px;'>
                 <div style='position:relative;'>
-                    <div id='${this.refId}-cnt'></div>
+                    <div id='${this.refId}-cnt' style='font-size:80%;'></div>
                 </div>
             </div>
         `;
@@ -20,7 +20,7 @@ class DateTimeField extends ZCustomController {
         document.body.appendChild(this.calendarContainer);
         $view.datetimepicker({
             timeZone:window.timeZone,
-            format:"DD/MMM/YYYY HH:mm",
+            format:"DD/MMM/YYYY HH:mm",            
             widgetPositioning: {horizontal: 'right', vertical: 'top'},
             locale:"es",
             widgetParent:"#" + this.refId + "-cnt",
@@ -33,6 +33,13 @@ class DateTimeField extends ZCustomController {
             ignoreReadonly: true
         });
         $view.on("dp.change", _ => this.onEd_change());
+        $view.on("dp.show", e => {
+            let $view = $(this.ed.view);
+            let x = $view.offset().left;
+            let y = $view.offset().top;  
+            this.calendarContainer.style["left"] = x + "px";
+            this.calendarContainer.style["top"] = y + "px";
+        });
     }
     onThis_deactivated() {
         this.calendarContainer.remove();

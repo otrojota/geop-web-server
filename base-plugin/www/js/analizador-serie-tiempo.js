@@ -13,6 +13,9 @@ class AnalizadorSerieTiempo extends AnalizadorObjeto {
         return [{
             codigo:"vars",
             path:"base/propiedades/PropSerieTiempoVars"
+        }, {
+            codigo:"tiempo-serie-tiempo",
+            path:"base/propiedades/PropTiempoSerieTiempo"
         }];
     }
     getRutaPanelAnalisis() {

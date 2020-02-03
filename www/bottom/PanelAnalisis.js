@@ -56,7 +56,7 @@ class PanelAnalisis extends ZCustomController {
         this.propiedadesAnalisis.size = {width:this.configAnalisis.width - 4, height:s.height - 33}
         this.contenedorAnalisis.pos = {left:this.configAnalisis.width + 6, top:0}
         this.contenedorAnalisis.size = {width:s.width - this.configAnalisis.width - 6, height:s.height}
-        if (this.contenedorAnalisis.doResize) this.contenedorAnalisis.doResize();
+        if (this.contenedorAnalisis.content.doResize) this.contenedorAnalisis.content.doResize();
     }
     onEdAnalizador_change() {
         this.refrescaDetallesAnalizador();
@@ -106,7 +106,7 @@ class PanelAnalisis extends ZCustomController {
         }
     }
     async creaPanelAnalisis() {
-        await this.contenedorAnalisis.load(this.analizador.getRutaPanelAnalisis());
+        await this.contenedorAnalisis.load(this.analizador.getRutaPanelAnalisis(), {contenedor:this});
     }
     async refrescaPaneles() {
         for (let i=0; i<this.paneles.length; i++) {
@@ -116,9 +116,26 @@ class PanelAnalisis extends ZCustomController {
     }
 
     async refrescaPanelAnalisis() {
-        if (this.contenedorAnalisis.refresca) {
-            this.contenedorAnalisis.refresca(this.objeto);
+        if (this.contenedorAnalisis.content.refresca) {
+            await this.contenedorAnalisis.content.refresca(this.objeto);
         }
+    }
+
+    cambioTiempo() {
+        return this.refrescaPanelAnalisis();
+    }
+    async movioObjeto(objeto) {
+        if (this.objeto.id == objeto.id) {
+            await this.refrescaPanelAnalisis();
+        }
+    }
+    iniciaTrabajando() {
+        this.iconoAnalizador.hide();
+        this.iconoTrabajando.show();
+    }
+    finalizaTrabajando() {
+        this.iconoAnalizador.show();
+        this.iconoTrabajando.hide();
     }
 }
 

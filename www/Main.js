@@ -131,5 +131,12 @@ class Main extends ZCustomController {
         }
         this.doResize();
     }
+
+    async cambioTiempo() {
+        await this.panelAnalisis.cambioTiempo();
+    }
+    async movioObjeto(objeto) {
+        await this.panelAnalisis.movioObjeto(objeto);
+    }
 }
 ZVC.export(Main);

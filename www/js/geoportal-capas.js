@@ -48,7 +48,7 @@ class Capa {
     get urlIcono() {return this.config.urlIcono}
     get opacidad() {return this.config.opacidad}
     set opacidad(o) {this.config.opacidad = o; this.cambioOpacidad()}
-    get esObjetosUsuario() {return this.config.esObjetosUsuario?true:false}    
+    get esObjetosUsuario() {return this.config.esObjetosUsuario?true:false}
 
     addWorkingListener(accion, listener) {
         this.workingListeners.push({accion:accion, listener:listener});
@@ -207,6 +207,10 @@ class Capa {
         })
         .then(res => {
             if (idConsulta != this.nextIdConsulta) return;
+            if (res.status != 200) {
+                res.text().then(t => callback(t));
+                return;
+            }
             res.json().then(j => {
                 callback(null, j);
             }).catch(err => {
@@ -223,11 +227,14 @@ class Capa {
         })
     }
 
-    async refresca() {
+    async refresca() {        
         let proms = this.listaVisualizadoresActivos.reduce((lista, v) => {
             lista.push(v.refresca());
             return lista;
-        }, []);
+        }, []);        
+        if (this.objetos) {
+            this.objetos.forEach(o => proms.push(o.cambioTiempo()))
+        }
         await Promise.all(proms);
     }
 
@@ -273,7 +280,7 @@ class Capa {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
         if (this.esObjetosUsuario) window.geoportal.mapa.dibujaObjetos();
     }
-    cambioTiempo() {
+    cambioTiempo() {        
         if (!this.temporal || this.tiempoFijo) return;
         this.refresca();
     }
@@ -464,6 +471,7 @@ class Capas {
             },
             urlIcono:"img/iconos/user-tools.svg",
             esObjetosUsuario:true,
+            temporal:true,
             opacidad:100,
             formatos:{objetosUsuario:true}
         }

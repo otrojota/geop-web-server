@@ -1,4 +1,10 @@
 class GeoPortal {
+    static round(number, precision) {
+        let factor = Math.pow(10, precision);
+        let tempNumber = number * factor;
+        let roundedTempNumber = Math.round(tempNumber);
+        return roundedTempNumber / factor;
+    }
     constructor() {
         this.callSync(10);
         this.plugins = {};
@@ -159,6 +165,7 @@ class GeoPortal {
     setTiempo(tiempo) {
         this.tiempo = tiempo;
         this.capas.getCapas().forEach(capa => capa.cambioTiempo())
+        if (this.admAnalisis) this.admAnalisis.cambioTiempo();
     }
 
     // Edición de Objetos
@@ -188,12 +195,9 @@ class GeoPortal {
         if (window.capasController) await window.capasController.refresca();
         await this.admAnalisis.ajustaPanelAnalisis();
     }
-    objetoMovido(objeto) {
-        /*
-        if (objeto.seleccionado) {
-            this.panelAnalisis.movioObjeto(objeto);                
-        }
-        */
+    async objetoMovido(objeto) {
+        await objeto.movio();
+        if (this.admAnalisis) await this.admAnalisis.movioObjeto(objeto);
     }
 
     // Interacciones
@@ -207,6 +211,15 @@ class GeoPortal {
         if (this.agregandoObjeto) {
             ObjetoGeoportal.handleMouseMove(puntoMapa, puntoCanvas);
         }
+    }
+
+    // Utiles
+    formateaValor(codigoCapa, valor) {
+        if (valor === undefined) return "Sin Datos";
+        let capa = this.capasDisponibles[codigoCapa];
+        if (!capa) throw "No se encontró la capa '" + codigoCapa + "'";
+        let decimales = capa.decimales;
+        return GeoPortal.round(valor, decimales).toLocaleString();
     }
 }
 
