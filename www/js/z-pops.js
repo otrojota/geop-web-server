@@ -155,21 +155,25 @@ class ZPop {
     paintItems(items) {
         let html = "<div class='zpop-items-container'>";
         items.forEach(item => {
-            html += "<div class='zpop-item-container' data-code='" + item.code + "'>";
-            if (this.options.subItemsAt == "right") {
-                html += this.getIconHTML(item);
-                html += this.getLabelHTML(item);
-                if (item.items) {
-                    html += "<i class='fas fa-caret-right float-right ml-2 mt-1'></i>";
-                }
+            if (item.code == "sep") {
+                html += "<hr class='my-1' />";
             } else {
-                if (item.items) {
-                    html += "<i class='fas fa-caret-left float-left mr-2 mt-1'></i>";
+                html += "<div class='zpop-item-container' data-code='" + item.code + "'>";
+                if (this.options.subItemsAt == "right") {
+                    html += this.getIconHTML(item);
+                    html += this.getLabelHTML(item);
+                    if (item.items) {
+                        html += "<i class='fas fa-caret-right float-right ml-2 mt-1'></i>";
+                    }
+                } else {
+                    if (item.items) {
+                        html += "<i class='fas fa-caret-left float-left mr-2 mt-1'></i>";
+                    }
+                    html += this.getLabelHTML(item);
+                    html += this.getIconHTML(item);
                 }
-                html += this.getLabelHTML(item);
-                html += this.getIconHTML(item);
+                html += "</div>";
             }
-            html += "</div>";
         });
         html += "</div>";
         this.pop.find("#sub-items").html(html);

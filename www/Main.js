@@ -126,7 +126,10 @@ class Main extends ZCustomController {
         }
         if (!this.analisisOpen) {
             await this.alternaAnalisis();
+        } else {
+            await this.panelAnalisis.refresca();
         }
+        this.doResize();
     }
 }
 ZVC.export(Main);

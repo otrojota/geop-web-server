@@ -1,5 +1,12 @@
-<div id="rowAnalizador" style="position: absolute;">
-    <select id="edAnalizador" class="custom-select custom-select-sm" data-z-id-field="codigo" data-z-label-field="nombre"></select>
+<div id="rowAnalizador" style="position: absolute; background-color: lightgray;" class="">
+    <div class="container-fluid pt-1" style="display: flex; position: relative;">
+        <img id="iconoAnalizador" height="28px" class="mr-1 mt-1" />
+        <select id="edAnalizador" class="custom-select custom-select-sm ml-auto" data-z-id-field="codigo" data-z-label-field="nombre"></select>
+    </div>
+    <hr class="my-1" />
 </div>
 <div id="vsplitAnalisis" class="vsplit" style="position: absolute;"></div>
-<div id="panelPropiedadesAnalisis" data-z-component="./PanelPropiedadesAnalisis" style="position: absolute;"></div>
+<div id="propiedadesAnalisis" data-z-autoload="common/Empty" style="position: absolute; left:4px; top:40px; overflow-y: auto;">
+</div>
+<div id="contenedorAnalisis" style="position: absolute;">
+</div>

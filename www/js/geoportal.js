@@ -68,7 +68,7 @@ class GeoPortal {
             let prov = this.proveedores.find(p => p.codigo == defCapa.codigoProveedor);
             defCapa.urlIcono = prov.url + "/" + defCapa.icono;
         });      
-        this.grupos = config.grupos;
+        this.grupos = config.grupos;        
     }
 
     get listaCapasDisponibles() {
@@ -78,7 +78,7 @@ class GeoPortal {
         }, []);
     }
 
-    getNivelAgregarGrupos(nivel) {
+    getNivelAgregarGrupos(nivel, formato) {
         let items = [];
         nivel.forEach(grupo => {
             let nodo = {
@@ -89,7 +89,8 @@ class GeoPortal {
                 subitems = this.getNivelAgregarGrupos(grupo.subgrupos);
             }
             this.listaCapasDisponibles.forEach(capa => {
-                if (capa.grupos.includes(grupo.codigo)) {
+                let soportaFormato = !formato || capa.formatos[formato];
+                if (soportaFormato && capa.grupos.includes(grupo.codigo)) {
                     subitems.push({code:capa.codigo, label:capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa});
                 }
             })
@@ -100,13 +101,14 @@ class GeoPortal {
         });
         return items;
     }
-    getArbolAgregarAMapa() {        
+    getArbolAgregarAMapa(formato) {        
         let grupos = this.getNivelAgregarGrupos(this.grupos);
         let origenes = Object.keys(this.origenes).map(codigo => {
             let o = this.origenes[codigo];
             let nodo = {code:o.codigo, label:o.nombre, icon:o.icono, items:[], tipo:"origen"};
             this.listaCapasDisponibles.forEach(capa => {
-                if (capa.origen == o.codigo) {
+                let soportaFormato = !formato || capa.formatos[formato];
+                if (soportaFormato && capa.origen == o.codigo) {
                     nodo.items.push({code:capa.codigo, label:capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa})
                 }
             })            
@@ -122,12 +124,14 @@ class GeoPortal {
                 code:"origen", icon:"img/iconos/satelite.svg", label:"Por Origen de la Información", items:origenes
             })
         }
-        arbol.push({code:"sep"});
-        arbol.push({
-            code:"espec", icon:"img/iconos/process.svg", label:"Capas Especiales", items:[
-                {code:"objetos-usuario", icon:"img/iconos/user-tools.svg", label:"Objetos de Usuario"}
-            ]
-        })
+        if (!formato) {
+            arbol.push({code:"sep"});
+            arbol.push({
+                code:"espec", icon:"img/iconos/process.svg", label:"Capas Especiales", items:[
+                    {code:"objetos-usuario", icon:"img/iconos/user-tools.svg", label:"Objetos de Usuario"}
+                ]
+            })
+        }
         return arbol;
     }
 

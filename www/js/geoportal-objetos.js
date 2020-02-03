@@ -104,6 +104,7 @@ class Punto extends ObjetoGeoportal {
         this.configAnalisis.analizadores = {
             "serie-tiempo":{
                 variable:"gfs4.TMP_2M",
+                nivelVariable:0,
                 tiempo:{tipo:"relativo", from:-5, to:5}
             }
         }
@@ -663,5 +664,9 @@ class AnalizadorObjeto {
         this.codigo = codigo;
         this.objeto = objeto;
         this.config = config;
+    }
+    getPanelesPropiedades() {
+        console.error("getPanelesPropiedades no sobreescrito en Analizador");
+        return [];
     }
 }
