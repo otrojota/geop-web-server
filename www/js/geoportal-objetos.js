@@ -669,4 +669,8 @@ class AnalizadorObjeto {
         console.error("getPanelesPropiedades no sobreescrito en Analizador");
         return [];
     }
+    getRutaPanelAnalisis() {
+        console.error("getRutaPanelAnalisis no sobreescrito en Analizador");
+        return "common/Empty";
+    }
 }

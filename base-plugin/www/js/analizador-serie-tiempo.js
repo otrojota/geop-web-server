@@ -15,6 +15,9 @@ class AnalizadorSerieTiempo extends AnalizadorObjeto {
             path:"base/propiedades/PropSerieTiempoVars"
         }];
     }
+    getRutaPanelAnalisis() {
+        return "base/analisis/SerieTiempo"
+    }
 }
 
 window.geoportal.capas.registraAnalizador("base", "serie-tiempo", AnalizadorSerieTiempo, "Serie de Tiempo", "base/img/serie-tiempo.svg");

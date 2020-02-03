@@ -31,6 +31,8 @@ class PanelAnalisis extends ZCustomController {
         await this.refresca();
     }
     async destruye() {
+        this.destruyePaneles();
+        await this.destruyePanelAnalisis();
         this.objeto = null;
     }
 
@@ -40,10 +42,10 @@ class PanelAnalisis extends ZCustomController {
         this.doResize();
     }
     
-    refrescaAnalizadores() {
+    async refrescaAnalizadores() {
         let analizadores = window.geoportal.capas.getAnalizadoresAplicables(this.objeto);
         this.edAnalizador.setRows(analizadores, this.configAnalisis.analizador);
-        this.refrescaDetallesAnalizador();
+        await this.refrescaDetallesAnalizador();
     }    
     doResize() {
         let s = this.size;
@@ -54,12 +56,14 @@ class PanelAnalisis extends ZCustomController {
         this.propiedadesAnalisis.size = {width:this.configAnalisis.width - 4, height:s.height - 33}
         this.contenedorAnalisis.pos = {left:this.configAnalisis.width + 6, top:0}
         this.contenedorAnalisis.size = {width:s.width - this.configAnalisis.width - 6, height:s.height}
+        if (this.contenedorAnalisis.doResize) this.contenedorAnalisis.doResize();
     }
     onEdAnalizador_change() {
         this.refrescaDetallesAnalizador();
     }
     async refrescaDetallesAnalizador() {
         await this.destruyePaneles();
+        await this.destruyePanelAnalisis();
         let definicionAnalizador = this.edAnalizador.selectedRow;
         this.iconoAnalizador.view.setAttribute("src", definicionAnalizador.icono);
         if (!this.configAnalisis.analizadores[definicionAnalizador.codigo]) {
@@ -71,7 +75,9 @@ class PanelAnalisis extends ZCustomController {
         let configAnalisis = this.configAnalisis.analizadores[definicionAnalizador.codigo];
         this.analizador = new (definicionAnalizador.clase)(this.objeto, configAnalisis);
         await this.creaPaneles();
+        await this.creaPanelAnalisis();
         await this.refrescaPaneles();
+        await this.refrescaPanelAnalisis();
     }
 
     async destruyePaneles() {
@@ -80,6 +86,9 @@ class PanelAnalisis extends ZCustomController {
             await this.paneles[i].deactivate();
         }
         this.propiedadesAnalisis.view.innerHTML = "";
+    }
+    async destruyePanelAnalisis() {
+        this.contenedorAnalisis.load("common/Empty");
     }
     async creaPaneles() {
         this.paneles = [];
@@ -96,6 +105,9 @@ class PanelAnalisis extends ZCustomController {
             this.paneles.push(controller);
         }
     }
+    async creaPanelAnalisis() {
+        await this.contenedorAnalisis.load(this.analizador.getRutaPanelAnalisis());
+    }
     async refrescaPaneles() {
         for (let i=0; i<this.paneles.length; i++) {
             let panel = this.paneles[i];
@@ -104,7 +116,9 @@ class PanelAnalisis extends ZCustomController {
     }
 
     async refrescaPanelAnalisis() {
-        
+        if (this.contenedorAnalisis.refresca) {
+            this.contenedorAnalisis.refresca(this.objeto);
+        }
     }
 }
 
