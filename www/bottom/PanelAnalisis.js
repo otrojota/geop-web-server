@@ -125,7 +125,7 @@ class PanelAnalisis extends ZCustomController {
         return this.refrescaPanelAnalisis();
     }
     async movioObjeto(objeto) {
-        if (this.objeto.id == objeto.id) {
+        if (this.objeto && this.objeto.id == objeto.id) {
             await this.refrescaPanelAnalisis();
         }
     }

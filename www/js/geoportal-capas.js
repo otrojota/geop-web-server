@@ -278,7 +278,7 @@ class Capa {
 
     cambioOpacidad() {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
-        if (this.esObjetosUsuario) window.geoportal.mapa.dibujaObjetos();
+        if (this.esObjetosUsuario) window.geoportal.mapa.callDibujaObjetos(100);
     }
     cambioTiempo() {        
         if (!this.temporal || this.tiempoFijo) return;

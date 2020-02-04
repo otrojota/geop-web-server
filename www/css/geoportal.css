@@ -9,9 +9,6 @@ body {
     overflow-y:auto;
 }
 
-.top {
-}
-
 .top-menu-left {
     background-color: #16232f;
     width: 200px;
@@ -301,4 +298,49 @@ body {
     min-height: 30px;
     font-style: italic;
     margin:6px;
+}
+
+.tooltip-inner{
+    max-width: 100%;
+}
+.tooltip-titulo {
+    font-family:  -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    color:white;
+    font-size: 11px;
+    max-width:240px;
+}
+.tooltip-subtitulo {
+    font-family:  -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    color:white;
+    font-size: 10px;
+    font-style: italic;
+}
+.tooltip-contenido {
+    font-family:  -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    background-color: rgba(40,40,40, 0.8);
+    margin:2px 2px 4px 2px;
+    padding:4px;
+    color:white;
+    font-size: 10px;
+    border-radius: 4px;
+    border-color: gray;
+    border-width: 1px;
+    border-style: solid;
+}
+.icono-tooltip {
+    width:25px;
+}
+.icono-tooltip-invert {
+    width:25px;
+    filter: invert(1);
+}
+.propiedad-tooltip {
+    color:white;
+    font-weight: bold;
+    text-align: right;
+}
+.valor-tooltip {
+    color:white;
+    font-weight: normal;
+    text-align: right;
 }

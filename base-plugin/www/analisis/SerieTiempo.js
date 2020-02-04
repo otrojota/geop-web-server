@@ -209,8 +209,9 @@ class SerieTiempo extends ZCustomController {
                                 unidad = capa.unidad,
                                 icono = capa.urlIcono,
                                 metadata = this.metadata,
-                                modelo = (metadata && metadata.modelo)?metadata.modelo:null                         
-                            let html = "<div class='tooltip-titulo'>" + nombre + "</div>";
+                                modelo = (metadata && metadata.modelo)?metadata.modelo:null;
+                            let html = "<div class='tooltip-contenido'>";
+                            html += "<div class='tooltip-titulo'>" + nombre + "</div>";
                             if (nombreNivel) html += "<div class='tooltip-subtitulo'>" + nombreNivel + "</div>";
                             html += "<hr class='my-1 bg-white' />";
                             html += "<div class='tooltip-contenido'>";
@@ -244,6 +245,7 @@ class SerieTiempo extends ZCustomController {
                             }
 
                             html += "</table>";
+                            html += "</div>";
                             html += "</div>";
                             return html;
                         }

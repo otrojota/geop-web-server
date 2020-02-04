@@ -80,7 +80,7 @@ class Top extends ZCustomController {
                 code:"area", icon:"img/iconos/area.svg", label:"Agregar Área Rectangular"
             }],
             {
-                vMargin:16, hMargin:-2, 
+                vMargin:10, hMargin:-2, 
                 onClick:code => {
                     window.geoportal.iniciaAgregarObjeto(code);
                     return true;

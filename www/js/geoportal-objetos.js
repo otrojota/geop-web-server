@@ -114,8 +114,8 @@ class Punto extends ObjetoGeoportal {
         this.tipo = "punto";
         this.lng = puntoMapa.lng;
         this.lat = puntoMapa.lat;
-        this.observa = []; // datasources
-        this.valoresObservados = {}; // codigoDS:null|numero|buscador        
+        this.observa = []; // {capa:capasDisponibles, nivel:0}
+        this.valoresObservados = []; // indice de "observa"
         this.movible = initialConfig.movible;
         this.iconoEnMapa = initialConfig.iconoEnMapa;
     }
@@ -125,6 +125,9 @@ class Punto extends ObjetoGeoportal {
         let paneles = [{
             codigo:"props",
             path:"left/propiedades/PropPunto"
+        }, {
+            codigo:"observa",
+            path:"left/propiedades/PuntoObserva"
         }];
         return paneles;
     }
@@ -144,24 +147,25 @@ class Punto extends ObjetoGeoportal {
                 height:8 + 6 + 26 * this.observa.length,
                 fill:"#a86d32",
                 stroke:"black",
-                strokeWidth:0.5
+                strokeWidth:0.5,
+                opacity:this.capa.opacidad / 100
             });
             konvaLayer.add(rect);
-            this.observa.forEach((dsInfo, idx) => {
+            this.observa.forEach((o, idx) => {
                 //let y = point.y - 8 - 6 - 26 * idx - 24;
                 let y = point.y - 8 - 6 - 26 * this.observa.length + idx * 26 + 3;
                 let x = point.x + 3;
-                let value = this.valoresObservados[dsInfo.codigo + "-" + dsInfo.idxNivel];
+                let value = this.valoresObservados[idx];
                 let text, textColor;
-                if (value.data === undefined && !value.abort) {
+                if (value == "S/D") {
                     text = "Sin Datos"; textColor = "orange";
-                } else if (value.abort) {
+                } else if (value === null) {
                     text = "... ?? ..."; textColor = "orange";
                 } else if (typeof value == "string") {
-                    text = value; textColor = "red";
+                    text = value; textColor = "orange";
                 } else {
-                    let v = window.geoportal.formateaValor(dsInfo.datasource.codigo, value.data);
-                    text = v + " [" + value.unit + "]";
+                    let v = window.geoportal.formateaValor(o.capa.codigoProveedor + "." + o.capa.codigo, value.value);
+                    text = v + " [" + o.capa.unidad + "]";
                     textColor = "white";
                 }                
                 let txt = new Konva.Text({
@@ -169,7 +173,8 @@ class Punto extends ObjetoGeoportal {
                     text:text,
                     fontSize:14,
                     fontFamily:"Calibri",
-                    fill:textColor
+                    fill:textColor,
+                    opacity:this.capa.opacidad / 100
                 });
                 let txtWidth = txt.width() + 14;
                 let poly = new Konva.Line({
@@ -181,16 +186,21 @@ class Punto extends ObjetoGeoportal {
                     shadowOffsetX : 5,
                     shadowOffsetY : 3,
                     shadowBlur : 7,
-                    opacity : 0.8
+                    opacity : 0.8 * this.capa.opacidad / 100
                 });
                 konvaLayer.add(poly);
                 konvaLayer.add(txt);
+                /*
                 let htmlImg = new Image(12,12);
-                htmlImg.src = dsInfo.datasource.icono;
+                htmlImg.crossOrigin = "Anonymous";
+                htmlImg.src = o.capa.urlIcono;
+                */
+                let htmlImg = window.geoportal.getImagen(o.capa.urlIcono, 12, 12, _ => window.geoportal.mapa.callDibujaObjetos(300));
                 let img = new Konva.Image({
                     x:x + 2, y: y + 4,
                     image:htmlImg,
-                    width:12, height:12
+                    width:12, height:12,
+                    opacity:this.capa.opacidad / 100
                 });
                 img.cache();
                 img.filters([Konva.Filters.Invert]);
@@ -198,17 +208,16 @@ class Punto extends ObjetoGeoportal {
                 let background = new Konva.Rect({
                     x:x, y:y, width:8+txtWidth+5, height:20
                 });
-                konvaLayer.add(background);
-                /*
+                konvaLayer.add(background);                
                 background.on("mouseenter", e => {
-                    let ds = dsInfo.datasource;
-                    let html = "<div class='tooltip-titulo'>" + dsInfo.datasource.nombre + "</div>";
-                    if (dsInfo.nombreNivel) html += "<div class='tooltip-subtitulo'>" + dsInfo.nombreNivel + "</div>";
+                    let capa = o.capa;
+                    let html = "<div class='tooltip-titulo'>" + capa.nombre + "</div>";
+                    if (capa.niveles.length > 1) html += "<div class='tooltip-subtitulo'>" + capa.niveles[o.nivel].descripcion + "</div>";
                     html += "<hr class='my-1 bg-white' />";
                     html += "<div class='tooltip-contenido'>";
                     html += "<table class='w-100'>";
                     html += "<tr>";
-                    let origen = window.pomeo.getOrigen(ds.origen);
+                    let origen = window.geoportal.origenes[capa.origen];
                     html += "<td class='icono-tooltip'><img src='" + origen.icono + "' width='14px' /></td>";
                     html += "<td class='propiedad-tooltip'>Origen:</td>";
                     html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
@@ -232,12 +241,11 @@ class Punto extends ObjetoGeoportal {
 
                     html += "</table>";
                     html += "</div>";
-                    window.pomeo.showTooltip(x + 15 + txtWidth, y+7, html);
+                    window.geoportal.showTooltip(x + 15 + txtWidth, y+7, html);
                 });
                 background.on("mouseout", e => {
-                    window.pomeo.hideTooltip();
-                });
-                */
+                    window.geoportal.hideTooltip();
+                });                
             });
         }
         this.selectedCircle = new Konva.Circle({
@@ -392,35 +400,33 @@ class Punto extends ObjetoGeoportal {
     getRutaPanelConfiguracion() {return "main/config-objetos/PConfigPunto"}
     getIcono() {return "img/iconos/punto.svg"}
     recalculaValoresObservados() {
-        Object.keys(this.valoresObservados).forEach(dsCode => {
-            let v = this.valoresObservados[dsCode];
-            if (v && v.abort) v.abort();
-        })
-        this.valoresObservados = {};
-        this.observa.forEach(dsInfo => {
+        this.valoresObservados = this.observa.reduce((lista, o) => {
+            lista.push(null);
+            return lista;
+        }, []);        
+        this.observa.forEach((o, i) => {
             let query = {
                 lat:this.lat, lng:this.lng, time:window.geoportal.tiempo,
-                levelIndex:dsInfo.idxNivel?dsInfo.idxNivel:0
-            }   
-            this.valoresObservados[dsInfo.codigo + "-" + dsInfo.idxNivel] = zPost("query.ds", {ds:dsInfo.codigo, formato:"POINT_TIME_VALUE", query:query}, data => {
-                this.valoresObservados[dsInfo.codigo + "-" + dsInfo.idxNivel] = data;
-                window.geoportal.mapa.dibujaObjetos();
-            }, error => {
-                console.error(error);
-                this.valoresObservados[dsInfo.codigo + "-" + dsInfo.idxNivel] = "Error:" + error.toString();
+                levelIndex:o.nivel !== undefined?o.nivel:0,
+                codigoVariable:o.capa.codigo
+            }
+            let capa = new Capa(o.capa);
+            capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
+                if (err) this.valoresObservados[i] = "Error: " + err;
+                else this.valoresObservados[i] = resultado;
+                window.geoportal.mapa.callDibujaObjetos();
             });
         });
     }
 
     movio() {
-        //this.recalculaValoresObservados();
+        this.recalculaValoresObservados();
         super.movio();
     }
     cambioTiempo() {
-        let idx = this.observa.findIndex(dsInfo => dsInfo.datasource.opciones.temporal);
+        let idx = this.observa.findIndex(o => o.capa.temporal);
         if (idx < 0) return;
-        this.recalculaValoresObservados();
-        super.cambioTiempo();
+        this.recalculaValoresObservados();        
     }
     isVisible() {
         return window.pomeo.mapa.map.getBounds().contains(L.latLng(this.lat, this.lng));

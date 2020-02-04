@@ -320,9 +320,16 @@ class MapaGeoPortal {
         this.konvaLayerEfectos.draw();
         this.konvaLayer.draw();
     }
+    callDibujaObjetos(delay) {
+        if (!delay) delay = 200;
+        if (this.timerDibujaObjetos) clearTimeout(this.timerDibujaObjetos);
+        this.timerDibujaObjetos = setTimeout(_ => {
+            this.timerDibujaObjetos = null;
+            this.dibujaObjetos()
+        }, delay);
+    }
     async seleccionaObjeto(objeto) {
         //if (!isNaN(objeto)) objeto = this.objetos[objeto];
-        console.log("mapa selecciona objeto", objeto);
         let objetos = this.getObjetos();
         // desseleccionar
         objetos.forEach(o => {

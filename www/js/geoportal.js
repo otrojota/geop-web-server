@@ -12,6 +12,7 @@ class GeoPortal {
         dt.setHours(0); dt.setMinutes(0); dt.setSeconds(0); dt.setMilliseconds(0);
         this.tiempo = dt.getTime();
         this.listenersEdicion = [];
+        this.cacheImagenes = {};
     }
     loadScripts() {
         return new Promise((resolve, reject) => {
@@ -187,7 +188,7 @@ class GeoPortal {
         this.agregandoObjeto = null;
         this.mapa.resetCursor();
         this.panelTop.agregoObjeto(objeto);
-        this.mapa.dibujaObjetos();
+        this.mapa.callDibujaObjetos(100);
     }
     async objetoSeleccionado(objeto) {
         console.log("geoportal objeto seleccionado", objeto);
@@ -220,6 +221,15 @@ class GeoPortal {
         if (!capa) throw "No se encontró la capa '" + codigoCapa + "'";
         let decimales = capa.decimales;
         return GeoPortal.round(valor, decimales).toLocaleString();
+    }
+    getImagen(url, w, h, onload) {
+        let key = url + "-" + w + h;
+        if (this.cacheImagenes[key]) return this.cacheImagenes[key];
+        let htmlImg = new Image(w, h);
+        htmlImg.crossOrigin = "Anonymous";
+        htmlImg.src = url;
+        htmlImg.onload = _ => onload(htmlImg);
+        this.cacheImagenes[key] = htmlImg;
     }
 }
 
