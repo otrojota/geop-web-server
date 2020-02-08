@@ -26,6 +26,11 @@ class Main extends ZCustomController {
                 }
             }            
         });
+        Highcharts.setOptions({
+            global:{
+                timezone:window.timeZone
+            }
+        });  
     }
     async onThis_activated() {
         $(window).resize(() => {            
