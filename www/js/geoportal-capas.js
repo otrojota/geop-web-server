@@ -16,7 +16,7 @@ class Capa {
         this.preConsultando = false;
         this.consultando = false;
         this.listenersPreconsulta = null;
-        this.listenersConsulta = null;
+        this.listenersConsulta = [];
         this.preconsulta = null;
         this.resultadoConsulta = null;
         this.idBasePanel = window.geoportal.mapa.creaIdPanelesCapa();
@@ -59,8 +59,8 @@ class Capa {
                 }
             });
             console.log("Cargados objetos", this.objetos);
+            this.invalida();
         }
-        this.invalida(); // iniciar
     }
     get tipo() {return this.config.tipo}
     get codigo() {return this.config.codigo}
@@ -107,6 +107,19 @@ class Capa {
         })
         return ret;
     }
+    async activaVisualizadoresIniciales() {
+        if (this.config.visualizadoresIniciales) {
+            let lista = Object.keys(this.config.visualizadoresIniciales);
+            for (let i=0; i<lista.length; i++) {
+                let codVisualizador = lista[i];
+                let configVisualizador = this.config.visualizadoresIniciales[codVisualizador];
+                let clase = window.geoportal.capas.clasesVisualizadores.find(vis => vis.codigo == codVisualizador).clase;
+                this.visualizadoresActivos[codVisualizador] = new (clase)(this, configVisualizador);
+                await this.visualizadoresActivos[codVisualizador].crea();
+            }
+            delete this.config.visualizadoresIniciales;
+        }
+    }
     crea() {
         this.listaVisualizadoresActivos.forEach(v => v.crea());
     }
@@ -149,9 +162,9 @@ class Capa {
         }
         return items;
     }
-    async activaVisualizador(v) {
+    async activaVisualizador(v, configVisualizador) {
         let clase = window.geoportal.capas.clasesVisualizadores.find(vis => vis.codigo == v.codigo).clase;
-        this.visualizadoresActivos[v.codigo] = new (clase)(this, {});
+        this.visualizadoresActivos[v.codigo] = new (clase)(this, configVisualizador || {});
         await this.visualizadoresActivos[v.codigo].crea();
         window.geoportal.capas.getGrupoActivo().itemActivo = this.visualizadoresActivos[v.codigo];
         this.visualizadoresActivos[v.codigo].refresca();
@@ -489,13 +502,16 @@ class Capas {
     }
     add(config) {
         let capa = new Capa(config);
-        console.log("agregando capa", capa.tieneObjetos);
         capa.abierto = true;
         this.getGrupoActivo().addCapa(capa);
         this.getGrupoActivo().itemActivo = capa;
-        if (this.listener) this.listener.onCapaAgregada(capa);
-        console.log("agrego capa", capa, capa.tieneObjetos);
-        if (capa.tieneObjetos) window.geoportal.mapa.dibujaObjetos();
+        capa.activaVisualizadoresIniciales()
+            .then(_ => {
+                capa.invalida()
+                if (this.listener) this.listener.onCapaAgregada(capa);
+                console.log("agrego capa", capa, capa.tieneObjetos);
+                if (capa.tieneObjetos) window.geoportal.mapa.dibujaObjetos();
+            });
         return capa;
     }
     async addObjetosUsuario() {

@@ -185,7 +185,7 @@ class MapaGeoPortal {
         } else {
             idBase = capa.idBasePanel;
             idxCapa = window.geoportal.capas.getCapas().findIndex(c => c === capa);
-            if (idxCapa < 0) throw "No se encontró la capa";        
+            if (idxCapa < 0) throw "Creando Panel Mapa. No se encontró la capa";        
         }         
         let p = this.creaPanel(idBase + "-" + codigoPanel);
         p.setAttribute("data-idx-capa", idxCapa);
@@ -317,7 +317,6 @@ class MapaGeoPortal {
         await this.seleccionaObjeto(o);
     }
     dibujaObjetos() {
-        console.log("dibujaObjetos", this.getObjetos());
         this.konvaLayerEfectos.destroyChildren();
         this.konvaLayer.destroyChildren();
         this.getObjetos().forEach(o => o.dibuja(this.konvaLayer, this.konvaLayerEfectos));
