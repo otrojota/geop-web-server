@@ -66,6 +66,7 @@ class PanelAnalisis extends ZCustomController {
         await this.destruyePanelAnalisis();
         let definicionAnalizador = this.edAnalizador.selectedRow;
         this.iconoAnalizador.view.setAttribute("src", definicionAnalizador.icono);
+        console.log("buscando configuracion del analizador en:", this.objeto)
         if (!this.configAnalisis.analizadores[definicionAnalizador.codigo]) {
             this.configAnalisis.analizadores[definicionAnalizador.codigo] = {};
         }

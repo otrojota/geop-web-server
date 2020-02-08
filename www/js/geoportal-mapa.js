@@ -264,6 +264,9 @@ class MapaGeoPortal {
         let b = this.map.getBounds();
         return {lng0:b.getWest(), lat0:b.getSouth(), lng1:b.getEast(), lat1:b.getNorth()}
     }
+    setCenter(lat, lng) {
+        this.map.panTo(new L.LatLng(lat, lng));
+    }
 
     setCursorAgregandoObjeto() {
         this.lyObjetos.options.pane.style.cursor = "crosshair";
@@ -273,7 +276,7 @@ class MapaGeoPortal {
     }
     getObjetos() {
         return window.geoportal.capas.getCapas().reduce((lista, capa) => {
-            if (capa.esObjetosUsuario) lista = lista.concat(capa.objetos);
+            if (capa.tieneObjetos) lista = lista.concat(capa.objetos);
             return lista;
         }, [])
     }
@@ -314,6 +317,7 @@ class MapaGeoPortal {
         await this.seleccionaObjeto(o);
     }
     dibujaObjetos() {
+        console.log("dibujaObjetos", this.getObjetos());
         this.konvaLayerEfectos.destroyChildren();
         this.konvaLayer.destroyChildren();
         this.getObjetos().forEach(o => o.dibuja(this.konvaLayer, this.konvaLayerEfectos));

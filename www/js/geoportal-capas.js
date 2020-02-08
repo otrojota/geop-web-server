@@ -7,6 +7,7 @@ function uuidv4() {
 
 class Capa {
     constructor(config) {
+        console.log("crea capa con ", config);
         this.id = uuidv4();
         this.config = JSON.parse(JSON.stringify(config));
         this.nivel = this.config.nivelInicial?config.nivelInicial:0;
@@ -29,8 +30,39 @@ class Capa {
         }
         this.workingListeners = []; // {accion:"start"|"finish"|"refrescar", listener:function}
         this.objetos = null;
+        if (this.tipo == "dataObjects") {
+            this.objetos = [];
+            this.config.objetos.forEach(o => {
+                switch(o.tipo) {
+                    case "punto":
+                        let proveedor = window.geoportal.getProveedor(this.codigoProveedor);
+                        o.variables.forEach(v => v.icono = proveedor.url + "/" + v.icono);
+                        o.urlIcono = proveedor.url + "/" + o.icono;
+                        let configPunto = {
+                            iconoEnMapa: proveedor.url + "/" + o.icono,
+                            variables: o.variables,
+                            movible:false
+                        }
+                        let punto = new Punto({lat:o.lat, lng:o.lng}, o.nombre, configPunto);
+                        punto.id = uuidv4();
+                        punto.codigo = o.codigo;
+                        punto.capa = this;
+                        if (o.extraConfig) {
+                            if (o.extraConfig.configAnalisis) {
+                                punto.configAnalisis = $.extend(true, {}, punto.configAnalisis, o.extraConfig.configAnalisis);
+                            }
+                        }
+                        this.objetos.push(punto);
+                        break;
+                    default:
+                        console.error("Capa de dataObjects no maneja [aún] objetos del tipo '" + o.tipo + "'");
+                }
+            });
+            console.log("Cargados objetos", this.objetos);
+        }
         this.invalida(); // iniciar
     }
+    get tipo() {return this.config.tipo}
     get codigo() {return this.config.codigo}
     get codigoProveedor() {return this.config.codigoProveedor}
     get formatos() {return this.config.formatos}
@@ -49,6 +81,7 @@ class Capa {
     get opacidad() {return this.config.opacidad}
     set opacidad(o) {this.config.opacidad = o; this.cambioOpacidad()}
     get esObjetosUsuario() {return this.config.esObjetosUsuario?true:false}
+    get tieneObjetos() {return this.esObjetosUsuario || this.tipo == "dataObjects"}
 
     addWorkingListener(accion, listener) {
         this.workingListeners.push({accion:accion, listener:listener});
@@ -105,10 +138,10 @@ class Capa {
                     tipo:"objeto",
                     codigo:o.id,
                     nombre:o.nombre,
-                    icono:o.getIcono(),
-                    urlIcono:o.getIcono(),
+                    icono:o.iconoEnMapa?o.iconoEnMapa:o.getIcono(),
+                    urlIcono:o.iconoEnMapa?o.iconoEnMapa:o.getIcono(),
                     activable:false,
-                    eliminable:true,
+                    eliminable:this.tipo == "dataObjects"?false:true,
                     item:o,
                     capa:this
                 })
@@ -278,10 +311,11 @@ class Capa {
 
     cambioOpacidad() {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
-        if (this.esObjetosUsuario) window.geoportal.mapa.callDibujaObjetos(100);
+        if (this.tieneObjetos) window.geoportal.mapa.callDibujaObjetos(100);
     }
-    cambioTiempo() {        
-        if (!this.temporal || this.tiempoFijo) return;
+    cambioTiempo() {   
+        console.log("cambioTiempo", this);     
+        if ((!this.temporal && this.tipo != "dataObjects") || this.tiempoFijo) return;
         this.refresca();
     }
     cambioNivel() {
@@ -334,12 +368,13 @@ class GrupoCapas {
     removeCapa(idx) {
         let capa = this.capas[idx];
         if (capa.id == this.itemActivo.id) this.itemActivo = this;
-        let necesitaDibujar = capa.esObjetosUsuario;
+        let necesitaDibujar = capa.tieneObjetos;
         capa.destruye();
         this.capas.splice(idx,1)
         if (necesitaDibujar) window.geoportal.mapa.dibujaObjetos();
     }
     getCapa(idx) {return this.capas[idx]}
+    findCapa(id) {return this.capas.find(c => c.id == id)}
     async activa() {
         this.activo = true
         let proms = this.capas.reduce((lista, capa) => {
@@ -454,10 +489,13 @@ class Capas {
     }
     add(config) {
         let capa = new Capa(config);
+        console.log("agregando capa", capa.tieneObjetos);
         capa.abierto = true;
         this.getGrupoActivo().addCapa(capa);
         this.getGrupoActivo().itemActivo = capa;
         if (this.listener) this.listener.onCapaAgregada(capa);
+        console.log("agrego capa", capa, capa.tieneObjetos);
+        if (capa.tieneObjetos) window.geoportal.mapa.dibujaObjetos();
         return capa;
     }
     async addObjetosUsuario() {

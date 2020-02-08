@@ -2,10 +2,10 @@ class PropSerieTiempoVars extends ZCustomController {
     onThis_init(options) {      
         this.codigo = "vars";  
         this.options = options;
-        this.analizador = options.analizador;    
-        this.arbolAgregar = window.geoportal.getArbolAgregarAMapa("serieTiempo");
+        this.analizador = options.analizador; 
+        let dataObject = this.analizador.objeto.capa.tipo == "dataObjects"?this.analizador.objeto:null;
+        this.arbolAgregar = window.geoportal.getArbolAgregarAMapa("serieTiempo", dataObject);
         this.zpop = null;
-        console.log("options", options);
     }    
     async destruye() {}
     get config() {
@@ -41,17 +41,21 @@ class PropSerieTiempoVars extends ZCustomController {
         let variable = this.analizador.config.variable;
         let nivel = this.analizador.config.nivelVariable || 0;
         if (variable) {
-            let capa = window.geoportal.capasDisponibles[variable];
-            console.log("capa", capa);
-            nombreVar = capa.nombre;
-            urlIconoVar = capa.urlIcono;
+            let defVariable = window.geoportal.getVariable(variable);
+            //let capa = window.geoportal.capasDisponibles[variable];
+            //nombreVar = capa.nombre;
+            nombreVar = defVariable.nombre;
+            //urlIconoVar = capa.urlIcono;
+            urlIconoVar = defVariable.urlIcono;
             this.delVar1.show();
-            if (capa.niveles && capa.niveles.length > 1) {
+            //if (capa.niveles && capa.niveles.length > 1) {
+            if (defVariable.niveles && defVariable.niveles.length > 1) {
                 if (!this.edNivel1.view.noUiSlider) {
                     noUiSlider.create(this.edNivel1.view, {
                         start: nivel,
                         step:1,
-                        range: {'min': 0,'max': capa.niveles.length - 1}
+                        //range: {'min': 0,'max': capa.niveles.length - 1}
+                        range: {'min': 0,'max': defVariable.niveles.length - 1}
                     });
                 }
                 this.edNivel1.view.noUiSlider.on("slide", v => {
@@ -76,7 +80,8 @@ class PropSerieTiempoVars extends ZCustomController {
         this.iconoVar1.setAttribute("src", urlIconoVar);
     }
     refrescaNombreNivel1(n) {
-        this.lblNivel1.text = window.geoportal.capasDisponibles[this.analizador.config.variable].niveles[n].descripcion;
+        //this.lblNivel1.text = window.geoportal.capasDisponibles[this.analizador.config.variable].niveles[n].descripcion;
+        this.lblNivel1.text = window.geoportal.getVariable(this.analizador.config.variable).niveles[n].descripcion;
     }
     refrescaVar2() {
         let nombreVar = "[Comparar con Variable]";
@@ -84,16 +89,21 @@ class PropSerieTiempoVars extends ZCustomController {
         let variable = this.analizador.config.variable2;
         let nivel = this.analizador.config.nivelVariable2 || 0;
         if (variable) {
-            let capa = window.geoportal.capasDisponibles[variable];
-            nombreVar = capa.nombre;
-            urlIconoVar = capa.urlIcono;
+            let defVariable = window.geoportal.getVariable(variable);
+            //let capa = window.geoportal.capasDisponibles[variable];
+            //nombreVar = capa.nombre;
+            nombreVar = defVariable.nombre;
+            //urlIconoVar = capa.urlIcono;
+            urlIconoVar = defVariable.urlIcono;
             this.delVar2.show();
-            if (capa.niveles && capa.niveles.length > 1) {
+            //if (capa.niveles && capa.niveles.length > 1) {
+            if (defVariable.niveles && defVariable.niveles.length > 1) {
                 if (!this.edNivel2.view.noUiSlider) {
                     noUiSlider.create(this.edNivel2.view, {
                         start: nivel,
                         step:1,
-                        range: {'min': 0,'max': capa.niveles.length - 1}
+                        //range: {'min': 0,'max': capa.niveles.length - 1}
+                        range: {'min': 0,'max': defVariable.niveles.length - 1}
                     });
                 }
                 this.edNivel2.view.noUiSlider.on("slide", v => {
@@ -118,14 +128,18 @@ class PropSerieTiempoVars extends ZCustomController {
         this.iconoVar2.setAttribute("src", urlIconoVar);
     }
     refrescaNombreNivel2(n) {
-        this.lblNivel2.text = window.geoportal.capasDisponibles[this.analizador.config.variable2].niveles[n].descripcion;
+        //this.lblNivel2.text = window.geoportal.capasDisponibles[this.analizador.config.variable2].niveles[n].descripcion;
+        this.lblNivel2.text = window.geoportal.getVariable(this.analizador.config.variable2).niveles[n].descripcion;
     }
 
     onLblVar1_click() {
         this.zpop = new ZPop(this.caretVar1.view, this.arbolAgregar, {vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, onClick:(codigo, item) => {
-            console.log("item", item);
-            this.analizador.config.variable = item.capa.codigoProveedor + "." + item.capa.codigo ;
-            let nivelInicial = item.capa.nivelInicial;
+            let codigoVariable = item.capa.codigoProveedor + "." + item.code;
+            let variable = window.geoportal.getVariable(codigoVariable);
+            //this.analizador.config.variable = item.capa.codigoProveedor + "." + item.capa.codigo ;
+            this.analizador.config.variable = codigoVariable;
+            //let nivelInicial = item.capa.nivelInicial;
+            let nivelInicial = variable.nivelInicial;
             if (nivelInicial === undefined) nivelInicial = 0;
             this.analizador.config.nivelVariable = nivelInicial;
             this.refrescaVar1();
@@ -141,8 +155,12 @@ class PropSerieTiempoVars extends ZCustomController {
     }
     onLblVar2_click() {
         this.zpop = new ZPop(this.caretVar2.view, this.arbolAgregar, {vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, onClick:(codigo, item) => {
-            this.analizador.config.variable2 = item.capa.codigoProveedor + "." + item.capa.codigo ;
-            let nivelInicial = item.capa.nivelInicial;
+            let codigoVariable = item.capa.codigoProveedor + "." + item.code;
+            let variable = window.geoportal.getVariable(codigoVariable);
+            //this.analizador.config.variable2 = item.capa.codigoProveedor + "." + item.capa.codigo ;
+            this.analizador.config.variable2 = codigoVariable;
+            //let nivelInicial = item.capa.nivelInicial;
+            let nivelInicial = variable.nivelInicial;
             if (nivelInicial === undefined) nivelInicial = 0;
             this.analizador.config.nivelVariable2 = nivelInicial;
             this.refrescaVar2();

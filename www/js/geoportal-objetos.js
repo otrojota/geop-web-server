@@ -64,6 +64,8 @@ class ObjetoGeoportal {
     get nombre() {return this.config.nombre}
     set nombre(n) {this.config.nombre = n}
 
+    get variables() {return this.config.variables} // dataObject
+
     describe() {return "Sin Descripción"}
     dibuja(konvaLayer, konvaLayerEfectos) {}
     destruye() {}
@@ -138,7 +140,7 @@ class Punto extends ObjetoGeoportal {
 
     dibuja(konvaLayer, konvaLayerEfectos) {
         let map = window.geoportal.mapa.map;
-        let point = map.latLngToContainerPoint([this.lat, this.lng]);
+        let point = map.latLngToContainerPoint([this.lat, this.lng]);        
         if (this.observa.length) {
             let rect = new Konva.Rect({
                 x:point.x - 2,
@@ -164,8 +166,8 @@ class Punto extends ObjetoGeoportal {
                 } else if (typeof value == "string") {
                     text = value; textColor = "orange";
                 } else {
-                    let v = window.geoportal.formateaValor(o.capa.codigoProveedor + "." + o.capa.codigo, value.value);
-                    text = v + " [" + o.capa.unidad + "]";
+                    let v = window.geoportal.formateaValorVariable(o.variable, value.value);
+                    text = v + " [" + o.variable.unidad + "]";
                     textColor = "white";
                 }                
                 let txt = new Konva.Text({
@@ -190,12 +192,7 @@ class Punto extends ObjetoGeoportal {
                 });
                 konvaLayer.add(poly);
                 konvaLayer.add(txt);
-                /*
-                let htmlImg = new Image(12,12);
-                htmlImg.crossOrigin = "Anonymous";
-                htmlImg.src = o.capa.urlIcono;
-                */
-                let htmlImg = window.geoportal.getImagen(o.capa.urlIcono, 12, 12, _ => window.geoportal.mapa.callDibujaObjetos(300));
+                let htmlImg = window.geoportal.getImagen(o.variable.urlIcono, 12, 12, _ => window.geoportal.mapa.callDibujaObjetos(300));
                 let img = new Konva.Image({
                     x:x + 2, y: y + 4,
                     image:htmlImg,
@@ -210,14 +207,14 @@ class Punto extends ObjetoGeoportal {
                 });
                 konvaLayer.add(background);                
                 background.on("mouseenter", e => {
-                    let capa = o.capa;
-                    let html = "<div class='tooltip-titulo'>" + capa.nombre + "</div>";
-                    if (capa.niveles.length > 1) html += "<div class='tooltip-subtitulo'>" + capa.niveles[o.nivel].descripcion + "</div>";
+                    let variable = o.variable;
+                    let html = "<div class='tooltip-titulo'>" + variable.nombre + "</div>";
+                    if (variable.niveles.length > 1) html += "<div class='tooltip-subtitulo'>" + variable.niveles[o.nivel].descripcion + "</div>";
                     html += "<hr class='my-1 bg-white' />";
                     html += "<div class='tooltip-contenido'>";
                     html += "<table class='w-100'>";
                     html += "<tr>";
-                    let origen = window.geoportal.origenes[capa.origen];
+                    let origen = window.geoportal.origenes[variable.origen];
                     html += "<td class='icono-tooltip'><img src='" + origen.icono + "' width='14px' /></td>";
                     html += "<td class='propiedad-tooltip'>Origen:</td>";
                     html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
@@ -258,36 +255,35 @@ class Punto extends ObjetoGeoportal {
         });
         konvaLayerEfectos.add(this.selectedCircle);
 
-        if (this.iconoEnMapa) {            
-            window.geoportal.mapa.getImagen(this.iconoEnMapa, htmlImage => {
-                let img = new Konva.Image({
-                    x:point.x - 11, y: point.y - 11,
-                    image:htmlImage,
-                    width:21, height:21
-                });
-                img.cache();
-                img.on('mouseenter', _ => {
-                    map.dragging.disable();
-                    document.body.style.cursor = 'pointer';
-                    let html = "<div class='tooltip-titulo'>" + this.nombre + "</div>";
-                    window.geoportal.showTooltip(point.x + 15, point.y, html);
-                });
-                img.on('mouseout', _ => {
-                    map.dragging.enable();
-                    document.body.style.cursor = 'default';
-                    window.geoportal.hideTooltip();
-                });        
-                img.on("mousedown", e => {
-                    window.geoportal.mapa.ignoreNextClick = true;
-                    this.dragged = false;
-                })  
-                img.on("mouseup", e => {
-                    if (!this.dragged) {
-                        window.geoportal.mapa.seleccionaObjeto(this);
-                    }
-                })  
-                konvaLayer.add(img);
-            }); 
+        if (this.iconoEnMapa) { 
+            let htmlImage = window.geoportal.getImagen(this.iconoEnMapa, 12, 12, _ => window.geoportal.mapa.callDibujaObjetos(300));           
+            let img = new Konva.Image({
+                x:point.x - 11, y: point.y - 11,
+                image:htmlImage,
+                width:21, height:21
+            });
+            img.cache();
+            img.on('mouseenter', _ => {
+                map.dragging.disable();
+                document.body.style.cursor = 'pointer';
+                let html = "<div class='tooltip-titulo'>" + this.nombre + "</div>";
+                window.geoportal.showTooltip(point.x + 15, point.y, html);
+            });
+            img.on('mouseout', _ => {
+                map.dragging.enable();
+                document.body.style.cursor = 'default';
+                window.geoportal.hideTooltip();
+            });        
+            img.on("mousedown", e => {
+                window.geoportal.mapa.ignoreNextClick = true;
+                this.dragged = false;
+            })  
+            img.on("mouseup", e => {
+                if (!this.dragged) {
+                    window.geoportal.mapa.seleccionaObjeto(this);
+                }
+            })  
+            konvaLayer.add(img);
             this.circle = null;           
         } else {
             let circle = new Konva.Circle({
@@ -382,8 +378,13 @@ class Punto extends ObjetoGeoportal {
             return;
         }
         if (!this.animation) {
+            if (!this.selectedCircle) {
+                console.error("check animation sin selectedCircle .. agendando");
+                setTimeout(_ => this.checkAnimation(), 300);
+                return;
+            }           
             this.animation = new Konva.Animation(frame => {
-                let porc = (new Date().getTime() % 1000) / 1000;
+                let porc = (new Date().getTime() % 1000) / 1000;     
                 this.selectedCircle.setRadius(5 + 20 * porc);
                 this.selectedCircle.setOpacity(1 - porc);
             }, this.konvaLayerEfectos);            
@@ -398,19 +399,20 @@ class Punto extends ObjetoGeoportal {
         }
     }
     getRutaPanelConfiguracion() {return "main/config-objetos/PConfigPunto"}
-    getIcono() {return "img/iconos/punto.svg"}
+    getIcono() {return this.iconoEnMapa || "img/iconos/punto.svg"}
     recalculaValoresObservados() {
         this.valoresObservados = this.observa.reduce((lista, o) => {
             lista.push(null);
             return lista;
         }, []);        
         this.observa.forEach((o, i) => {
+            let infoVar = window.geoportal.getInfoVarParaConsulta(o.codigoVariable, this);
             let query = {
                 lat:this.lat, lng:this.lng, time:window.geoportal.tiempo,
                 levelIndex:o.nivel !== undefined?o.nivel:0,
-                codigoVariable:o.capa.codigo
+                codigoVariable:infoVar.codigoVariable
             }
-            let capa = new Capa(o.capa);
+            let capa = infoVar.capaQuery;
             capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
                 if (err) this.valoresObservados[i] = "Error: " + err;
                 else this.valoresObservados[i] = resultado;
@@ -424,16 +426,16 @@ class Punto extends ObjetoGeoportal {
         super.movio();
     }
     cambioTiempo() {
-        let idx = this.observa.findIndex(o => o.capa.temporal);
+        let idx = this.observa.findIndex(o => o.variable.temporal);
         if (idx < 0) return;
         this.recalculaValoresObservados();        
     }
     isVisible() {
-        return window.pomeo.mapa.map.getBounds().contains(L.latLng(this.lat, this.lng));
+        return window.geoportal.mapa.map.getBounds().contains(L.latLng(this.lat, this.lng));
     }
     aseguraVisible() {
         if (this.isVisible()) return;
-        setTimeout(_ => window.geoportal.mapa.setCenter(this.lat, this.lng), 300);        
+        setTimeout(_ => window.geoportal.mapa.setCenter(this.lat, this.lng), 200);        
     }
 
 }

@@ -52,11 +52,10 @@ class SerieTiempo extends ZCustomController {
         if (cambioVar1 || cambioTiempo || cambioPosicion) {
             this.var1 = var1; this.nivelVar1 = nivelVar1; this.serie1 = null;
             if (this.var1) {
-                let defCapa = window.geoportal.capasDisponibles[this.var1];
-                let capa = new Capa(defCapa);
+                let infoVar = window.geoportal.getInfoVarParaConsulta(this.var1, this.objeto);
                 promesas.push(new Promise((resolve, reject) => {
-                    capa.resuelveConsulta("serieTiempo", {
-                        codigoVariable:defCapa.codigo,
+                    infoVar.capaQuery.resuelveConsulta("serieTiempo", {
+                        codigoVariable:infoVar.codigoVariable,
                         lat:this.objeto.lat, lng:this.objeto.lng,
                         levelIndex:this.nivelVar1,
                         time0:this.t0, time1:this.t1
@@ -78,11 +77,10 @@ class SerieTiempo extends ZCustomController {
         if (cambioVar2 || cambioTiempo || cambioPosicion) {
             this.var2 = var2; this.nivelVar2 = nivelVar2; this.serie2 = null;
             if (this.var2) {
-                let defCapa = window.geoportal.capasDisponibles[this.var2];
-                let capa = new Capa(defCapa);
+                let infoVar = window.geoportal.getInfoVarParaConsulta(this.var2, this.objeto);
                 promesas.push(new Promise((resolve, reject) => {
-                    capa.resuelveConsulta("serieTiempo", {
-                        codigoVariable:defCapa.codigo,
+                    infoVar.capaQuery.resuelveConsulta("serieTiempo", {
+                        codigoVariable:infoVar.codigoVariable,
                         lat:this.objeto.lat, lng:this.objeto.lng,
                         levelIndex:this.nivelVar2,
                         time0:this.t0, time1:this.t1
@@ -136,37 +134,37 @@ class SerieTiempo extends ZCustomController {
             let yAxis = [];
             this.capas = [];
             if (this.var1) {
-                let capa = window.geoportal.capasDisponibles[this.var1];
-                this.capas.push(capa);
-                titulo = capa.nombre;
-                if (capa.niveles && capa.niveles.length > 1) titulo += " [" + capa.niveles[this.nivelVar1].descripcion + "]";
+                let variable = window.geoportal.getVariable(this.var1);
+                this.capas.push(variable);
+                titulo = variable.nombre;
+                if (variable.niveles && variable.niveles.length > 1) titulo += " [" + variable.niveles[this.nivelVar1].descripcion + "]";
                 series.push({
                     type:"area",
                     name:titulo,
                     data:this.serie1
                 });
-                yAxis.push({id:"primario", title:{text:capa.unidad}});
+                yAxis.push({id:"primario", title:{text:variable.unidad}});
             }
             if (this.var2) {
-                let capa = window.geoportal.capasDisponibles[this.var2];
-                this.capas.push(capa);
+                let variable = window.geoportal.getVariable(this.var2);
+                this.capas.push(variable);
                 let requiereEjeSecundario = false;
-                if (series.length && yAxis[0].title.text != capa.unidad) {
+                if (series.length && yAxis[0].title.text != variable.unidad) {
                     requiereEjeSecundario = true;
-                    yAxis.push({id:"secundario", title:{text:capa.unidad}, opposite:true});
+                    yAxis.push({id:"secundario", title:{text:variable.unidad}, opposite:true});
                 } else if (!series.length) {
-                    yAxis.push({id:"primario", title:{text:capa.unidad}});
+                    yAxis.push({id:"primario", title:{text:variable.unidad}});
                 }
                 if (!series.length) {
-                    titulo = capa.nombre;
-                    if (capa.niveles && capa.niveles.length > 1) titulo += " [" + capa.niveles[this.nivelVar2].descripcion + "]";
+                    titulo = variable.nombre;
+                    if (variable.niveles && variable.niveles.length > 1) titulo += " [" + variable.niveles[this.nivelVar2].descripcion + "]";
                 } else {
-                    subtitulo = "v/s " + capa.nombre;
-                    if (capa.niveles && capa.niveles.length > 1) subtitulo += " [" + capa.niveles[this.nivelVar2].descripcion + "]";
+                    subtitulo = "v/s " + variable.nombre;
+                    if (variable.niveles && variable.niveles.length > 1) subtitulo += " [" + variable.niveles[this.nivelVar2].descripcion + "]";
                 }                
                 series.push({
                     type:"spline",
-                    name:capa.nombre + (capa.niveles && capa.niveles.length > 1?capa.niveles[this.nivelVar2]:""),
+                    name:variable.nombre + (variable.niveles && variable.niveles.length > 1?variable.niveles[this.nivelVar2]:""),
                     data:this.serie2,
                     yAxis:requiereEjeSecundario?"secundario":"primario"
                 })
@@ -205,7 +203,6 @@ class SerieTiempo extends ZCustomController {
                             let nombre = capa.nombre,
                                 nombreNivel = (capa.niveles && capa.niveles.length > 1?capa.niveles[this.nivelVar2]:""),
                                 origen = window.geoportal.origenes[capa.origen],
-                                codigoCapa = capa.codigoProveedor + "." + capa.codigo, 
                                 unidad = capa.unidad,
                                 icono = capa.urlIcono,
                                 metadata = this.metadata,
@@ -229,7 +226,7 @@ class SerieTiempo extends ZCustomController {
                             html += "<td class='valor-tooltip'>" + tiempo.format("DD/MMM/YYYY HH:mm") + "</td>";
                             html += "</tr>";
 
-                            let valor = window.geoportal.formateaValor(codigoCapa, this.y) + " [" + unidad + "]";
+                            let valor = window.geoportal.formateaValorVariable(capa, this.y) + " [" + unidad + "]";
                             html += "<tr>";
                             html += "<td class='icono-tooltip-invert'><img src='" + icono + "' width='14px' /></td>";
                             html += "<td class='propiedad-tooltip'>Valor:</td>";

@@ -3,7 +3,8 @@ class PuntoObserva extends ZCustomController {
         this.codigo = "observa";  
         this.options = options;
         this.punto = options.item;
-        this.arbolAgregar = window.geoportal.getArbolAgregarAMapa("valorEnPunto");
+        let dataObject = this.punto.capa.tipo == "dataObjects"?this.punto:null;
+        this.arbolAgregar = window.geoportal.getArbolAgregarAMapa("valorEnPunto", dataObject);
     }    
     async destruye() {}
     get config() {
@@ -20,9 +21,12 @@ class PuntoObserva extends ZCustomController {
     }
     onCmdObservar_click() {
         this.zpop = new ZPop(this.caretObservar.view, this.arbolAgregar, {vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, onClick:(codigo, item) => {
-            let nivelInicial = item.capa.nivelInicial;
+            console.log("item", item);
+            let codigoVariable = item.capa.codigoProveedor + "." + item.code;
+            let variable = window.geoportal.getVariable(codigoVariable);
+            let nivelInicial = variable.nivelInicial;
             if (nivelInicial === undefined) nivelInicial = 0;
-            this.punto.observa.push({capa:window.geoportal.capasDisponibles[item.capa.codigoProveedor + "." + item.capa.codigo], nivel:nivelInicial});
+            this.punto.observa.push({variable:variable, nivel:nivelInicial, codigoVariable:codigoVariable});
             this.refresca();
             this.punto.recalculaValoresObservados();
         }});
@@ -44,11 +48,11 @@ class PuntoObserva extends ZCustomController {
             html += `<div class="row mt-1">`;
             html += `  <div class="col">`;
             html += `    <i data-indice="${i}" class="fas fa-trash-alt mr-2 float-left mt-1" style="cursor: pointer;"></i>`;
-            html += `    <img class="mr-1 float-left" height="16px" src="${o.capa.urlIcono}" />`;
-            html += `    <span>${o.capa.nombre}</span>`;
+            html += `    <img class="mr-1 float-left" height="16px" src="${o.variable.urlIcono}" />`;
+            html += `    <span>${o.variable.nombre}</span>`;
             html += `  </div>`;
             html += `</div>`;
-            if (o.capa.niveles && o.capa.niveles.length > 1) {
+            if (o.variable.niveles && o.variable.niveles.length > 1) {
                 html += `<div class="row mt-1 ml-2">`;
                 html += `  <div class="col-4">`;
                 html += `    <label class="etiqueta-subpanel-propiedades mb-0">Nivel</label>`;
@@ -59,7 +63,7 @@ class PuntoObserva extends ZCustomController {
                 html += `</div>`;
                 html += `<div class="row ml-2">`;
                 html += `  <div class="col">`;
-                html += `    <label id="lblNivel${i}" class="etiqueta-subpanel-propiedades mb-0">${o.capa.niveles[o.nivel].descripcion}</label>`;
+                html += `    <label id="lblNivel${i}" class="etiqueta-subpanel-propiedades mb-0">${o.variable.niveles[o.nivel].descripcion}</label>`;
                 html += `  </div>`;
                 html += `</div>`;
             }
@@ -80,12 +84,12 @@ class PuntoObserva extends ZCustomController {
             noUiSlider.create(slider, {
                 start: o.nivel,
                 step:1,
-                range: {'min': 0,'max': o.capa.niveles.length - 1}
+                range: {'min': 0,'max': o.variable.niveles.length - 1}
             });
             slider.noUiSlider.on("slide", v => {
                 let value = parseInt(v[0]);
                 o.nivel = value;
-                lbl.textContent = o.capa.niveles[o.nivel].descripcion;
+                lbl.textContent = o.variable.niveles[o.nivel].descripcion;
             });
             slider.noUiSlider.on("change", v => {
                 this.punto.recalculaValoresObservados();

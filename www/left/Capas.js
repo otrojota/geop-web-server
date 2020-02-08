@@ -318,6 +318,7 @@ class Capas extends ZCustomController {
         if (item.tipo == "objeto") {            
             window.geoportal.mapa.seleccionaObjeto(item.item);
             window.geoportal.mapa.dibujaObjetos();
+            item.item.aseguraVisible();
         } else {
             window.geoportal.admAnalisis.ajustaPanelAnalisis();
         }

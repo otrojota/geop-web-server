@@ -50,7 +50,7 @@ class Capas extends ZModule {
             }
             this.proveedores = proveedores;
             this.origenes = origenes;
-            this.capas = capas;
+                this.capas = capas;
         } catch(error) {
             console.error(error);
         } finally {
