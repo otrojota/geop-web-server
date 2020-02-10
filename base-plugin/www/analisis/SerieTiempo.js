@@ -141,7 +141,8 @@ class SerieTiempo extends ZCustomController {
                 series.push({
                     type:"area",
                     name:titulo,
-                    data:this.serie1
+                    data:this.serie1,
+                    turboThreshold: 0
                 });
                 yAxis.push({id:"primario", title:{text:variable.unidad}});
             }
@@ -166,6 +167,7 @@ class SerieTiempo extends ZCustomController {
                     type:"spline",
                     name:variable.nombre + (variable.niveles && variable.niveles.length > 1?variable.niveles[this.nivelVar2]:""),
                     data:this.serie2,
+                    turboThreshold: 0,
                     yAxis:requiereEjeSecundario?"secundario":"primario"
                 })
             }

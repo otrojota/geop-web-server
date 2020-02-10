@@ -260,7 +260,8 @@ class Punto extends ObjetoGeoportal {
             let img = new Konva.Image({
                 x:point.x - 11, y: point.y - 11,
                 image:htmlImage,
-                width:21, height:21
+                width:21, height:21,
+                opacity : this.capa.opacidad / 100
             });
             img.cache();
             img.on('mouseenter', _ => {
@@ -297,7 +298,7 @@ class Punto extends ObjetoGeoportal {
                 shadowOffsetX : 5,
                 shadowOffsetY : 5,
                 shadowBlur : 10,
-                opacity : (this.iconoEnMapa?0:1) * this.capa.opacidad / 100,
+                opacity : this.capa.opacidad / 100,
                 dragBoundFunc: this.dragBoundFunc
             });    
             circle.on('mouseenter', _ => {

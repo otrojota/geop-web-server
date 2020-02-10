@@ -86,7 +86,7 @@ class PanelAnalisis extends ZCustomController {
             await this.paneles[i].destruye();
             await this.paneles[i].deactivate();
         }
-        this.propiedadesAnalisis.view.innerHTML = "";
+        //this.propiedadesAnalisis.view.innerHTML = "";
     }
     async destruyePanelAnalisis() {
         this.contenedorAnalisis.load("common/Empty");
