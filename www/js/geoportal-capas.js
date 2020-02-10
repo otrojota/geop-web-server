@@ -177,11 +177,15 @@ class Capa {
         return Object.keys(this.visualizadoresActivos).map(codigo => (this.visualizadoresActivos[codigo]));
     }
 
-    invalida() {        
+    movioMapa() {
+        if (this.tipo == "raster") this.invalida();
+    }
+
+    invalida() {
         if (this.preConsultando && this.listenersPreconsulta) {
             this.listenersPreconsulta.forEach(cb => cb("preconsulta cancelada"));
         }
-        if (this.listenersConsulta) {
+        if (this.listenersConsulta && this.listenersConsulta.length) {
             this.listenersConsulta.forEach(cb => cb("consulta cancelada"));
         }
         this.preconsulta = null;
@@ -550,7 +554,9 @@ class Capas {
         this.clasesAnalizadores.push({codigoPlugin:codigoPlugin, codigo:codigo, clase:claseAnalizador, nombre:nombre, icono:icono})
     }
     movioMapa() {
-        this.getCapas().forEach(capa => capa.invalida());
+        this.getCapas().forEach(capa => {
+            capa.movioMapa();
+        });
     }
     getGrupoActivo() {return this.grupos.find(g => g.activo)}
     async activaGrupo(idx) {
