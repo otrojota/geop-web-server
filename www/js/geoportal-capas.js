@@ -234,7 +234,7 @@ class Capa {
             })
             .catch(err => {
                 console.error("Error en preconsulta");
-                console.error(error);
+                console.error(err);
                 this.listenersPreconsulta.forEach(cb => cb(err));    
             })
             .finally(_ => {
@@ -580,6 +580,10 @@ class Capas {
             if (a.clase.aplicaAObjeto(objeto)) lista.push(a);
             return lista;
         }, []);
+    }
+
+    seleccionaPanelCapas() {
+        if (this.listener) this.listener.seleccionaCapas();
     }
 }
 

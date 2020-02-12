@@ -78,14 +78,16 @@ class GeoPortal {
             let prov = this.getProveedor(defCapa.codigoProveedor);
             defCapa.urlIcono = prov.url + "/" + defCapa.icono;
         });      
-        this.grupos = config.grupos;        
+        this.grupos = config.grupos;
+        console.log("Sincronizado con capas", this.capasDisponibles);
     }
 
     get listaCapasDisponibles() {
-        return Object.keys(this.capasDisponibles).reduce((lista, codigoCapa) => {
+        let lista = Object.keys(this.capasDisponibles).reduce((lista, codigoCapa) => {
             lista.push(this.capasDisponibles[codigoCapa]);
             return lista;
         }, []);
+        return lista;
     }
 
     getNivelAgregarGrupos(nivel, formato) {
@@ -105,6 +107,7 @@ class GeoPortal {
                 }
             })
             if (subitems.length) {
+                subitems.sort((i1, i2) => (i1.label < i2.label?-1:1));
                 nodo.items = subitems;
                 items.push(nodo);
             }
@@ -119,6 +122,7 @@ class GeoPortal {
                 if (!formato || v.formatos.indexOf(formato) >= 0) {
                     lista.push({code:dataObject.capa.codigo + "." + dataObject.codigo + "." + v.codigo, label:v.nombre, icon:v.icono, tipo:"capa", capa:dataObject.capa});
                 }
+                lista.sort((i1, i2) => (i1.label < i2.label?-1:1));
                 return lista;
             }, []);
             if (variables.length) {
@@ -133,7 +137,8 @@ class GeoPortal {
                 if (soportaFormato && capa.origen == o.codigo) {
                     nodo.items.push({code:capa.codigo, label:capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa})
                 }
-            })            
+            })   
+            nodo.items.sort((i1, i2) => (i1.label < i2.label?-1:1));         
             return nodo;
         }).filter(nodo => (nodo.items.length > 0));
         let arbol = [];
@@ -159,6 +164,17 @@ class GeoPortal {
             })
         }
         return arbol;
+    }
+
+    getCapasEstaciones() {
+        let lista = this.listaCapasDisponibles.reduce((lista, capa) => {
+            if (capa.menuEstaciones) {
+                lista.push({code:capa.codigo, label:capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa});
+            }
+            return lista;
+        }, []);
+        lista.sort((i1, i2) => (i1.label < i2.label?-1:1));         
+        return lista;
     }
 
     showTooltip(x, y, contenido) {

@@ -52,7 +52,6 @@ class PanelAgregar extends ZCustomController {
     }
     refresca() {
         this.items = window.geoportal.getArbolAgregarAMapa();
-        console.log("PanelAgregar.items", this.items);
         this.doShow(this.items);
     }
     doShow(items) {

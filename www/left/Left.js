@@ -12,7 +12,8 @@ class Left extends ZCustomController {
     onThis_activated() {
         this.listener = {
             onCapaAgregada:async capa => await this.capaAgregada(capa),
-            onCapaRemovida:async capa => await this.capaRemovida(capa)
+            onCapaRemovida:async capa => await this.capaRemovida(capa),
+            seleccionaCapas: async _ => await this.seleccionaCapas()
         }
         window.geoportal.capas.setListener(this.listener);
     }
@@ -22,7 +23,12 @@ class Left extends ZCustomController {
     async capaAgregada(capa) {
         if (this.opcionActiva == "capas") await this.panelActivo.capaAgregada(capa);
         else (await this.selecciona("capas")); // Refresh al abrir
-
+    }
+    async seleccionaCapas() {
+        this.triggerEvent("aseguraVisible");
+        if (this.opcionActiva != "capas") {
+            (await this.selecciona("capas")); // Refresh al abrir
+        }
     }
     async capaRemovida(capa) {
         if (this.opcionActiva == "capas") await this.panelActivo.capaRemovida(capa);

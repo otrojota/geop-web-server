@@ -143,5 +143,11 @@ class Main extends ZCustomController {
     async movioObjeto(objeto) {
         await this.panelAnalisis.movioObjeto(objeto);
     }
+
+    onLeft_aseguraVisible() {
+        if (!this.leftOpen) {
+            this.onTop_alternaMenu();
+        }
+    }
 }
 ZVC.export(Main);

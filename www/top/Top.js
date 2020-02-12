@@ -104,5 +104,22 @@ class Top extends ZCustomController {
         this.mostrandoPanelAgregarObjeto = false;
         this.panelAgregarObjeto.hide();
     }
+
+    onCmdCapasActivas_click() {
+        window.geoportal.capas.seleccionaPanelCapas();
+    }
+
+    onCmdEstaciones_click() {
+        this.zpop = new ZPop(this.cmdEstaciones.view, geoportal.getCapasEstaciones(),
+            {
+                vMargin:10, hMargin:-2, 
+                onClick:(code, item) => {
+                    console.log("agrega capa estaciones", code, item);
+                    window.geoportal.capas.add(item.capa);
+                    return true;
+                }
+            }
+        ).show();
+    }
 }
 ZVC.export(Top);
