@@ -17,7 +17,6 @@ class SerieTiempo extends ZCustomController {
         if(this.grafico) this.grafico.setSize(size.width, size.height);
     }
     async refresca(objeto) {
-        console.log("refrescando serie", objeto);
         this.options.contenedor.iniciaTrabajando();
         this.objeto = objeto;        
         let cambioVar1 = false, cambioVar2 = false;

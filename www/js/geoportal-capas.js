@@ -247,7 +247,16 @@ class Capa {
         this.startWorking();
         this.listenersConsulta.push(callback);
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor); 
-        let idConsulta = this.nextIdConsulta;       
+        let idConsulta = this.nextIdConsulta;      
+        if (!args) args = {};
+        if (!args.codigoVariable) args.codigoVariable = this.codigo;
+        if (!args.time) args.time = this.tiempoFijo?this.tiempoFijo:window.geoportal.tiempo;
+        let b = window.geoportal.mapa.getLimites();
+        if (args.lng0 === undefined) args.lng0 = b.lng0; 
+        if (args.lat0 === undefined) args.lat0 = b.lat0; 
+        if (args.lng1 === undefined) args.lng1 = b.lng1; 
+        if (args.lat1 === undefined) args.lat1 = b.lat1; 
+        if (args.levelIndex === undefined) args.levelIndex = this.nivel;
         fetch(prov.url + "/consulta", {
             method:"POST", 
             headers:{
@@ -330,9 +339,9 @@ class Capa {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
         if (this.tieneObjetos) window.geoportal.mapa.callDibujaObjetos(100);
     }
-    cambioTiempo() {   
+    cambioTiempo(forzar) {   
         console.log("cambioTiempo", this);     
-        if ((!this.temporal && this.tipo != "dataObjects") || this.tiempoFijo) return;
+        if ((!this.temporal && this.tipo != "dataObjects") || (this.tiempoFijo && !forzar)) return;
         this.refresca();
     }
     cambioNivel() {

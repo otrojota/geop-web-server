@@ -48,19 +48,22 @@ class FechaCapa extends ZCustomController {
     }
     onEdFijar_change() {
         if (this.edFijar.checked) {
+            this.ignorarCambioTiempo = true;
             this.edTiempo.value = TimeUtils.now;
+            this.ignorarCambioTiempo = false;
             this.edTiempo.show();
             this.capa.tiempoFijo = this.edTiempo.value.valueOf();
-            this.capa.cambioTiempo();
+            this.capa.cambioTiempo(true);
         } else {
             this.edTiempo.hide();
             this.capa.tiempoFijo = null;
-            this.capa.cambioTiempo();
+            this.capa.cambioTiempo(true);
         }
     }
     onEdTiempo_change() {
+        if (this.ignorarCambioTiempo) return;
         this.capa.tiempoFijo = this.edTiempo.value.valueOf();
-        this.capa.cambioTiempo();
+        this.capa.cambioTiempo(true);
     }
 }
 ZVC.export(FechaCapa);
