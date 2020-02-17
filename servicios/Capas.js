@@ -35,22 +35,26 @@ class Capas extends ZModule {
             let proveedores = config.proveedores;
             for (let i=0; i<proveedores.length; i++) {
                 let proveedor = proveedores[i];
-                let pOrigenes = await this.get(proveedor.url + "/origenes");
-                pOrigenes.forEach(o => {
-                    origenes[o.codigo] = {codigo:o.codigo, nombre:o.nombre, url:o.url};
-                    let icono = o.icono;
-                    if (icono.startsWith(".")) icono = proveedor.url + "/" + icono.substr(2);
-                    origenes[o.codigo].icono = icono;
-                });
-                let pCapas = await this.get(proveedor.url + "/capas");
-                pCapas.forEach(c => {
-                    c.codigoProveedor = proveedor.codigo;
-                    capas[proveedor.codigo + "." + c.codigo] = c;
-                });
+                try {
+                    let pOrigenes = await this.get(proveedor.url + "/origenes");
+                    pOrigenes.forEach(o => {
+                        origenes[o.codigo] = {codigo:o.codigo, nombre:o.nombre, url:o.url};
+                        let icono = o.icono;
+                        if (icono.startsWith(".")) icono = proveedor.url + "/" + icono.substr(2);
+                        origenes[o.codigo].icono = icono;
+                    });
+                    let pCapas = await this.get(proveedor.url + "/capas");
+                    pCapas.forEach(c => {
+                        c.codigoProveedor = proveedor.codigo;
+                        capas[proveedor.codigo + "." + c.codigo] = c;
+                    });
+                } catch(errProv) {
+                    console.error("Error sincronizando con proveedor '" + proveedor.codigo + "'", errProv);
+                }
             }
             this.proveedores = proveedores;
             this.origenes = origenes;
-                this.capas = capas;
+            this.capas = capas;
         } catch(error) {
             console.error(error);
         } finally {

@@ -231,7 +231,7 @@ class GeoPortal {
         await this.admAnalisis.ajustaPanelAnalisis();
     }
     async objetoMovido(objeto) {
-        await objeto.movio();
+        //await objeto.movio();
         if (this.admAnalisis) await this.admAnalisis.movioObjeto(objeto);
     }
 
