@@ -156,6 +156,7 @@ class Capa {
                     activable:false,
                     eliminable:this.tipo == "dataObjects"?false:true,
                     item:o,
+                    items:o.getItems(),
                     capa:this
                 })
             })

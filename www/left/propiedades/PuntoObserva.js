@@ -75,6 +75,7 @@ class PuntoObserva extends ZCustomController {
                 this.punto.observa.splice(indice, 1);
                 this.refresca();
                 this.punto.recalculaValoresObservados();
+                window.geoportal.mapa.dibujaObjetos();
             }
         })
         this.cntObserva.findAll(".slider-nivel").forEach(slider => {

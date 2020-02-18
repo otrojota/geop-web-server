@@ -138,6 +138,7 @@ class PanelPropiedades extends ZCustomController {
             })
         }
         this.paneles = [];
+        console.log("item", this.item);
         let paneles = this.item.getPanelesPropiedades();
         let html = paneles.reduce((html, panel) => {
             html += "<div id='panprop-" + panel.codigo + "' class='subpanel-propiedades' data-z-component='" + panel.path + "'></div>";

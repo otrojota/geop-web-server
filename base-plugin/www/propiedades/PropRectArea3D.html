@@ -1,0 +1,52 @@
+<div id="filaTitulo" data-z-clickable="true" style="cursor: pointer;">
+    <i id="imgAbierto" class="float-left far fa-minus-square mx-1 mt-1"></i>
+    <div id="titulo" class="py-1 titulo-subpanel-propiedades"></div>
+</div>
+<div id="contenido" class="contenido-subpanel-propiedades container-fluid pb-1">
+    <div class="row mt-1">
+        <div class="col">
+            <i id="delVar1" class="fas fa-trash-alt mr-2 float-left mt-1" data-z-clickable="true" style="cursor: pointer;"></i>
+            <img id="iconoVar1" class="mr-1 float-left" height="16px" />
+            <span id="lblVar1" class="nombre-item" data-z-clickable="true"></span>
+            <i id="caretVar1" class="fas fa-caret-right ml-1 float-right mt-1"></i>
+        </div>
+    </div>
+    <div id="grpNivel1" class="ml-4">
+        <div class="row mt-1">
+            <div class="col-4">
+                <label class="etiqueta-subpanel-propiedades mb-0">Nivel</label>
+            </div>
+            <div class="col-8">
+                <div id="edNivel1"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label id="lblNivel1" class="etiqueta-subpanel-propiedades mb-0">...</label>
+            </div>
+        </div>
+    </div>
+    <p class="text-muted small mb-1">
+        Seleccione la opción 'Escalar Lat / Lng' para mantener la proporción de las coordenadas x/y en base a distancia lineal. Si la variable que analiza se mide en metros, puede además escalar el eje Z en base a un factor editable.
+    </p>
+    <div class="row mt-0">
+        <div class="col">
+            <div id="edEscalarLngLat" data-z-component="common/CheckBox" data-label="Escalar Lat / Long" class="etiqueta-subpanel-propiedades mb-0"></div>
+        </div>
+    </div>
+    <div id="rowEscalarZ">
+        <div class="row mt-0">
+            <div class="col">
+                <div id="edEscalarZ" data-z-component="common/CheckBox" data-label="Escalar eje Z (metros)" class="etiqueta-subpanel-propiedades mb-0"></div>
+            </div>
+        </div>
+        <div id="rowFactorEscalaZ" class="row mt-1">
+            <div class="col-6">
+                <label class="etiqueta-subpanel-propiedades mb-0">Factor Escala</label>
+            </div>
+            <div class="col-6">
+                <input id="edFactorEscalaZ" type="number" step="1" class="form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+            </div>
+        </div>
+    </div>
+</div>

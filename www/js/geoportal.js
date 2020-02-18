@@ -196,6 +196,9 @@ class GeoPortal {
         if (idx >= 0) this.listenersEdicion.splice(idx,1);
     }
     editoObjeto(tipo, objeto) {
+        if (objeto.objetos && objeto.objetos.length) {
+            objeto.objetos.forEach(o => o.editoPadre());
+        }
         this.listenersEdicion.forEach(l => l(tipo, objeto));
     }
     setTiempo(tiempo) {
@@ -217,6 +220,8 @@ class GeoPortal {
             ObjetoGeoportal.cancelaAgregarObjeto();
             this.panelTop.cancelaAgregarObjeto();
             this.mapa.resetCursor();
+            window.geoportal.mapa.konvaLayerAgregando.destroyChildren();
+            window.geoportal.mapa.konvaLayerAgregando.draw();
         }
     }
     finalizaAgregarObjeto(objeto) {

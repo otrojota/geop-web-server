@@ -14,9 +14,10 @@ class ObjetoGeoportal {
             window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa));
         } else if (window.geoportal.agregandoObjeto == "area") {
             window.geoportal.mapa.konvaLayerAgregando.destroyChildren();
+            window.geoportal.mapa.konvaLayerAgregando.draw();
             if (ObjetoGeoportal.agregandoArea) {
-                window.geoportal.mapa.agregaObjeto(new Area(Objetogeoportal.agregandoArea, puntoMapa));
-                Objetogeoportal.agregandoArea = null;
+                window.geoportal.mapa.agregaObjeto(new Area(ObjetoGeoportal.agregandoArea, puntoMapa));
+                ObjetoGeoportal.agregandoArea = null;
             } else {
                 ObjetoGeoportal.agregandoArea = puntoMapa;
                 ObjetoGeoportal.newAreaP0 = puntoCanvas;
@@ -49,7 +50,7 @@ class ObjetoGeoportal {
         this.nombreEditable = true;
         this.objetoPadre = null;
         this.dragBoundFunc = null;
-        this.capa = null;
+        this._capa = null;
         this.configPanel = {
             flotante:false,
             height:180, width:300,
@@ -74,13 +75,13 @@ class ObjetoGeoportal {
     cambioTiempo() {
         console.error("cambioTiempo no sobreescrito en objeto");
     }
-    getSubitems() {return []}
+    getItems() {return null}
     selecciona() {this.seleccionado = true}
     desselecciona() {this.seleccionado = false}
-    getRutaPanelConfiguracion() {return "common/Empty"}
     getIcono() {return "img/iconos/punto.svg"}
     aseguraVisible() {}
     isVisible() {throw "isVisible no Implementado en '" + this.nombre + "'"}
+    editoPadre() {}
 
     getAnalizadoresAplicables() {
         let ret = [];
@@ -120,6 +121,12 @@ class Punto extends ObjetoGeoportal {
         this.valoresObservados = []; // indice de "observa"
         this.movible = initialConfig.movible;
         this.iconoEnMapa = initialConfig.iconoEnMapa;
+    }
+    editoPadre() {
+        let p = this.nombre.indexOf("-");
+        if (p > 0) {
+            this.nombre = this.objetoPadre.nombre + "-" + this.nombre.substr(p+1);
+        }
     }
     describe() {return this.nombre}
     /* Panel de Propiedades */
@@ -489,15 +496,27 @@ class Area extends ObjetoGeoportal {
             nombre = "Área " + Area.siguienteNumeroArea++
         }
         let defaultConfig = {
-            nombre:nombre,
-            analisis:{
-                datasource:"fixed.BATIMETRIA",
-                visualizador:"rectAreaValue"
-            },
+            nombre:nombre,            
             movible:true
         }
         let initialConfig = $.extend({}, defaultConfig, config?config:{});
         super(initialConfig);
+        this.configAnalisis = {
+            analizador:"rect-area-3d",
+            height:300, width:260,
+            analizadores:{
+                "rect-area-3d":{
+                    variable:"fixed.BATIMETRIA_2019",
+                    nivelVariable:0,
+                    escalarLngLat:true,
+                    escalarZ:false, factorEscalaZ:10,
+                    escala:{
+                        dinamica:true,
+                        nombre:"Agua -> Tierra"
+                    }
+                }
+            }
+        };
         this.tipo = "area";
         let lngW = Math.min(p1.lng, p2.lng);
         let lngE = Math.max(p1.lng, p2.lng);
@@ -509,7 +528,10 @@ class Area extends ObjetoGeoportal {
             new Punto({lng:lngW, lat:latS}, nombre + "-sw"),
             new Punto({lng:lngE, lat:latS}, nombre + "-se")
         ];
-        this.objetos.forEach(o => o.objetoPadre = this);
+        this.objetos.forEach(o => {
+            o.id = uuidv4();
+            o.objetoPadre = this
+        });
 
         //Retringir movimiento de puntos de control
         // NW
@@ -543,9 +565,27 @@ class Area extends ObjetoGeoportal {
     get lat0() {return this.objetos[2].lat}
     get lat1() {return this.objetos[0].lat}
     describe() {return this.nombre}
-    getRutaPanelConfiguracion() {return null}
     getIcono() {return "img/iconos/area.svg"}
-    getSubitems() {return this.objetos}
+    getItems() {
+        let items = this.objetos.map(o => ({
+            tipo:"objeto",
+            codigo:o.id,
+            nombre:o.nombre,
+            icono:o.iconoEnMapa?o.iconoEnMapa:o.getIcono(),
+            urlIcono:o.iconoEnMapa?o.iconoEnMapa:o.getIcono(),
+            activable:false,
+            eliminable:false,
+            item:o,
+            items:o.getItems(),
+            capa:this.capa
+        }));
+        return items;
+    }
+    get capa() {return this._capa}
+    set capa(c) {
+        this._capa = c;
+        this.objetos.forEach(o => o.capa = c)
+    }
     dibuja(konvaLayer, konvaLayerEfectos) {
         let map = geoportal.mapa.map;
         let p0 = map.latLngToContainerPoint([this.lat0, this.lng0]);
@@ -615,8 +655,15 @@ class Area extends ObjetoGeoportal {
     cambioTiempo() {
         this.objetos.forEach(o => o.cambioTiempo())
     }
+    movio() {
+        this.objetos.forEach(o => {
+            o.movio();
+            window.geoportal.objetoMovido(o);
+        })
+    }
     movioHijo(hijo) {
         hijo.movio();
+        window.geoportal.objetoMovido(hijo);
         let idx = this.objetos.findIndex(h => (h === hijo));
         if (idx < 0) {
             console.error("Punto hijo se movió y no se encontró en el area", hijo);
@@ -627,21 +674,29 @@ class Area extends ObjetoGeoportal {
             this.objetos[2].lng = hijo.lng;
             this.objetos[1].movio();
             this.objetos[2].movio();
+            window.geoportal.objetoMovido(this.objetos[1]);
+            window.geoportal.objetoMovido(this.objetos[2]);
         } else if (idx == 1) {  // ne
             this.objetos[0].lat = hijo.lat;
             this.objetos[3].lng = hijo.lng;
             this.objetos[0].movio();
             this.objetos[3].movio();
+            window.geoportal.objetoMovido(this.objetos[0]);
+            window.geoportal.objetoMovido(this.objetos[3]);
         } else if (idx == 2) {  // sw
             this.objetos[0].lng = hijo.lng;
             this.objetos[3].lat = hijo.lat;
             this.objetos[0].movio();
             this.objetos[3].movio();
+            window.geoportal.objetoMovido(this.objetos[0]);
+            window.geoportal.objetoMovido(this.objetos[3]);
         } else if (idx == 3) {  // se
             this.objetos[1].lng = hijo.lng;
             this.objetos[2].lat = hijo.lat;
             this.objetos[1].movio();
             this.objetos[2].movio();
+            window.geoportal.objetoMovido(this.objetos[1]);
+            window.geoportal.objetoMovido(this.objetos[2]);
         }
         window.geoportal.mapa.movioObjeto(this);
     }
@@ -662,6 +717,19 @@ class Area extends ObjetoGeoportal {
             ))
         }, 300);        
     }
+
+    /* Panel de Propiedades */
+    getPanelesPropiedades() {
+        let paneles = [{
+            codigo:"props",
+            path:"left/propiedades/PropArea"
+        }];
+        return paneles;
+    }
+
+    getTituloPanel() {
+        return this.nombre;
+    }
 }
 
 // Analizadores
@@ -674,8 +742,11 @@ class AnalizadorObjeto {
     constructor(codigo, objeto, config) {
         this.codigo = codigo;
         this.objeto = objeto;
-        this.config = config;
+        this._config = config;
     }
+
+    get config() {return this.objeto.configAnalisis.analizadores[this.codigo]}
+    
     getPanelesPropiedades() {
         console.error("getPanelesPropiedades no sobreescrito en Analizador");
         return [];

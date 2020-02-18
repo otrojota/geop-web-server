@@ -6,6 +6,7 @@ class PanelAnalisis extends ZCustomController {
 
     onThis_init() {
         this.paneles = [];
+        this.onRefrescado = null;
         this.rowAnalizador.pos = {left:0, top:0};
         interact(this.vsplitAnalisis.view).draggable({
             startAxis:"x", lockAxis:"x",
@@ -119,6 +120,15 @@ class PanelAnalisis extends ZCustomController {
     async refrescaPanelAnalisis() {
         if (this.contenedorAnalisis.content.refresca) {
             await this.contenedorAnalisis.content.refresca(this.objeto);
+            if (this.onRefrescado) await this.onRefrescado();
+        }
+    }
+
+    async redibujaPanelAnalisis() {
+        if (this.contenedorAnalisis.content.redibuja) {
+            this.iniciaTrabajando();            
+            await this.contenedorAnalisis.content.redibuja();
+            this.finalizaTrabajando();
         }
     }
 

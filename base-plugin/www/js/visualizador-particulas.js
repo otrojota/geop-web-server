@@ -3,7 +3,7 @@ class VisualizadorParticulas extends VisualizadorCapa {
         let defaultConfig = {
             nParticulas:10000,
             retina:true,
-            valocidad:0.50,
+            velocidad:0.50,
             escala:{
                 dinamica:true,
                 nombre:"Magma - MatplotLib"

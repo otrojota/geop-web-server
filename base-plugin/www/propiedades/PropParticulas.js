@@ -44,7 +44,7 @@ class PropParticulas extends ZCustomController {
             noUiSlider.create(this.edVelocidad.view, {
                 start: this.visualizador.velocidad,
                 step:0.05,
-                range: {min: 0.01,max: 1}
+                range: {min: 0.01,max: 3}
             });
         }
         this.edVelocidad.view.noUiSlider.on("change", v => {

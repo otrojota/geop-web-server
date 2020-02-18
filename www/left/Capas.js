@@ -4,10 +4,13 @@ class Capas extends ZCustomController {
         this.workingListeners = [];  // {item:capa|visualizador, listener:function}
         await this.refresca();
         window.geoportal.addListenerEdicion((tipo, objeto) => {
+            this.refresca();
+            /*
             let td = this.cntItems.find(".nombre-item[data-id-item='" + objeto.id + "']");
             if (td) {
                 if (objeto.nombre) td.innerText = objeto.nombre;
             }
+            */
         });
         interact(this.hsplit.view).draggable({
             startAxis:"y", lockAxis:"y",
@@ -76,7 +79,6 @@ class Capas extends ZCustomController {
                 let tr = e.parentNode.parentNode;
                 let indiceNivel = tr.getAttribute("data-indice-nivel");
                 let item = this.mapaItems[indiceNivel];
-                console.log("activando", item);
                 if (item.tipo == "visualizador") {
                     if (item.activo) {
                         if (item.item.id == idItemActivo) grupoActivo.itemActivo = item.item.capa;
@@ -201,7 +203,7 @@ class Capas extends ZCustomController {
             html += "<tr class='" + claseFila + "' data-indice-nivel='" + indiceNivel + "' style='" + (grupoInactivo?"opacity:0.5;":"") + "' data-grupo-activo='" + (!grupoInactivo) + "' >";            
             html += "<td style='width:14px; text-align:left;'>";
             if (subitems.length) {
-                if (item.abierto) {
+                if (item.item.abierto) {
                     html += "<i class='fas fa-lg fa-caret-down abridor' " + (item.item?"data-id-item='" + item.item.id + "'":"") + "></i>";
                 } else {
                     html += "<i class='fas fa-lg fa-caret-right abridor' " + (item.item?"data-id-item='" + item.item.id + "'":"") + "></i>";
@@ -286,8 +288,11 @@ class Capas extends ZCustomController {
                 item.item.addWorkingListener("refrescar", refrescarWorkingListener);
             }
             html += "</tr>";            
-            if (subitems.length && item.abierto) {
+            if (subitems.length && item.item.abierto) {
+                console.log("pintando subitems de ", item);
                 html += this.getHTMLItems(subitems, nivel+1, indiceNivel, grupoInactivo);
+            } else {
+                console.log("no pinta subitems de ", item);
             }
             return html;
         }, "");
