@@ -24,7 +24,15 @@ class Capas extends ZModule {
         return new Promise((resolve, reject) => {
             request(url, {method:"GET"}, (err, res, body) => {
                 if (err) reject(err);
-                else resolve(JSON.parse(body));
+                else {
+                    try {
+                        resolve(JSON.parse(body));
+                    } catch(error) {
+                        console.error("Error parseando respuesta desde " + url, error);
+                        console.error("Respuesta", body);
+                        reject(err);
+                    }
+                }
             })
         })
     }

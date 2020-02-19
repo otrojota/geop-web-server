@@ -3,5 +3,5 @@ FROM node:12.3.1-alpine
 WORKDIR /opt/geoportal/geop-web-server
 COPY . .
 RUN npm install 
-EXPOSE 8085
+EXPOSE 8180
 CMD node index.js

@@ -126,6 +126,7 @@ class PropRectArea3D extends ZCustomController {
             if (nivelInicial === undefined) nivelInicial = 0;
             this.analizador.config.nivelVariable = nivelInicial;
             this.refrescaVar1();
+            this.chequeaEscalaZ();
             this.options.contenedor.refrescaPanelAnalisis();
         }});
         this.zpop.show();
