@@ -32,6 +32,7 @@ class PropRectArea3D extends ZCustomController {
         this.titulo.text = "Lat/Lng/ Variable Z";
         this.refrescaVar1();
         this.edEscalarLngLat.checked = this.analizador.config.escalarLngLat;
+        this.edEscalarZ.checked = this.analizador.config.escalarZ;
         this.chequeaEscalaZ();
     }
 

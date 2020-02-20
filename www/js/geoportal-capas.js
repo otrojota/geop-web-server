@@ -7,7 +7,6 @@ function uuidv4() {
 
 class Capa {
     constructor(config) {
-        console.log("crea capa con ", config);
         this.id = uuidv4();
         this.config = JSON.parse(JSON.stringify(config));
         this.nivel = this.config.nivelInicial?config.nivelInicial:0;
@@ -30,6 +29,7 @@ class Capa {
         }
         this.workingListeners = []; // {accion:"start"|"finish"|"refrescar", listener:function}
         this.objetos = null;
+        this.mensajes = new MensajesGeoportal(this, this.origen);
         if (this.tipo == "dataObjects") {
             this.objetos = [];
             this.config.objetos.forEach(o => {
@@ -44,7 +44,6 @@ class Capa {
                             movible:false
                         }
                         let punto = new Punto({lat:o.lat, lng:o.lng}, o.nombre, configPunto);
-                        punto.id = uuidv4();
                         punto.codigo = o.codigo;
                         punto.capa = this;
                         if (o.extraConfig) {
@@ -268,7 +267,9 @@ class Capa {
         .then(res => {
             if (idConsulta != this.nextIdConsulta) return;
             if (res.status != 200) {
-                res.text().then(t => callback(t));
+                res.text().then(t => {
+                    callback(t)
+                });
                 return;
             }
             res.json().then(j => {
@@ -287,7 +288,7 @@ class Capa {
         })
     }
 
-    async refresca() {        
+    async refresca() {  
         let proms = this.listaVisualizadoresActivos.reduce((lista, v) => {
             lista.push(v.refresca());
             return lista;
@@ -341,7 +342,6 @@ class Capa {
         if (this.tieneObjetos) window.geoportal.mapa.callDibujaObjetos(100);
     }
     cambioTiempo(forzar) {   
-        console.log("cambioTiempo", this);     
         if ((!this.temporal && this.tipo != "dataObjects") || (this.tiempoFijo && !forzar)) return;
         this.refresca();
     }
@@ -356,12 +356,15 @@ class VisualizadorCapa {
         this.codigo = codigo;
         this.capa = capa;
         this.config = config;   
-        this.workingListeners = []; // {accion:"start"|"finish", listener:function}     
+        this.workingListeners = []; // {accion:"start"|"finish", listener:function}
+        this.mensajes = new MensajesGeoportal(this, capa.origen);
     }
     static aplicaACapa(capa) {return false;}
     async crea() {}
     async destruye() {}
-    async refresca() {}
+    async refresca() {
+        this.mensajes.clear();
+    }
     addWorkingListener(accion, listener) {
         this.workingListeners.push({accion:accion, listener:listener});
     }
@@ -523,7 +526,6 @@ class Capas {
             .then(_ => {
                 capa.invalida()
                 if (this.listener) this.listener.onCapaAgregada(capa);
-                console.log("agrego capa", capa, capa.tieneObjetos);
                 if (capa.tieneObjetos) window.geoportal.mapa.dibujaObjetos();
             });
         return capa;

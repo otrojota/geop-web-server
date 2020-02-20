@@ -117,7 +117,6 @@ class Main extends ZCustomController {
     }
 
     async ajustaPanelAnalisis() {
-        console.log("ajustando panel análisis");
         let grupoActivo = window.geoportal.capas.getGrupoActivo();
         let itemActivo = grupoActivo.itemActivo;
         if (!itemActivo || !(itemActivo instanceof ObjetoGeoportal)) {
@@ -147,6 +146,12 @@ class Main extends ZCustomController {
     onLeft_aseguraVisible() {
         if (!this.leftOpen) {
             this.onTop_alternaMenu();
+        }
+    }
+
+    async cambioMensajesItem(idItem) {
+        if (this.panelAnalisis) {
+            await this.panelAnalisis.cambioMensajesItem(idItem);
         }
     }
 }

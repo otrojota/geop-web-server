@@ -21,7 +21,6 @@ class PuntoObserva extends ZCustomController {
     }
     onCmdObservar_click() {
         this.zpop = new ZPop(this.caretObservar.view, this.arbolAgregar, {vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, onClick:(codigo, item) => {
-            console.log("item", item);
             let codigoVariable = item.capa.codigoProveedor + "." + item.code;
             let variable = window.geoportal.getVariable(codigoVariable);
             let nivelInicial = variable.nivelInicial;

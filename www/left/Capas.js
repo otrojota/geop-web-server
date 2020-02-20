@@ -5,12 +5,6 @@ class Capas extends ZCustomController {
         await this.refresca();
         window.geoportal.addListenerEdicion((tipo, objeto) => {
             this.refresca();
-            /*
-            let td = this.cntItems.find(".nombre-item[data-id-item='" + objeto.id + "']");
-            if (td) {
-                if (objeto.nombre) td.innerText = objeto.nombre;
-            }
-            */
         });
         interact(this.hsplit.view).draggable({
             startAxis:"y", lockAxis:"y",
@@ -38,6 +32,7 @@ class Capas extends ZCustomController {
     }
 
     getCapaDeItem(item) {
+        if (!item) return null;
         if (item instanceof GrupoCapas) return null;
         if (item instanceof Capa) return item;
         if (item.capa) return item.capa;
@@ -85,7 +80,6 @@ class Capas extends ZCustomController {
                         await item.capa.desactivaVisualizador(item.codigo);
                     } else {
                         await item.capa.activaVisualizador(item);
-                        //grupoActivo.itemActivo = item.capa.getVisualizador(item.codigo);
                     }
                 } else {                    
                     throw "Tipo de item '" + item.tipo + "' no se reconoce como activable";
@@ -267,6 +261,21 @@ class Capas extends ZCustomController {
                 html += "<i class='fas fa-spin fa-spinner' style='display: none; ' data-id-item='" + item.item.id + "'></i>";
             }
             html += "</td>";
+            html += "<td>";
+            if (item.item && item.item.mensajes) {
+                let display = "display:none; ";
+                let src = "";
+                if (item.item.mensajes.nAdvertencias) {
+                    display = "";
+                    src = "img/iconos/advertencia.svg";
+                }
+                if (item.item.mensajes.nErrores) {
+                    display = "";
+                    src = "img/iconos/error.svg";
+                }
+                html += "<img class='estado-mensajes' style='" + display + "width:14px;' src='" + src + "'  data-id-item='" + item.item.id + "' />";
+            }
+            html += "</td>";
             if (item.item && item.item.addWorkingListener) {
                 let startWorkingListener = _ => {
                     let img = this.cntItems.find(".fa-spinner[data-id-item='" + item.item.id + "']");
@@ -281,7 +290,6 @@ class Capas extends ZCustomController {
                 this.workingListeners.push({item:item.item, listener:finishWorkingListener});
                 item.item.addWorkingListener("finish", finishWorkingListener);
                 let refrescarWorkingListener = async _ => {
-                    console.log("recibe refrescar con itemActivo", window.geoportal.capas.getGrupoActivo().itemActivo);
                     await this.refresca();
                 };
                 this.workingListeners.push({item:item.item, listener:refrescarWorkingListener});
@@ -289,10 +297,7 @@ class Capas extends ZCustomController {
             }
             html += "</tr>";            
             if (subitems.length && item.item.abierto) {
-                console.log("pintando subitems de ", item);
                 html += this.getHTMLItems(subitems, nivel+1, indiceNivel, grupoInactivo);
-            } else {
-                console.log("no pinta subitems de ", item);
             }
             return html;
         }, "");
@@ -327,6 +332,30 @@ class Capas extends ZCustomController {
         } else {
             window.geoportal.admAnalisis.ajustaPanelAnalisis();
         }
+    }
+
+    async cambiosMensajes(listaIdsCambiados) {
+        listaIdsCambiados.forEach(async id => {
+            let img = this.cntItems.find(".estado-mensajes[data-id-item=\"" + id + "\"]");
+            let item = this.mapaItemsPorId[id];
+            if (img) {
+                if (item.mensajes.nErrores) {
+                    img.src = "img/iconos/error.svg";
+                    img.style.display = "block";
+                } else if (item.mensajes.nAdvertencias) {
+                    img.src = "img/iconos/advertencia.svg";
+                    img.style.display = "block";
+                } else {
+                    img.src = "";
+                    delete img.style.display;
+                }
+                await this.panelPropiedades.cambioMensajesItem(item);
+            }
+            if (item && item.mensajes) {
+                let flotante = window.geoportal.capas.getGrupoActivo().getPanelesFlotantes().find(p => p.item && p.item.id == id);
+                if (flotante) await flotante.cambioMensajesItem(item);
+            }
+        });
     }
 }
 ZVC.export(Capas);

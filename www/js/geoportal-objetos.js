@@ -11,7 +11,7 @@ class ObjetoGeoportal {
     }
     static handleMouseClick(puntoMapa, puntoCanvas) {
         if (window.geoportal.agregandoObjeto == "punto") {
-            window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa));
+            window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa, null, null));
         } else if (window.geoportal.agregandoObjeto == "area") {
             window.geoportal.mapa.konvaLayerAgregando.destroyChildren();
             window.geoportal.mapa.konvaLayerAgregando.draw();
@@ -42,8 +42,9 @@ class ObjetoGeoportal {
         ObjetoGeoportal.agregandoArea = null;
     }
 
-    constructor(config) {
+    constructor(config, id) {
         this.tipo = "abstract";
+        this.id = id;
         this.config = config;
         this.seleccionado = false;
         this.usaAnalisis = true;
@@ -94,17 +95,17 @@ class ObjetoGeoportal {
 }
 
 class Punto extends ObjetoGeoportal {    
-    constructor(puntoMapa, nombre, config) {
+    constructor(puntoMapa, nombre, config, id) {
         if (!nombre) {
             if (!Punto.siguienteNumeroPunto) Punto.siguienteNumeroPunto = 1;
             nombre = "Punto " + Punto.siguienteNumeroPunto++
         }
         let defaultConfig = {
             nombre:nombre,
-            movible:true, iconoEnMapa:null
+            movible:true, iconoEnMapa:null, nombreEditable:true
         }        
         let initialConfig = $.extend({}, defaultConfig, config?config:{});
-        super(initialConfig);
+        super(initialConfig, id?id:uuidv4());
         this.configAnalisis.analizador = "serie-tiempo";
         this.configAnalisis.analizadores = {
             "serie-tiempo":{
@@ -121,6 +122,7 @@ class Punto extends ObjetoGeoportal {
         this.valoresObservados = []; // indice de "observa"
         this.movible = initialConfig.movible;
         this.iconoEnMapa = initialConfig.iconoEnMapa;
+        this.mensajes = new MensajesGeoportal(this);
     }
     editoPadre() {
         let p = this.nombre.indexOf("-");
@@ -166,7 +168,7 @@ class Punto extends ObjetoGeoportal {
                 let x = point.x + 3;
                 let value = this.valoresObservados[idx];
                 let text, textColor;
-                if (value == "S/D") {
+                if (value && (value == "S/D" || value.value === undefined)) {
                     text = "Sin Datos"; textColor = "orange";
                 } else if (value === null) {
                     text = "... ?? ..."; textColor = "orange";
@@ -227,20 +229,25 @@ class Punto extends ObjetoGeoportal {
                     html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
                     html += "</tr>";
                     
-                    let tiempo = TimeUtils.fromUTCMillis(value.time);
-                    html += "<tr>";
-                    html += "<td class='icono-tooltip'><i class='fas fa-lg fa-clock'></i></td>";
-                    html += "<td class='propiedad-tooltip'>Tiempo:</td>";
-                    html += "<td class='valor-tooltip'>" + tiempo.format("DD/MMM/YYYY HH:mm") + "</td>";
-                    html += "</tr>";
-
-                    let modelo = (value.metadata && value.metadata.modelo)?value.metadata.modelo:null;
-                    if (modelo) {
-                        html += "<tr>";
-                        html += "<td class='icono-tooltip'><i class='fas fa-lg fa-square-root-alt'></i></td>";
-                        html += "<td class='propiedad-tooltip'>Ejecución Modelo:</td>";
-                        html += "<td class='valor-tooltip'>" + modelo + "</td>";
-                        html += "</tr>";
+                    if (value.atributos) {
+                        Object.keys(value.atributos).forEach(att => {
+                            let valor = value.atributos[att];
+                            let icono = "fa-tag";
+                            if (att.toLowerCase().indexOf("tiempo") >= 0) {
+                                let dt = moment.tz(valor, window.timeZone);
+                                if (dt.isValid()) {
+                                    valor = dt.format("DD/MMM/YYYY HH:mm");
+                                    icono = "fa-clock";
+                                }
+                            }
+                            if (att.toLowerCase().indexOf("modelo") >= 0) icono = "fa-square-root-alt";
+                            if (typeof valor == "string" && valor.length > 25) valor = valor.substr(0,20) + "...";
+                            html += "<tr>";
+                            html += "<td class='icono-tooltip'><i class='fas fa-lg " + icono + "'></i></td>";
+                            html += "<td class='propiedad-tooltip'>" + att + ":</td>";
+                            html += "<td class='valor-tooltip'>" + valor + "</td>";
+                            html += "</tr>";
+                        })
                     }
 
                     html += "</table>";
@@ -409,21 +416,32 @@ class Punto extends ObjetoGeoportal {
     getRutaPanelConfiguracion() {return "main/config-objetos/PConfigPunto"}
     getIcono() {return this.iconoEnMapa || "img/iconos/punto.svg"}
     recalculaValoresObservados() {
+        this.mensajes.clear();
         this.valoresObservados = this.observa.reduce((lista, o) => {
             lista.push(null);
             return lista;
         }, []);        
         this.observa.forEach((o, i) => {
             let infoVar = window.geoportal.getInfoVarParaConsulta(o.codigoVariable, this);
+            this.mensajes.addOrigen(infoVar.variable.origen);
             let query = {
                 lat:this.lat, lng:this.lng, time:window.geoportal.tiempo,
                 levelIndex:o.nivel !== undefined?o.nivel:0,
-                codigoVariable:infoVar.codigoVariable
+                codigoVariable:infoVar.codigoVariable,
+                metadataCompleta:true
             }
             let capa = infoVar.capaQuery;
             capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
-                if (err) this.valoresObservados[i] = "Error: " + err;
-                else this.valoresObservados[i] = resultado;
+                if (err) {
+                    this.valoresObservados[i] = "Error: " + err;
+                    this.mensajes.addError(infoVar.variable.nombre + ": " + err.toString());
+                } else {
+                    this.valoresObservados[i] = resultado;
+                    if (resultado == "S/D" || resultado == null || resultado === undefined) this.mensajes.addError(infoVar.variable.nombre + ": Sin Datos");
+                    else if (typeof resultado == "string") this.mensajes.addError(infoVar.variable.nombre + ": " + resultado);  
+                    else if (resultado && resultado.value === undefined) this.mensajes.addError(infoVar.variable.nombre + ": Sin Datos");
+                    else this.mensajes.parse(resultado, infoVar.variable.nombre);
+                }
                 window.geoportal.mapa.callDibujaObjetos();
             });
         });
@@ -448,49 +466,8 @@ class Punto extends ObjetoGeoportal {
 
 }
 
-class DataPunto extends Punto {
-    constructor(config) {
-        super({lat:config.lat, lng:config.lng}, config.nombre, config);
-        this.codigo = config.codigo;
-        this.datasources = config.datasources;
-        this.nombreEditable = false;
-    }
-}
-class DataObjects extends ObjetoGeoportal {
-    constructor(ds, config) {
-        super(config);
-        this.tipo = "dataObjects";
-        this.ds = ds;
-        this.objetos = config.objetos.reduce((lista, o) => {
-            switch(o.tipo) {
-                case "punto":
-                    lista.push(new DataPunto(o));
-                    break;
-                default:
-                    console.error("Data Object", o);
-                    throw "Tipo de DataObject '" + o.tipo + "' no manejado";
-            }
-            return lista;
-        }, []);
-        this.usaAnalisis = false;
-        this.icono = config.icono;
-    }
-    getRutaPanelConfiguracion() {return null}
-    getIcono() {return this.icono}
-    getSubitems() {return this.objetos}
-    dibuja(konvaLayer, konvaLayerEfectos) {
-        this.objetos.forEach(o => o.dibuja(konvaLayer, konvaLayerEfectos));        
-    }
-    destruye() {
-        this.objetos.forEach(o => o.destruye())
-    }
-    cambioTiempo() {
-        this.objetos.forEach(o => o.cambioTiempo())
-    }
-}
-
 class Area extends ObjetoGeoportal {    
-    constructor(p1, p2, nombre, config) {
+    constructor(p1, p2, nombre, config, id) {
         if (!nombre) {
             if (!Area.siguienteNumeroArea) Area.siguienteNumeroArea = 1;
             nombre = "Área " + Area.siguienteNumeroArea++
@@ -500,7 +477,7 @@ class Area extends ObjetoGeoportal {
             movible:true
         }
         let initialConfig = $.extend({}, defaultConfig, config?config:{});
-        super(initialConfig);
+        super(initialConfig, id?id:uuidv4());
         this.configAnalisis = {
             analizador:"rect-area-3d",
             height:300, width:260,
@@ -529,7 +506,6 @@ class Area extends ObjetoGeoportal {
             new Punto({lng:lngE, lat:latS}, nombre + "-se")
         ];
         this.objetos.forEach(o => {
-            o.id = uuidv4();
             o.objetoPadre = this
         });
 
@@ -740,9 +716,11 @@ class AnalizadorObjeto {
     }
 
     constructor(codigo, objeto, config) {
+        this.id = uuidv4();
         this.codigo = codigo;
         this.objeto = objeto;
         this._config = config;
+        this.mensajes = new MensajesGeoportal(this);
     }
 
     get config() {return this.objeto.configAnalisis.analizadores[this.codigo]}

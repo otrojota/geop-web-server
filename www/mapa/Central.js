@@ -79,7 +79,6 @@ class Central extends ZCustomController {
     }
 
     doResize() {
-        console.log("central resize");
         let w = this.$view.innerWidth();
         let h = this.$view.innerHeight();
         let leftTiempo = 10;

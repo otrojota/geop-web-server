@@ -57,15 +57,18 @@ class VisualizadorParticulas extends VisualizadorCapa {
         window.geoportal.mapa.eliminaCapaMapa(this.lyParticulas);    
     }
     refresca() {
+        super.refresca();
         this.startWorking(); 
         this.capa.resuelveConsulta("windglPNG", {}, async (err, data) => {
-            if (err) {
+            if (err) {                
                 this.finishWorking();
+                this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
             }
-            this.data = data;
+            this.mensajes.parse(data);
             console.log("data", data);
+            this.data = data;
             await (new Promise(resolve => {
                 let img = new Image();
                 img.crossOrigin = "anonymous";

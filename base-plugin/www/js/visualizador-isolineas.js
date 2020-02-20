@@ -71,17 +71,25 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         }        
     }
     refresca() {
+        super.refresca();
         this.startWorking();
         this.lyCurvas.clearLayers();
         this.panelMarkers.innerHTML = "";
         this.capa.getPreConsulta((err, preconsulta) => {
             if (err) {
                 this.finishWorking();
+                this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
             }
             this.preconsulta = preconsulta;
-            this.refresca2();
+            this.mensajes.parse(preconsulta);
+            try {
+                this.refresca2();
+            } catch(err) {
+                this.mensajes.addError(err.toString());
+                throw err;
+            }
         })
     }
     refresca2() {
@@ -92,6 +100,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             step = Math.pow(10, parseInt(Math.log10(max - min) - 1));
             while (parseInt((max - min) / step) > 10) step *= 2;
             this.config.step = step;
+            this.mensajes.addInformacion("Se usa incremento calculado entre líneas: " + step);
         } else {
             if ((max - min) / step > 50) throw "Demasiadas Líneas, aumente el incremento"
         }
@@ -101,6 +110,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         this.capa.resuelveConsulta("isolineas", args, (err, ret) => {
             if (err) {
                 this.finishWorking();
+                this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
             }
@@ -109,6 +119,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
                 .then(ret => {
                     if (ret.error) {
                         this.finishWorking();
+                        this.mensajes.addError(ret.error);
                         console.error(ret.error);
                         return;
                     }

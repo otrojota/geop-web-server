@@ -305,7 +305,6 @@ class MapaGeoPortal {
                 capaObjetosUsuario = await window.geoportal.capas.addObjetosUsuario();
             }
         }
-        o.id = uuidv4();
         capaObjetosUsuario.addObjetoUsuario(o);
         window.geoportal.panelTop.agregoObjeto();
         grupoActivo.itemActivo = o;

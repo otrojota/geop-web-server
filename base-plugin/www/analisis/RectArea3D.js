@@ -3,6 +3,7 @@ class RectArea3D extends ZCustomController {
         if (!this.objeto) return null;
         return this.objeto.configAnalisis.analizadores["rect-area-3d"];
     }
+    get analizador() {return this.options.analizador}
     onThis_init(options) {
         this.options = options; 
         
@@ -20,6 +21,7 @@ class RectArea3D extends ZCustomController {
         this.options.contenedor.iniciaTrabajando();
         this.objeto = objeto;        
         let infoVar = window.geoportal.getInfoVarParaConsulta(this.config.variable, this.objeto);
+        this.analizador.mensajes.clear();
         return new Promise((resolve, reject) => {
             infoVar.capaQuery.resuelveConsulta("matrizRectangular", {
                 codigoVariable:infoVar.codigoVariable,
@@ -30,16 +32,20 @@ class RectArea3D extends ZCustomController {
             }, (error, data) => {
                 if (error) {
                     this.options.contenedor.finalizaTrabajando();
+                    this.analizador.mensajes.addError(error.toString());
                     console.error(error);
                     reject(error);
                     return;
                 } 
-                console.log("data", data);
+                this.analizador.mensajes.parse(data);
                 this.data = data;
                 this.infoVar = infoVar;
                 this.refrescaGrafico()
                     .then(_ => resolve())
-                    .catch(err => reject(err))
+                    .catch(err => {
+                        this.analizador.mensajes.addError(err.toString());
+                        reject(err)
+                    })
                     .finally(_ => this.options.contenedor.finalizaTrabajando())
             });
         });
@@ -51,6 +57,7 @@ class RectArea3D extends ZCustomController {
     }
     async redibuja() {
         // Llamado por PanelAnalisis cuando cambia escala u otra propiedad que no requiere releer los datos
+        this.analizador.mensajes.clear();
         await this.refrescaGrafico(); 
     }
     async refrescaGrafico() {
@@ -72,21 +79,11 @@ class RectArea3D extends ZCustomController {
                 }
             }
             let min = this.data.min, max = this.data.max;
-            /*
-            let d = max - min;
-            if (d > 0) {
-                let orden = parseInt(Math.log10(d)) - 1;
-                let factor = Math.pow(10, orden);
-                max += factor;
-                max = this.corrigeDecimales(factor * parseInt(max / factor));
-                min -= factor;
-                min = this.corrigeDecimales(factor * parseInt(min / factor));
-            }
-            */
             let minLat = this.data.yllcorner, maxLat = this.data.yllcorner + this.data.nrows * this.data.dy;
             let minLng = this.data.xllcorner, maxLng = this.data.xllcorner + this.data.ncols * this.data.dx;
             let distLng = turf.distance(turf.point([minLng, (minLat + maxLat) / 2]), [maxLng, (minLat + maxLat) / 2]);
             let distLat = turf.distance(turf.point([(minLng + maxLng) / 2, minLat]), [(minLng + maxLng) / 2, maxLat]);
+            let dZ = (max -min) / 1000;
             console.log("distancia lng, lat", distLng, distLat);
             // Ajustar proporcion de acuerdo a las distancias 
             if (this.config.escalarLngLat) {
@@ -105,7 +102,6 @@ class RectArea3D extends ZCustomController {
                 distLat = turf.distance(turf.point([(minLng + maxLng) / 2, minLat]), [(minLng + maxLng) / 2, maxLat]);
                 console.log("distancias ajustadas lng, lat", distLng, distLat);
                 if (this.config.escalarZ) {
-                    let dZ = (max -min) / 1000;
                     console.log("distancia Z", dZ);
                     // distLng y distLat se asumen iguales
                     if (distLng > dZ) {
@@ -128,6 +124,13 @@ class RectArea3D extends ZCustomController {
                     console.log("distancias Ajustadas (lng, lat, z)", distLng, distLat, dZ);
                 }
             }
+            let kmLng = GeoPortal.round(distLng, 2).toLocaleString();
+            let kmLat = GeoPortal.round(distLat, 2).toLocaleString();
+            let area = distLng * distLat;
+            let kmArea = GeoPortal.round(area, 2).toLocaleString();
+            this.analizador.mensajes.addInformacion("Superficie Calculada en Gráfico:" + kmLng + "[lng] x " + kmLat + "[lat] = " + kmArea + "[km2]");
+            let kmZ = GeoPortal.round(dZ, 2).toLocaleString();
+            this.analizador.mensajes.addInformacion("Altura Proporcional:" + kmZ + "[km]");
 
             /*
             d = maxLat - minLat;

@@ -61,6 +61,7 @@ class VisualizadorVectores extends VisualizadorCapa {
         window.geoportal.mapa.eliminaCapaMapa(this.lyVectores);
     }
     refresca() {
+        super.refresca();
         this.startWorking();
         this.konvaLayer.destroyChildren();
         this.konvaLayer.draw();
@@ -69,10 +70,12 @@ class VisualizadorVectores extends VisualizadorCapa {
         }, async (err, data) => {
             if (err) {
                 this.finishWorking();
+                this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
             }
             this.data = data;
+            this.mensajes.parse(data);
             this.magnitudes = [];
             this.minMagnitud = undefined;
             this.maxMagnitud = undefined;
@@ -89,6 +92,7 @@ class VisualizadorVectores extends VisualizadorCapa {
             }
             if (this.minMagnitud === undefined || this.maxMagnitud === undefined) {
                 this.finishWorking();
+                this.mensajes.addError("No hay Datos");
                 throw "No hay Datos";
             }
             let min, max;
@@ -99,6 +103,7 @@ class VisualizadorVectores extends VisualizadorCapa {
                 this.config.escala.max = max;
                 if (min === max) {
                     this.finishWorking();
+                    this.mensajes.addError("No hay Datos");
                     throw "No hay datos";
                 }
             } else {

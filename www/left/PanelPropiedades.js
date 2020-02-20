@@ -138,8 +138,10 @@ class PanelPropiedades extends ZCustomController {
             })
         }
         this.paneles = [];
-        console.log("item", this.item);
-        let paneles = this.item.getPanelesPropiedades();
+        let paneles = [{
+            codigo:"mensajes",
+            path:"left/propiedades/Mensajes"
+        }].concat(this.item.getPanelesPropiedades());
         let html = paneles.reduce((html, panel) => {
             html += "<div id='panprop-" + panel.codigo + "' class='subpanel-propiedades' data-z-component='" + panel.path + "'></div>";
             return html;
@@ -195,6 +197,11 @@ class PanelPropiedades extends ZCustomController {
             this.refresca();
             window.capasController.refrescaPanelPropiedades();
         }
+    }
+
+    async cambioMensajesItem(item) {
+        if (!this.item || this.item.id != item.id) return;
+        this.paneles[0].refresca();
     }
 }
 ZVC.export(PanelPropiedades);

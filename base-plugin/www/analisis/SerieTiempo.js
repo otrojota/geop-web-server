@@ -3,6 +3,7 @@ class SerieTiempo extends ZCustomController {
         if (!this.objeto) return null;
         return this.objeto.configAnalisis.analizadores["serie-tiempo"];
     }
+    get analizador() {return this.options.analizador}
     onThis_init(options) {
         this.options = options;
         this.t0 = null; this.t1 = null;
@@ -45,14 +46,19 @@ class SerieTiempo extends ZCustomController {
             }
         }
         let promesas = [];
-        // Var1
+
         let var1 = this.config.variable, nivelVar1 = this.config.nivelVariable;
         if (var1 != this.var1) recrearGrafico = true;
         cambioVar1 = var1 != this.var1 || nivelVar1 != this.nivelVar1;
-        if (cambioVar1 || cambioTiempo || cambioPosicion) {
+        let var2 = this.config.variable2, nivelVar2 = this.config.nivelVariable2;
+        if (var2 != this.var2) recrearGrafico = true;
+        cambioVar2 = var2 != this.var2 || nivelVar2 != this.nivelVar2;
+        if (cambioVar1 || cambioVar2 || cambioTiempo || cambioPosicion) {
+            this.analizador.mensajes.clear();
             this.var1 = var1; this.nivelVar1 = nivelVar1; this.serie1 = null;
             if (this.var1) {
                 let infoVar = window.geoportal.getInfoVarParaConsulta(this.var1, this.objeto);
+                this.analizador.mensajes.addOrigen(infoVar.variable.origen);
                 promesas.push(new Promise((resolve, reject) => {
                     infoVar.capaQuery.resuelveConsulta("serieTiempo", {
                         codigoVariable:infoVar.codigoVariable,
@@ -60,24 +66,25 @@ class SerieTiempo extends ZCustomController {
                         levelIndex:this.nivelVar1,
                         time0:this.t0, time1:this.t1
                     }, (err, result) => {
-                        if (err) {reject(err); return;}
+                        if (err) {
+                            this.analizador.mensajes.addError(err.toString());
+                            reject(err); 
+                            return;
+                        }
+                        this.analizador.mensajes.parse(result, infoVar.variable.nombre);
+                        if (!result.data.length) this.analizador.mensajes.addError(infoVar.variable.nombre + ": No hay datos para el período seleccionado");
                         let serie = result.data.reduce((lista, punto) => {
-                            lista.push({x:punto.time, y:punto.value, metadata:punto.metadata})
+                            lista.push({x:punto.time, y:punto.value, atributos:punto.atributos})
                             return lista;
                         }, [])                    
                         resolve(serie);                    
                     })
                 }));
             }
-        }
-        // Var2
-        let var2 = this.config.variable2, nivelVar2 = this.config.nivelVariable2;
-        if (var2 != this.var2) recrearGrafico = true;
-        cambioVar2 = var2 != this.var2 || nivelVar2 != this.nivelVar2;
-        if (cambioVar2 || cambioTiempo || cambioPosicion) {
             this.var2 = var2; this.nivelVar2 = nivelVar2; this.serie2 = null;
             if (this.var2) {
                 let infoVar = window.geoportal.getInfoVarParaConsulta(this.var2, this.objeto);
+                this.analizador.mensajes.addOrigen(infoVar.variable.origen);
                 promesas.push(new Promise((resolve, reject) => {
                     infoVar.capaQuery.resuelveConsulta("serieTiempo", {
                         codigoVariable:infoVar.codigoVariable,
@@ -85,7 +92,13 @@ class SerieTiempo extends ZCustomController {
                         levelIndex:this.nivelVar2,
                         time0:this.t0, time1:this.t1
                     }, (err, result) => {
-                        if (err) {reject(err); return;}
+                        if (err) {
+                            this.analizador.mensajes.addError(err.toString());
+                            reject(err); 
+                            return;
+                        }
+                        this.analizador.mensajes.parse(result, infoVar.variable.nombre);
+                        if (!result.data.length) this.analizador.mensajes.addError(infoVar.variable.nombre + ": No hay datos para el período seleccionado");
                         let serie = result.data.reduce((lista, punto) => {
                             lista.push([punto.time, punto.value])
                             return lista;
@@ -95,26 +108,10 @@ class SerieTiempo extends ZCustomController {
                 }));
             }
         }
-
         try {
-            let res = await Promise.all(promesas);        
-            if (cambioTiempo || cambioPosicion) {
-                if (this.var1) {
-                    this.serie1 = res[0];
-                    if (this.var2) {
-                        this.serie2 = res[1];
-                    }
-                } else if (this.var2) {
-                    this.serie2 = res[0];
-                }
-            } else if (cambioVar1 && this.var1) {
-                this.serie1 = res[0];
-                if (cambioVar2 && this.var2) {
-                    this.serie2 = res[1];
-                }
-            } else if (cambioVar2 && this.var2) {
-                this.serie2 = res[0];
-            }
+            let res = await Promise.all(promesas);    
+            this.serie1 = res[0];    
+            this.serie2 = res[1];
             this.refrescaGrafico(recrearGrafico);
         } catch(error) {
             console.error(error);
@@ -207,8 +204,7 @@ class SerieTiempo extends ZCustomController {
                                 origen = window.geoportal.origenes[capa.origen],
                                 unidad = capa.unidad,
                                 icono = capa.urlIcono,
-                                metadata = this.metadata,
-                                modelo = (metadata && metadata.modelo)?metadata.modelo:null;
+                                atributos = this.point.atributos
                             let html = "<div class='tooltip-contenido'>";
                             html += "<div class='tooltip-titulo'>" + nombre + "</div>";
                             if (nombreNivel) html += "<div class='tooltip-subtitulo'>" + nombreNivel + "</div>";
@@ -221,12 +217,14 @@ class SerieTiempo extends ZCustomController {
                             html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
                             html += "</tr>";
                             
-                            let tiempo = TimeUtils.fromUTCMillis(this.x);
+                            /*
+                            let tiempo = moment.tz(this.x, window.timeZone);
                             html += "<tr>";
                             html += "<td class='icono-tooltip'><i class='fas fa-lg fa-clock'></i></td>";
                             html += "<td class='propiedad-tooltip'>Tiempo:</td>";
                             html += "<td class='valor-tooltip'>" + tiempo.format("DD/MMM/YYYY HH:mm") + "</td>";
                             html += "</tr>";
+                            */
 
                             let valor = window.geoportal.formateaValorVariable(capa, this.y) + " [" + unidad + "]";
                             html += "<tr>";
@@ -234,13 +232,34 @@ class SerieTiempo extends ZCustomController {
                             html += "<td class='propiedad-tooltip'>Valor:</td>";
                             html += "<td class='valor-tooltip'>" + valor + "</td>";
                             html += "</tr>";
-
+                            /*
                             if (modelo) {
                                 html += "<tr>";
                                 html += "<td class='icono-tooltip'><i class='fas fa-lg fa-square-root-alt'></i></td>";
                                 html += "<td class='propiedad-tooltip'>Ejecución Modelo:</td>";
                                 html += "<td class='valor-tooltip'>" + modelo + "</td>";
                                 html += "</tr>";
+                            }
+                            */
+                           if (atributos) {
+                                Object.keys(atributos).forEach(att => {
+                                    let valor = atributos[att];
+                                    let icono = "fa-tag";
+                                    if (att.toLowerCase().indexOf("tiempo") >= 0) {
+                                        let dt = moment.tz(valor, window.timeZone);
+                                        if (dt.isValid()) {
+                                            valor = dt.format("DD/MMM/YYYY HH:mm");
+                                            icono = "fa-clock";
+                                        }
+                                    }
+                                    if (att.toLowerCase().indexOf("modelo") >= 0) icono = "fa-square-root-alt";
+                                    if (typeof valor == "string" && valor.length > 25) valor = valor.substr(0,20) + "...";
+                                    html += "<tr>";
+                                    html += "<td class='icono-tooltip'><i class='fas fa-lg " + icono + "'></i></td>";
+                                    html += "<td class='propiedad-tooltip'>" + att + ":</td>";
+                                    html += "<td class='valor-tooltip'>" + valor + "</td>";
+                                    html += "</tr>";
+                                })
                             }
 
                             html += "</table>";

@@ -183,6 +183,9 @@ class GeoPortal {
     hideTooltip() {
         this.panelCentral.hideTooltip();
     }
+    getOrigen(codigo) {
+        return this.origenes[codigo];
+    }
 
     // Eventos
     movioMapa() {
@@ -323,12 +326,14 @@ class GeoPortal {
         if (p1 < 0) {
             return {
                 capaQuery:new Capa(window.geoportal.capasDisponibles[codigo]),
-                codigoVariable:codigo.substr(p0+1)
+                codigoVariable:codigo.substr(p0+1),
+                variable:this.getVariable(codigo)
             }
         }
         return {
             capaQuery:objeto.capa,
-            codigoVariable:codigo.substr(p0+1)
+            codigoVariable:codigo.substr(p0+1),
+            variable:this.getVariable(codigo)
         }
     }
 }

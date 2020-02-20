@@ -67,16 +67,24 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         }        
     }
     refresca() {
+        super.refresca();
         this.startWorking();
         this.lyBandas.clearLayers();
         this.capa.getPreConsulta((err, preconsulta) => {
             if (err) {
                 this.finishWorking();
+                this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
             }
             this.preconsulta = preconsulta;
-            this.refresca2();
+            this.mensajes.parse(preconsulta);
+            try {
+                this.refresca2();
+            } catch(err) {
+                this.mensajes.addError(err.toString());
+                throw err;
+            }
         })
     }
     refresca2() {
@@ -86,7 +94,7 @@ class VisualizadorIsobandas extends VisualizadorCapa {
             max = this.preconsulta.max;
             this.config.escala.min = min;
             this.config.escala.max = max;
-            if (min === max) throw "No hay datos";
+            if (min === max) throw "No hay Datos";            
         } else {
             min = this.config.escala.min;
             max = this.config.escala.max;
@@ -97,14 +105,18 @@ class VisualizadorIsobandas extends VisualizadorCapa {
             step = Math.pow(10, parseInt(Math.log10(max - min) - 1));
             while (parseInt((max - min) / step) > 60) step *= 2;
             this.config.step = step;
+            this.mensajes.addInformacion("Se usa incremento calculado entre bandas: " + step);
         } else {
-            if ((max - min) / step > 100) throw "Demasiadas Bandas, aumente el incremento"
+            if ((max - min) / step > 100) {
+                throw "Demasiadas Bandas, aumente el incremento"
+            }
         }
         let args = JSON.parse(JSON.stringify(this.preconsulta));
         args.incremento = step;
         this.capa.resuelveConsulta("isobandas", args, (err, ret) => {
             if (err) {
                 this.finishWorking();
+                this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
             }
@@ -116,6 +128,7 @@ class VisualizadorIsobandas extends VisualizadorCapa {
                 .then(ret => {
                     if (ret.error) {
                         this.finishWorking();
+                        this.mensajes.addError(ret.error);
                         console.error(ret.error);
                         return;
                     }

@@ -67,7 +67,6 @@ class PanelAnalisis extends ZCustomController {
         await this.destruyePanelAnalisis();
         let definicionAnalizador = this.edAnalizador.selectedRow;
         this.iconoAnalizador.view.setAttribute("src", definicionAnalizador.icono);
-        console.log("buscando configuracion del analizador en:", this.objeto)
         if (!this.configAnalisis.analizadores[definicionAnalizador.codigo]) {
             this.configAnalisis.analizadores[definicionAnalizador.codigo] = {};
         }
@@ -94,7 +93,7 @@ class PanelAnalisis extends ZCustomController {
     }
     async creaPaneles() {
         this.paneles = [];
-        let paneles = this.analizador.getPanelesPropiedades();
+        let paneles = [{codigo:"mensajes", path:"bottom/MensajesAnalisis"}].concat(this.analizador.getPanelesPropiedades());
         let html = paneles.reduce((html, panel) => {
             html += "<div id='panprop-" + panel.codigo + "' class='subpanel-propiedades' data-z-component='" + panel.path + "'></div>";
             return html;
@@ -108,7 +107,7 @@ class PanelAnalisis extends ZCustomController {
         }
     }
     async creaPanelAnalisis() {
-        await this.contenedorAnalisis.load(this.analizador.getRutaPanelAnalisis(), {contenedor:this});
+        await this.contenedorAnalisis.load(this.analizador.getRutaPanelAnalisis(), {contenedor:this, analizador:this.analizador});
     }
     async refrescaPaneles() {
         for (let i=0; i<this.paneles.length; i++) {
@@ -147,6 +146,11 @@ class PanelAnalisis extends ZCustomController {
     finalizaTrabajando() {
         this.iconoAnalizador.show();
         this.iconoTrabajando.hide();
+    }
+
+    async cambioMensajesItem(idItem) {
+        if (!this.analizador || this.analizador.id != idItem) return;
+        this.paneles[0].refresca();
     }
 }
 
