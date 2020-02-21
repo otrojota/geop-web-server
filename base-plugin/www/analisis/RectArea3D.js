@@ -22,6 +22,7 @@ class RectArea3D extends ZCustomController {
         this.objeto = objeto;        
         let infoVar = window.geoportal.getInfoVarParaConsulta(this.config.variable, this.objeto);
         this.analizador.mensajes.clear();
+        this.analizador.mensajes.addOrigen(infoVar.variable.origen);
         return new Promise((resolve, reject) => {
             infoVar.capaQuery.resuelveConsulta("matrizRectangular", {
                 codigoVariable:infoVar.codigoVariable,
@@ -84,7 +85,6 @@ class RectArea3D extends ZCustomController {
             let distLng = turf.distance(turf.point([minLng, (minLat + maxLat) / 2]), [maxLng, (minLat + maxLat) / 2]);
             let distLat = turf.distance(turf.point([(minLng + maxLng) / 2, minLat]), [(minLng + maxLng) / 2, maxLat]);
             let dZ = (max -min) / 1000;
-            console.log("distancia lng, lat", distLng, distLat);
             // Ajustar proporcion de acuerdo a las distancias 
             if (this.config.escalarLngLat) {
                 if (distLng > distLat) {
@@ -100,9 +100,7 @@ class RectArea3D extends ZCustomController {
                 }
                 distLng = turf.distance(turf.point([minLng, (minLat + maxLat) / 2]), [maxLng, (minLat + maxLat) / 2]);
                 distLat = turf.distance(turf.point([(minLng + maxLng) / 2, minLat]), [(minLng + maxLng) / 2, maxLat]);
-                console.log("distancias ajustadas lng, lat", distLng, distLat);
                 if (this.config.escalarZ) {
-                    console.log("distancia Z", dZ);
                     // distLng y distLat se asumen iguales
                     if (distLng > dZ) {
                         let factor = (distLng - dZ) / dZ;
@@ -121,7 +119,6 @@ class RectArea3D extends ZCustomController {
                     distLng = turf.distance(turf.point([minLng, (minLat + maxLat) / 2]), [maxLng, (minLat + maxLat) / 2]);
                     distLat = turf.distance(turf.point([(minLng + maxLng) / 2, minLat]), [(minLng + maxLng) / 2, maxLat]);
                     dZ = (max -min) / 1000;
-                    console.log("distancias Ajustadas (lng, lat, z)", distLng, distLat, dZ);
                 }
             }
             let kmLng = GeoPortal.round(distLng, 2).toLocaleString();
@@ -132,28 +129,12 @@ class RectArea3D extends ZCustomController {
             let kmZ = GeoPortal.round(dZ, 2).toLocaleString();
             this.analizador.mensajes.addInformacion("Altura Proporcional:" + kmZ + "[km]");
 
-            /*
-            d = maxLat - minLat;
-            if (d > 0) {
-                let orden = parseInt(Math.log10(d)) - 1;
-                let factor = Math.pow(10, orden);
-                maxLat += factor;
-                maxLat = this.corrigeDecimales(factor * parseInt(maxLat / factor));
-                minLat -= factor;
-                minLat = this.corrigeDecimales(factor * parseInt(minLat / factor));
-            }               
-            d = maxLng - minLng;
-            if (d > 0) {
-                let orden = parseInt(Math.log10(d)) - 1;
-                let factor = Math.pow(10, orden);
-                maxLng += factor;
-                maxLng = this.corrigeDecimales(factor * parseInt(maxLng / factor));
-                minLng -= factor;
-                minLng = this.corrigeDecimales(factor * parseInt(minLng / factor));
-            }   
-            */
             let defVariable = window.geoportal.getVariable(this.config.variable);
             let titulo = this.infoVar.capaQuery.nombre;
+            if (defVariable.niveles && defVariable.niveles.length) {
+                let nivel = defVariable.niveles[this.config.nivelVariable];
+                titulo += " [" + nivel.descripcion + "]";
+            }
             let options = {
                 title:{text:titulo},
                 backgroundColor: '#fff',
@@ -183,7 +164,7 @@ class RectArea3D extends ZCustomController {
                 },
                 zAxis3D: {
                     type: 'value',
-                    name:titulo + " [" + this.data.unit + "]",
+                    name:"", //titulo + " [" + this.data.unit + "]",
                     axisLabel:{
                         formatter:v => v.toFixed(defVariable.decimales) + " [" + defVariable.unidad + "]"
                     },

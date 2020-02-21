@@ -163,17 +163,36 @@ class PanelPropiedades extends ZCustomController {
         }    
     }
     async creaDesde(item) {
-        if (this.item) {
-            if (item) {
-                if (item.id != this.item.id) await this.destruye();
-            } else {
-                await this.destruye();
-            }
+        if (!this.colaCreacion) this.colaCreacion = [];
+        if (this.creando) {
+            if (this.colaCreacion.indexOf(item) < 0) this.colaCreacion.push(item);
+            return;
         }
-        this.item = item;        
-        if (!this.item) return;
-        await this.crea();
-        await this.refresca();            
+        this.creando = true;
+        try {
+            if (this.item) {
+                if (item) {
+                    if (item.id != this.item.id) await this.destruye();
+                    else {
+                        this.refresca();
+                        return;
+                    }
+                } else {
+                    await this.destruye();
+                }
+            }
+            this.item = item;        
+            if (!this.item) return;
+            await this.crea();
+            await this.refresca();  
+        } finally {
+            this.creando = false;
+            if (this.colaCreacion.length) {
+                let nextItem = this.colaCreacion[0];
+                this.colaCreacion.splice(0,1);
+                setTimeout(_ => this.creaDesde(nextItem), 0);
+            }
+        }        
     }
     async refresca() {
         if (!this.item) return;
@@ -201,7 +220,7 @@ class PanelPropiedades extends ZCustomController {
 
     async cambioMensajesItem(item) {
         if (!this.item || this.item.id != item.id) return;
-        this.paneles[0].refresca();
+        await this.paneles[0].refresca();
     }
 }
 ZVC.export(PanelPropiedades);

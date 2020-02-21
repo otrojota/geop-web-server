@@ -48,6 +48,7 @@ class MensajesGeoportal {
 
     clear() {
         this.mensajes = [];
+        this.origenes = [];
         MensajesGeoportal.informaCambios(this);
     }
 

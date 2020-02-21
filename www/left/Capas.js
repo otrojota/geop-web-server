@@ -161,7 +161,7 @@ class Capas extends ZCustomController {
         await this.refrescaPanelPropiedades();
     }
 
-    async refrescaPanelPropiedades() {
+    async refrescaPanelPropiedades() {        
         let itemActivo = window.geoportal.capas.getGrupoActivo().itemActivo;
         if (itemActivo.configPanel && !itemActivo.configPanel.flotante) {
             if (itemActivo.id == this.panelPropiedades.idItem) {

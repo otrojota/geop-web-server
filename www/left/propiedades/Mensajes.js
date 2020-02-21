@@ -29,7 +29,11 @@ class Mensajes extends ZCustomController {
             this.contenido.hide();
         }
 
-        if (!this.mensajes || !this.mensajes.tieneDatos) {
+        if (!this.mensajes) {
+            this.hide();
+            return;
+        }
+        if (!this.mensajes.tieneDatos) {
             this.hide();
             return;
         }

@@ -9,7 +9,7 @@ class Mensajes extends ZCustomController {
         let c = this.analizador.config.paneles[this.codigo];
         if (c) return c;
         this.analizador.config.paneles[this.codigo] = {
-            abierto:true
+            abierto:false
         }
         return this.analizador.config.paneles[this.codigo];
     }
