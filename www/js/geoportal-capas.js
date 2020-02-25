@@ -224,13 +224,33 @@ class Capa {
                     })
                     return;
                 }
-                res.json()
-                    .then(ret => {
-                        this.preconsulta = ret;
-                        if (this.listenersPreconsulta) {
-                            this.listenersPreconsulta.forEach(cb => cb(null, this.preconsulta));
+                res.text()
+                    .then(txt => {
+                        try {
+                            this.preconsulta = JSON.parse(txt);
+                            if (this.listenersPreconsulta) {
+                                this.listenersPreconsulta.forEach(cb => {
+                                    try {
+                                        cb(null, this.preconsulta)
+                                    } catch(error) {
+                                        console.error("Error en listener preconsulta", error);
+                                    }
+                                });
+                            }
+                        } catch(err) {
+                            console.error("Error interpretando respuesta como JSON", err);
+                            console.log(txt);
+                            this.mensajes.addError(txt);
                         }
                     })
+                    .catch(err => {
+                        console.error("Error interpretando respuesta de consulta", err);
+                        res.text().then(txt => console.error(txt)).catch(e => console.error(e));
+                    })
+                    .finally(_ => {
+                        this.preConsultando = false;
+                        this.finishWorking();
+                    });        
             })
             .catch(err => {
                 console.error("Error en preconsulta");
