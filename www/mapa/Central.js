@@ -2,7 +2,10 @@ class Central extends ZCustomController {
     onThis_init() {
         window.geoportal.admPanelesFlotantes = this;
         window.geoportal.panelCentral = this;
-        this.$view = $(this.view);        
+        this.tiempoActual = moment.tz(window.geoportal.tiempo, window.timeZone);
+        this.tiempoInicial = this.tiempoActual.clone().subtract(2, "days").startOf("day");
+
+        this.$view = $(this.view);
         this.edTiempoActual.$view = $(this.edTiempoActual.view);
         this.tooltip.$view = $(this.tooltip.view);
         this.panelTiempo.$view = $(this.panelTiempo.view);
@@ -18,7 +21,8 @@ class Central extends ZCustomController {
             timeZone:window.timeZone,
             format:"DD/MMM/YYYY",
             widgetPositioning: {horizontal: 'left', vertical: 'top'},
-            locale:"es"
+            locale:"es",
+            date:this.tiempoActual
         });
         this.mostrandoCalendario = false;
         this.edTiempoActual.$view.on("dp.show", _ => this.mostrandoCalendario = true);
@@ -57,8 +61,7 @@ class Central extends ZCustomController {
             this.refrescaTiempo();
             window.geoportal.setTiempo(this.tiempoActual.valueOf());
         })
-        this.tiempoActual = window.TimeUtils.now.startOf("hour");
-        this.tiempoInicial = this.tiempoActual.clone().subtract(2, "days").startOf("day");
+        //this.tiempoActual = window.TimeUtils.now.startOf("hour");
         this.refrescaTiempo();
     }
 

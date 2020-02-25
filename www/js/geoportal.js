@@ -9,7 +9,7 @@ class GeoPortal {
         this.callSync(10);
         this.plugins = {};
         let dt = new Date()
-        dt.setHours(0); dt.setMinutes(0); dt.setSeconds(0); dt.setMilliseconds(0);
+        dt.setMinutes(0); dt.setSeconds(0); dt.setMilliseconds(0);
         this.tiempo = dt.getTime();
         this.listenersEdicion = [];
         this.cacheImagenes = {};

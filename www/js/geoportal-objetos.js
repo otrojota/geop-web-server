@@ -424,6 +424,8 @@ class Punto extends ObjetoGeoportal {
         this.observa.forEach((o, i) => {
             let infoVar = window.geoportal.getInfoVarParaConsulta(o.codigoVariable, this);
             this.mensajes.addOrigen(infoVar.variable.origen);
+            let tUTC = moment.tz(window.geoportal.tiempo, "UTC");
+            let tLocal = moment.tz(window.geoportal.tiempo, "America/Santiago");
             let query = {
                 lat:this.lat, lng:this.lng, time:window.geoportal.tiempo,
                 levelIndex:o.nivel !== undefined?o.nivel:0,
