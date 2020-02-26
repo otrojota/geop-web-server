@@ -1,0 +1,48 @@
+<div class="titulo-panel-auxiliar">
+    <img src="img/perfil-usuario.svg" height="24px" class="float-left ml-2" style="filter: invert(1); margin-top:2px;" />
+    Editar Perfil del Usuario
+    <i id="cmdClose" class="fas fa-times fa-lg float-right mr-2" data-z-clickable="true" style="margin-top:6px; cursor: pointer;"></i>
+</div>
+<div class="p-2">
+    <table class="tabla-auxiliar" style="width: 100%;">
+        <tbody>
+            <tr>
+                <td style="width: 200px;" class="cuadro-auxiliar">
+                    <div id="fotoContainer" data-z-clickable="true" style="width: 200px; height: 200px; cursor: pointer;">   
+                        <img id="fotoInicial" width="128px" height="128px" style="margin: 36px;" />                 
+                    </div>
+                </td>
+                <td class="cuadro-auxiliar">
+                    <div class="ml-auto mr-auto" style="max-width: 350px;">
+                        <label class="mb-1 ml-1 mr-auto">Dirección e-mail</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="far fa-envelope"></i>
+                                </span>
+                            </div>
+                            <input id="edEmail" class="form-control" type="email" style="background-color: white;" readonly/>
+                        </div>
+                    </div>
+                    <div class="ml-auto mr-auto mt-4" style="max-width: 350px;">
+                        <label class="mb-1 ml-1">Nombre Completo</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                            <input id="edNombre" class="form-control" type="text"/>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="cuadro-auxiliar p-2 m-2">
+        <label>Biografía para mostrar a los otros usuarios</label>
+        <div>
+            <textarea id="edDescripcionPerfil" rows="5" class="form-control"></textarea>
+        </div>
+    </div>
+</div>

@@ -4,6 +4,8 @@ const topHeight = 44;
 class Main extends ZCustomController {
     onThis_init() {
         this.leftOpen = true;
+        this.auxiliarOpen = false;
+        this.auxiliar.hide();
         this.analisisOpen = false;
         this.hsplitAnalisis.hide();
         this.panelAnalisis.hide();
@@ -59,7 +61,12 @@ class Main extends ZCustomController {
             this.top.pos = {left:leftWidth + 1, top:0};
             this.top.size = {width:w - leftWidth - 1, height:topHeight}
             this.mapa.pos = {left:leftWidth + 1, top:0};
-            this.central.pos = {left:leftWidth + 1, top:0};
+            this.central.pos = {left:leftWidth + 1, top:0};            
+            if (this.auxiliarOpen) {
+                this.auxiliar.pos = {left:leftWidth + 1, top:0};            
+                this.auxiliar.size = {width:w - leftWidth - 1, height:h}
+                this.auxiliar.doResize();
+            }
             if (this.analisisOpen) {
                 this.mapa.size = {width:w - leftWidth - 1, height:h - altoAnalisis - 7}
                 this.central.size = {width:w - leftWidth - 1, height:h - altoAnalisis - 7}
@@ -69,10 +76,12 @@ class Main extends ZCustomController {
                 this.panelAnalisis.size = {width:w - leftWidth - 1, height:altoAnalisis}
             } else {
                 this.mapa.size = {width:w - leftWidth - 1, height:h}
-                this.central.size = {width:w - leftWidth - 1, height:h}
+                this.central.size = {width:w - leftWidth - 1, height:h}                
             }
         } else {
             this.left.hide();
+            this.auxiliarOpen = false;
+            this.auxiliarOpen.hide();
             this.top.pos = {left:0, top:0};
             this.top.size = {width:w, height:topHeight}
             this.mapa.pos = {left:0, top:0};
@@ -153,6 +162,18 @@ class Main extends ZCustomController {
         if (this.panelAnalisis) {
             await this.panelAnalisis.cambioMensajesItem(idItem);
         }
+    }
+
+    onAuxiliar_open() {
+        if (!this.leftOpen) this.leftOpen = true;
+        this.auxiliarOpen = true;
+        this.auxiliar.show();
+        this.doResize();
+    }
+    onAuxiliar_close() {
+        this.auxiliarOpen = false;
+        this.auxiliar.hide();
+        this.doResize();
     }
 }
 ZVC.export(Main);

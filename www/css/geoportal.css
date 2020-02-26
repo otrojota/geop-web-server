@@ -196,6 +196,9 @@ body {
 .central {
     pointer-events: none;
 }
+.fila-opcion-activa {
+    background-color: lightgray;
+}
 
 #panelTiempo {    
     border:1px solid gray;
@@ -343,4 +346,27 @@ body {
     color:white;
     font-weight: normal;
     text-align: right;
+}
+.auxiliar {
+    z-index: 7000;
+    background-color: white;
+}
+.titulo-panel-auxiliar {
+    background-color: #2c3e50; 
+    color:white;
+    height: 34px;
+    font-size: 16px;
+    text-align: center;
+    padding-top:5px;
+}
+.tabla-auxiliar {
+    border-collapse: separate; 
+    border-spacing: 10px;
+}
+.cuadro-auxiliar {    
+    border-radius: 6px;
+    border-color: gray;
+    -webkit-box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
+    -moz-box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
+    box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
 }

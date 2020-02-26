@@ -20,7 +20,11 @@
   },
   "homepage": "https://gitlab.com/pomeo3/pomeo3-web-server#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "email-validator": "^2.0.4",
     "express": "^4.17.1",
+    "mongodb": "^3.5.4",
+    "nodemailer": "^6.4.3",
     "request": "^2.88.0"
   }
 }

@@ -51,6 +51,7 @@ class Left extends ZCustomController {
         if (this.opcionesLoader.content.doResize) this.opcionesLoader.content.doResize();
     }
     async activaOpcion(opcion) {
+        await window.geoportal.panelAuxiliar.close();
         let controller;
         switch(opcion) {
             case "sesion":

@@ -11,13 +11,17 @@ async function createHTTPServer() {
     const places = require("./servicios/Places");
     const capas = require("./servicios/Capas");
     const plugins = require("./servicios/Plugins");
+    const usuarios = require("./servicios/Usuarios");
     
+    await require("./servicios/MongoDB").init();
+
     let loadedPlugins = await plugins.init();
     capas.init();
 
     zServer.registerModule("plc", places);
     zServer.registerModule("ly", capas);    
     zServer.registerModule("plug", plugins);
+    zServer.registerModule("usu", usuarios);
     
     app.use("/", express.static(__dirname + "/www"));
 
