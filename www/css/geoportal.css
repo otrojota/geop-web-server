@@ -7,6 +7,10 @@ body {
 }
 .modal {
     overflow-y:auto;
+    z-index: 9001;
+}
+.modal-backdrop {
+    z-index: 9000;
 }
 
 .top-menu-left {
@@ -349,7 +353,7 @@ body {
 }
 .auxiliar {
     z-index: 7000;
-    background-color: white;
+    background-color: rgb(240, 240, 240);
 }
 .titulo-panel-auxiliar {
     background-color: #2c3e50; 
@@ -366,6 +370,7 @@ body {
 .cuadro-auxiliar {    
     border-radius: 6px;
     border-color: gray;
+    background-color: white;
     -webkit-box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
     -moz-box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
     box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);

@@ -7,6 +7,13 @@ class Perfil extends ZCustomController {
             return;
         }
         this.nombre.text = perfil.nombre;
+        if (perfil.descripcionPerfil) {
+            this.descripcionPerfil.html = perfil.descripcionPerfil.replace(/(?:\r\n|\r|\n)/g, '<br>');
+            this.conBiografia.show();
+        } else {
+            this.conBiografia.hide();
+        }
+        
         if (perfil.tieneFoto) this.foto.view.src = "foto-usuario?email=" + email;
     }
 }

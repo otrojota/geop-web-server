@@ -1,0 +1,81 @@
+<div class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal- modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="modal-title-default">Generar nueva Contraseña</h6>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="mensaje" class="alert alert-info m-2 small"></div>
+                <div id="alerta" class="alert alert-danger m-2 small"></div>
+                <form role="form" class="bg-light px-3 pt-2 pb-3">
+                    <div id="paso1">
+                        <div class="row">
+                            <div class="col">
+                                <label class="small mb-0 ml-1">Dirección e-mail</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                    </div>
+                                    <input id="edEmail" class="form-control" type="email" />
+                                </div>
+                            </div>
+                        </div>                              
+                    </div>
+                    <div id="paso2">
+                        <div class="row">
+                            <div class="col">
+                                <label class="small mb-0 ml-1">Código de Recuperación (recibido por email)</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-key"></i>
+                                        </span>
+                                    </div>
+                                    <input id="edCodigo" class="form-control" type="text" />
+                                </div>
+                            </div>
+                        </div>  
+                        <div class="row">
+                            <div class="col">
+                                <label class="small mb-0 ml-1">Nueva Contraseña</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                    </div>
+                                    <input id="edPwd1" class="form-control" type="password" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <label class="small mb-0 ml-1">Repita la Nueva Contraseña</label>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                    </div>
+                                    <input id="edPwd2" class="form-control" type="password" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>             
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="cmdCancel" type="button" class="btn btn-link">Cancelar</button>
+                <button id="cmdOk" type="button" class="btn btn-primary ml-auto">
+                    Siguiente
+                    <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,14 @@
 global.confPath = process.argv.length > 2?process.argv[2]:__dirname + "/config.json";
 const config = require("./servicios/Config");
 
+function base64MimeType(encoded) {
+    let result = null;
+    if (typeof encoded !== 'string') return null;
+    let mime = encoded.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/);
+    if (mime && mime.length) return mime[1];
+    return null;
+  }
+
 async function createHTTPServer() {
     const zServer = require("./servicios/z-server");
     const express = require('express');
@@ -37,6 +45,23 @@ async function createHTTPServer() {
         next();
     });
 
+    app.set('etag', false);
+    app.get("/foto-usuario", (req, res) => {
+        let email = req.query.email;
+        usuarios.getFotoUsuario(email)
+            .then(foto => {
+                let regex = /^data:.+\/(.+);base64,(.*)$/;
+                let matches = foto.match(regex);
+                let contentType = matches[1];
+                let data = matches[2];
+                let buffer = Buffer.from(data, 'base64');
+                res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+                res.setHeader('Content-Type', "image/" + contentType);
+                res.status(200);
+                res.send(buffer);
+            })
+            .catch(error => res.send(error).sendStatus(500));
+    });
     app.post("/*.*", (req, res) => zServer.resolve(req, res));
 
     if (conf.webServer.http) {

@@ -11,6 +11,12 @@
                     <div id="fotoContainer" data-z-clickable="true" style="width: 200px; height: 200px; cursor: pointer;">   
                         <img id="fotoInicial" width="128px" height="128px" style="margin: 36px;" />                 
                     </div>
+                    <div style="width: 0; height: 0; overflow: hidden;">
+                        <input id="edFileInput" type="file" accept="image" />
+                    </div>
+                    <div id="helpImagen" class="text-muted small text-center px-2" style="height: 50px;">
+                        Haga click en la imagen o arrastre un archivo.
+                    </div>
                 </td>
                 <td class="cuadro-auxiliar">
                     <div class="ml-auto mr-auto" style="max-width: 350px;">
@@ -32,7 +38,7 @@
                                     <i class="fas fa-user"></i>
                                 </span>
                             </div>
-                            <input id="edNombre" class="form-control" type="text"/>
+                            <input id="edNombre" class="form-control" type="text" data-z-autochange-delay="300" />
                         </div>
                     </div>
                 </td>
@@ -42,7 +48,18 @@
     <div class="cuadro-auxiliar p-2 m-2">
         <label>Biografía para mostrar a los otros usuarios</label>
         <div>
-            <textarea id="edDescripcionPerfil" rows="5" class="form-control"></textarea>
+            <textarea id="edDescripcionPerfil" rows="5" class="form-control" style="resize:none;" data-z-autochange-delay="300"></textarea>
         </div>
+    </div>
+    <hr />
+    <div>
+        <button id="cmdGrabar" class="btn btn-primary">
+            Grabar Cambios
+            <i class="fas fa-save ml-1"></i>
+        </button>
+        <button id="cmdCancelar" class="btn btn-secondary ml-2">
+            Cancelar
+            <i class="fas fa-ban ml-1"></i>
+        </button>
     </div>
 </div>

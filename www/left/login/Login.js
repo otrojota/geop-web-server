@@ -7,6 +7,7 @@ class Login extends ZCustomController {
                 let sesion = await zPost("autoLogin.usu", {token:JSON.parse(storedSesion).token});
                 if (sesion) {
                     window.sesionUsuario = sesion;
+                    window.zSecurityToken = sesion.token;
                     this.triggerEvent("login");
                     return;
                 } 
@@ -25,11 +26,18 @@ class Login extends ZCustomController {
             this.edPassword.value = r.pwd;
         });
     }
+    onCmdOlvidoPwd_click() {
+        this.showDialog("./WOlvidoPwd", {email:this.edEmail.value}, r => {
+            this.edEmail.value = r.email;
+            this.edPassword.value = r.pwd;
+        });
+    }
     async onCmdLogin_click() {
         try {
             this.alerta.hide();
             let sesion = await zPost("login.usu", {email:this.edEmail.value, pwd:this.edPassword.value});
             window.sesionUsuario = sesion;
+            window.zSecurityToken = sesion.token;            
             if (this.edRecordarme.checked) {
                 localStorage.setItem("sesion", JSON.stringify({token:sesion.token}));
             } else {

@@ -1,0 +1,62 @@
+<div class="titulo-panel-auxiliar">
+    <img src="img/contrasena.svg" height="24px" class="float-left ml-2" style="filter: invert(1); margin-top:2px;" />
+    Cambiar mi Contraseña
+    <i id="cmdClose" class="fas fa-times fa-lg float-right mr-2" data-z-clickable="true" style="margin-top:6px; cursor: pointer;"></i>
+</div>
+<div class="p-2">
+    <table class="tabla-auxiliar" style="width: 100%;">
+        <tbody>
+            <tr>
+                <td style="width: 200px;" class="cuadro-auxiliar">
+                    <img src="img/contrasena.svg" width="128px" height="128px" style="margin: 36px;" />                 
+                </td>
+                <td class="cuadro-auxiliar py-3">
+                    <div class="ml-auto mr-auto" style="max-width: 350px;">
+                        <label class="mb-1 ml-1 mr-auto">Contraseña Actual</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-unlock"></i>
+                                </span>
+                            </div>
+                            <input id="edPwdActual" class="form-control" type="password" />
+                        </div>
+                    </div>
+                    <div class="ml-auto mr-auto mt-4" style="max-width: 350px;">
+                        <label class="mb-1 ml-1 mr-auto">Nueva Contraseña</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                            <input id="edPwd1" class="form-control" type="password" />
+                        </div>
+                    </div>
+                    <div class="ml-auto mr-auto mt-4" style="max-width: 350px;">
+                        <label class="mb-1 ml-1 mr-auto">Repetición de la Nueva Contraseña</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                            <input id="edPwd2" class="form-control" type="password" />
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <hr />
+    <div>
+        <button id="cmdGrabar" class="btn btn-primary">
+            Cambiar Contraseña
+            <i class="fas fa-save ml-1"></i>
+        </button>
+        <button id="cmdCancelar" class="btn btn-secondary ml-2">
+            Cancelar
+            <i class="fas fa-ban ml-1"></i>
+        </button>
+    </div>
+</div>

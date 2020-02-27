@@ -9,7 +9,7 @@ function zPost(url, args, onOk, onError) {
     xhr.open("POST", finalUrl, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     if (window.zSecurityToken) {
-        xhr.setRequestHeader('Z-Token', window.zSecurityToken);
+        xhr.setRequestHeader('Authorization', "Bearer " + window.zSecurityToken);
     }
     xhr.send(JSON.stringify(args?args:{}));
     xhr.onload = () => {

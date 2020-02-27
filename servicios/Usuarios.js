@@ -106,6 +106,73 @@ class Usuarios extends ZModule {
         }
     } 
 
+    async iniciaOlvidoPwd(email) {
+        try {            
+            if (!email) throw "Debe ingresar su dirección de correo electrónico";
+            if (!emailValidador.validate(email)) throw "La dirección ingresada es inválida";
+            let u = await this.getUsuarioBasico(email);
+            if (!u) throw "No se ha encontrado una cuenta de usuario asociada a la dirección de correo."
+            let col = await mongo.collection("codigoRecuperacion");
+            await col.deleteMany({_id:email});
+            let codigo = this.getCodigoRandom();
+            await col.insertOne({_id:email, nombre:u.nombre, codigo:codigo});
+            let html = `
+                <html>
+                    <body>
+                        <p>
+                            Se está intentando generar una nueva contraseña para el usuario asociado a este correo en Geoportal.
+                            Si usted no lo ha solicitado, sólo ignore este correo.
+                        </p>
+                        <p>
+                            Para continuar la creación de la nueva contraseña para la cuenta, ingrese el siguiente código en la página que lo solicita:
+                        </p>
+                        <h2>${codigo}</h2>
+                        <hr />
+                        <i>Este es un correo automático generado por Geoportal. Por favor no lo responda.</i>
+                    </body>
+                </html>
+            `;
+            await mailer.sendMail(email, "Geoportal - Código para Creación de Nueva Contraseña", null, html);
+        } catch(error) {
+            throw error;
+        }
+    }
+
+    async finalizaOlvidoPwd(email, codigo, pwd) {
+        try {
+            let col = await mongo.collection("codigoRecuperacion");
+            let doc = await col.findOne({_id:email});
+            if (!doc) throw "No hay un código de creación de contraseña activo para el email ingresado. Recuerde que éstos tienen una validez de 10 minutos. Inicie el proceso de creación de contraseña nuevamente.";
+            if (codigo != doc.codigo) throw "El código ingresado es inválido. Recuerde que éstos tienen una validez de 10 minutos. Inicie el proceso de creación de contraseña nuevamente.";
+            await col.deleteOne({_id:email});
+            let u = await this.getUsuarioBasico(email);
+            if (!u) throw "No se encontró al usuario por su email."
+            let colUsuario = await mongo.collection("usuario");
+            let hash = await this.encript(pwd);
+            await colUsuario.updateOne({_id:email}, {$set:{pwd:hash}})
+        } catch(error) {
+            throw error;
+        }
+    } 
+
+    async cambiarPwd(pwdActual, pwdNueva, authToken) {
+        try {
+            if (!pwdNueva || pwdNueva.length < 4) throw "La nueva contraseña debe contener al menos 4 caracteres";
+            let sesion = await this.getSesionUsuario(authToken);
+            if (!sesion) throw "La sesión de usuario está cerrada";            
+            let u = await this.getUsuarioBasico(sesion.email);
+            if (!u) throw "No se encontró al usuario de la sesión activa."
+            let colUsuario = await mongo.collection("usuario");
+            let doc = await colUsuario.findOne({_id:sesion.email}, {pwd:1});
+            let actualValida = await this.compareWithEncripted(pwdActual, doc.pwd);
+            if (!actualValida) throw "La contraseña actual es inválida";
+            let hash = await this.encript(pwdNueva);
+            await colUsuario.updateOne({_id:sesion.email}, {$set:{pwd:hash}})
+        } catch(error) {
+            throw error;
+        }
+    } 
+
     async getSesionUsuario(token) {
         try {
             let colSesionUsuaro = await mongo.collection("sesionUsuario");
@@ -167,14 +234,39 @@ class Usuarios extends ZModule {
     async getPerfil(email) {
         try {
             let colUsuario = await mongo.collection("usuario");
-            let doc = await colUsuario.findOne({_id:email});
+            let doc = await colUsuario.findOne({_id:email}, {nombre:1, tieneFoto:1, descripcionPerfil:1});
             if (!doc) return null;
             return {
                 email:email,
                 nombre:doc.nombre,
-                tieneFoto:false,
+                tieneFoto:doc.tieneFoto,
                 descripcionPerfil:doc.descripcionPerfil
             }
+        } catch(error) {
+            throw error;
+        }
+    }
+    async savePerfil(email, nombre, descripcionPerfil, foto, authToken) {
+        try {
+            let sesion = await this.getSesionUsuario(authToken);
+            if (!sesion || sesion.email != email) throw "No autorizado";
+            let colUsuario = await mongo.collection("usuario");
+            let doc = {nombre:nombre, descripcionPerfil:descripcionPerfil};
+            if (foto) {
+                doc.foto = foto;
+                doc.tieneFoto = true;
+            }
+            await colUsuario.updateOne({_id:email}, {$set:doc});
+        } catch(error) {
+            throw error;
+        }
+    }
+    async getFotoUsuario(email) {
+        try {
+            let colUsuario = await mongo.collection("usuario");
+            let doc = await colUsuario.findOne({_id:email}, {foto:1});
+            if (!doc) return null;
+            return doc.foto;
         } catch(error) {
             throw error;
         }
