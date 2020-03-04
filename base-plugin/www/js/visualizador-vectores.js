@@ -83,8 +83,10 @@ class VisualizadorVectores extends VisualizadorCapa {
                 let u = this.data.data[i];
                 let v = this.data.data[i+1];
                 let magnitud = null;
-                if (u !== undefined && v !== undefined) {
+                if (u !== undefined && v !== undefined && u !== null && v !== null) {
                     magnitud = Math.sqrt(u * u + v * v);
+                    // caso especial .. vectores sin magnitud pueden llegar aproximados (i.e. 0.9999999999999999)
+                    if (Math.abs(1 - magnitud) < 0.0000000001) magnitud = 1;
                     if (this.minMagnitud === undefined || magnitud < this.minMagnitud) this.minMagnitud = magnitud;
                     if (this.maxMagnitud === undefined || magnitud > this.maxMagnitud) this.maxMagnitud = magnitud;
                 }
@@ -93,7 +95,7 @@ class VisualizadorVectores extends VisualizadorCapa {
             if (this.minMagnitud === undefined || this.maxMagnitud === undefined) {
                 this.finishWorking();
                 this.mensajes.addError("No hay Datos");
-                throw "No hay Datos";
+                throw "No hay datos (min == max)";
             }
             let min, max;
             if (this.config.escala.dinamica) {
@@ -102,9 +104,11 @@ class VisualizadorVectores extends VisualizadorCapa {
                 this.config.escala.min = min;
                 this.config.escala.max = max;
                 if (min === max) {
-                    this.finishWorking();
-                    this.mensajes.addError("No hay Datos");
-                    throw "No hay datos";
+                    let max = this.maxMagnitud;
+                    this.maxMagnitud = max * 1.2;
+                    this.minMagnitud = max - 8/10 * max;
+                    this.minMagnitud = Number(Math.round(this.minMagnitud+'e4')+'e-4');
+                    this.mensajes.addAdvertencia(`Usando vectores sin magnitud, se asume 80% de la escala [${this.minMagnitud} - ${this.maxMagnitud}]`);
                 }
             } else {
                 min = this.config.escala.min;
@@ -130,23 +134,24 @@ class VisualizadorVectores extends VisualizadorCapa {
             for (let iLng=0; iLng<this.data.resolution; iLng++) {
                 let point = window.geoportal.mapa.map.latLngToContainerPoint([lat, lng]);
                 let m = this.magnitudes[n], u = this.data.data[2*n], v = this.data.data[2*n + 1];
-                //let len = 30;
-                let len = Math.min(size.x / this.data.resolution, size.y / this.data.resolution) * 1.0;
-                let angle = Math.atan2(u, v) * 180 / Math.PI;
-                let scale = 0.3 + 0.7 * (m -this.minMagnitud) / (this.maxMagnitud - this.minMagnitud);
-                if (isNaN(scale)) scale = 1;
-                let arrow = new Konva.Arrow({
-                    x: point.x,
-                    y: point.y,
-                    points:[0,  len / 2, 0, -len /2],
-                    pointerLength: 5,
-                    pointerWidth: 5,
-                    stroke: this.objEscala.getColor(m),
-                    strokeWidth: 2,
-                    rotation:angle,
-                    scaleX:scale, scaleY:scale
-                });
-                this.konvaLayer.add(arrow);
+                if (m !== null) {
+                    let len = Math.min(size.x / this.data.resolution, size.y / this.data.resolution) * 1.0;
+                    let angle = Math.atan2(u, v) * 180 / Math.PI;
+                    let scale = 0.3 + 0.7 * (m -this.minMagnitud) / (this.maxMagnitud - this.minMagnitud);
+                    if (isNaN(scale)) scale = 1;
+                    let arrow = new Konva.Arrow({
+                        x: point.x,
+                        y: point.y,
+                        points:[0,  len / 2, 0, -len /2],
+                        pointerLength: 5,
+                        pointerWidth: 5,
+                        stroke: this.objEscala.getColor(m),
+                        strokeWidth: 2,
+                        rotation:angle,
+                        scaleX:scale, scaleY:scale
+                    });
+                    this.konvaLayer.add(arrow);
+                }
                 lng += this.data.deltaLng;
                 n++;
             }

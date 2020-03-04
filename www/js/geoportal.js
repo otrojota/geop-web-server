@@ -103,7 +103,9 @@ class GeoPortal {
             this.listaCapasDisponibles.forEach(capa => {
                 let soportaFormato = !formato || capa.formatos[formato];
                 if (soportaFormato && capa.grupos.includes(grupo.codigo)) {
-                    subitems.push({code:capa.codigo, label:capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa});
+                    console.log("origen", capa.origen, this.getOrigen(capa.origen));
+
+                    subitems.push({code:capa.codigo, label:"[" + this.getOrigen(capa.origen).nombre + "] " + capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa});
                 }
             })
             if (subitems.length) {

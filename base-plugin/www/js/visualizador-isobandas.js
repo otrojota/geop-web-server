@@ -103,6 +103,7 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         let step = this.config.step;
         if (this.config.autoStep || step === undefined) {
             step = Math.pow(10, parseInt(Math.log10(max - min) - 1));
+            while (parseInt((max - min) / step) < 30) step /= 2;
             while (parseInt((max - min) / step) > 60) step *= 2;
             this.config.step = step;
             this.mensajes.addInformacion("Se usa incremento calculado entre bandas: " + step);

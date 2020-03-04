@@ -3,7 +3,7 @@ class VisualizadorParticulas extends VisualizadorCapa {
         let defaultConfig = {
             nParticulas:10000,
             retina:true,
-            velocidad:0.50,
+            velocidad:0.70,
             escala:{
                 dinamica:true,
                 nombre:"Magma - MatplotLib"
@@ -85,6 +85,7 @@ class VisualizadorParticulas extends VisualizadorCapa {
 
     async repinta() {
         let data = this.data;
+        console.log("data", data);
 
         let baseURL = window.location.origin + window.location.pathname;
         if (baseURL.endsWith("/")) baseURL = baseURL.substr(0, baseURL.length - 1);
@@ -93,7 +94,7 @@ class VisualizadorParticulas extends VisualizadorCapa {
         escala.actualizaLimites(0, 1);
 
         this.rampColors = {};
-        for (let v=0; v<=1; v+=0.1) {
+        for (let v=0; v<=1; v+=0.05) {
             this.rampColors[v] = escala.getColor(v);
         }
 

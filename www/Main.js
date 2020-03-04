@@ -81,7 +81,7 @@ class Main extends ZCustomController {
         } else {
             this.left.hide();
             this.auxiliarOpen = false;
-            this.auxiliarOpen.hide();
+            this.auxiliar.hide();
             this.top.pos = {left:0, top:0};
             this.top.size = {width:w, height:topHeight}
             this.mapa.pos = {left:0, top:0};
