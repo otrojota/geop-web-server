@@ -35,6 +35,21 @@ class EscalaGeoportal {
         } else if (config.tipo == "agua-tierra") {
             let escala = new AguaTierra(config);
             return escala.init();
+        } else if (config.tipo == "color-fijo-negro") {
+            let escala = new Negro(config);
+            return escala.init();
+        } else if (config.tipo == "color-fijo-blanco") {
+            let escala = new Blanco(config);
+            return escala.init();
+        } else if (config.tipo == "color-fijo-rojo") {
+            let escala = new Rojo(config);
+            return escala.init();
+        } else if (config.tipo == "color-fijo-verde") {
+            let escala = new Verde(config);
+            return escala.init();
+        } else if (config.tipo == "color-fijo-azul") {
+            let escala = new Azul(config);
+            return escala.init();
         }
         throw "Escala '" + config.tipo + "' no implementada";
     }
@@ -242,6 +257,37 @@ class AguaTierra extends EscalaGeoportal {
     }
 }
 
+class ColorFijo extends EscalaGeoportal{
+    constructor(config) {
+        super(config);
+        this.color = config.color;
+    }    
+    getColor(valor) {
+        if (valor === undefined || valor === null || valor < this.min || valor > this.max) return "rgba(0,0,0,0)";
+        return this.color;
+    }
+    refrescaPreview(div) {
+        console.log("div", div);
+        div[0].style.removeProperty("background-image");
+        div.css({"background-color":this.color})
+    }
+}
+class Negro extends ColorFijo {
+    constructor(config) {super({color:"#000000"})}
+}
+class Blanco extends ColorFijo {
+    constructor(config) {super({color:"#FFFFFF"})}
+}
+class Azul extends ColorFijo {
+    constructor(config) {super({color:"#0000FF"})}
+}
+class Rojo extends ColorFijo {
+    constructor(config) {super({color:"#FF0000"})}
+}
+class Verde extends ColorFijo {
+    constructor(config) {super({color:"#00FF00"})}
+}
+
 EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/nasa-oc-sst.pg", nombre:"sst - NASA OceanColor"});
 EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/nasa-oc-rainbow.pg", nombre:"rainbow - NASA OceanColor"});
 EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/nasa-oc-zeu.pg", nombre:"zeu - NASA OceanColor"});
@@ -260,3 +306,8 @@ EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/saga-17.pg
 EscalaGeoportal.registraEscala({tipo:"hsl", nombre:"HSL Lineal Simple"});
 EscalaGeoportal.registraEscala({tipo:"transparente", nombre:"Transparencia Lineal"});
 EscalaGeoportal.registraEscala({tipo:"agua-tierra", nombre:"Agua -> Tierra"});
+EscalaGeoportal.registraEscala({tipo:"color-fijo-negro", nombre:"Color Fijo: Negro"});
+EscalaGeoportal.registraEscala({tipo:"color-fijo-blanco", nombre:"Color Fijo: Blanco"});
+EscalaGeoportal.registraEscala({tipo:"color-fijo-rojo", nombre:"Color Fijo: Rojo"});
+EscalaGeoportal.registraEscala({tipo:"color-fijo-verde", nombre:"Color Fijo: Verde"});
+EscalaGeoportal.registraEscala({tipo:"color-fijo-azul", nombre:"Color Fijo: Azul"});
