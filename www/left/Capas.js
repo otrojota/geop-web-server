@@ -81,6 +81,9 @@ class Capas extends ZCustomController {
                     } else {
                         await item.capa.activaVisualizador(item);
                     }
+                } else if (item.tipo == "filtro") {
+                    item.item.activo = !item.item.activo;
+                    await item.capa.cambioFiltros();
                 } else {                    
                     throw "Tipo de item '" + item.tipo + "' no se reconoce como activable";
                 }
@@ -225,6 +228,7 @@ class Capas extends ZCustomController {
                     } else {
                         if (item.activo) {
                             html += "    <i class='far fa-lg fa-check-square activador-item'></i>";
+                            if (item.tipo == "filtro") nombreSeleccionable = false;
                         } else {
                             html += "    <i class='far fa-lg fa-square activador-item'></i>";
                             nombreSeleccionable = false;

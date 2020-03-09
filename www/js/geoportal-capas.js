@@ -106,7 +106,7 @@ class Capa {
         })
         return ret;
     }
-    async activaVisualizadoresIniciales() {
+    async activaVisualizadoresIniciales() {        
         if (this.config.visualizadoresIniciales) {
             let lista = Object.keys(this.config.visualizadoresIniciales);
             for (let i=0; i<lista.length; i++) {
@@ -117,6 +117,9 @@ class Capa {
                 await this.visualizadoresActivos[codVisualizador].crea();
             }
             delete this.config.visualizadoresIniciales;
+        } else if (this.config.formatos.geoJSON) {
+            this.visualizadoresActivos.geojson = new VisualizadorGeoJSON(this, {});
+            await this.visualizadoresActivos.geojson.crea();
         }
     }
     crea() {
@@ -130,19 +133,21 @@ class Capa {
         let items = [];
         let vis = this.getVisualizadoresAplicables();
         vis.forEach(v => {
-            let urlIcono = null;
-            if (v.icono) urlIcono = v.codigoPlugin + "/" + v.icono;
-            items.push({
-                tipo:"visualizador",
-                codigo:v.codigo,
-                nombre:v.nombre,
-                icono:v.icono,
-                urlIcono:urlIcono,
-                activable:true,
-                activo:this.visualizadoresActivos[v.codigo]?true:false,
-                item:this.visualizadoresActivos[v.codigo],
-                capa:this
-            })
+            if (!v.clase.hidden) {
+                let urlIcono = null;
+                if (v.icono) urlIcono = v.codigoPlugin + "/" + v.icono;
+                items.push({
+                    tipo:"visualizador",
+                    codigo:v.codigo,
+                    nombre:v.nombre,
+                    icono:v.icono,
+                    urlIcono:urlIcono,
+                    activable:true,
+                    activo:this.visualizadoresActivos[v.codigo]?true:false,
+                    item:this.visualizadoresActivos[v.codigo],
+                    capa:this
+                })
+            }
         });
         if (this.objetos) {
             this.objetos.forEach(o => {
@@ -156,6 +161,23 @@ class Capa {
                     eliminable:this.tipo == "dataObjects"?false:true,
                     item:o,
                     items:o.getItems(),
+                    capa:this
+                })
+            })
+        }
+        if (this.formatos.geoJSON && this.visualizadoresActivos.geojson.tieneFiltros) {
+            this.visualizadoresActivos.geojson.filtros.forEach((f, idx) => {
+                items.push({
+                    id:this.id + "-" + idx,
+                    tipo:"filtro",
+                    codigo:this.id + "-" + idx,
+                    nombre:f.nombre,
+                    icono:this.urlIcono,
+                    activable:true,
+                    activo:f.activo,
+                    seleccionable:false,
+                    eliminable:false,
+                    item:f,
                     capa:this
                 })
             })
@@ -368,6 +390,13 @@ class Capa {
     cambioNivel() {
         this.refresca();
     }
+
+    /* Filtros */
+    async cambioFiltros() {
+        if (this.formatos.geoJSON && this.visualizadoresActivos.geojson) {
+            await this.visualizadoresActivos.geojson.cambioFiltros();
+        }
+    }
 }
 
 class VisualizadorCapa {
@@ -380,6 +409,7 @@ class VisualizadorCapa {
         this.mensajes = new MensajesGeoportal(this, capa.origen);
     }
     static aplicaACapa(capa) {return false;}
+    static get hidden() {return false}
     async crea() {}
     async destruye() {}
     async refresca() {

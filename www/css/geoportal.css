@@ -143,6 +143,9 @@ body {
     font-size: 12px;    
     width: 100%
 }
+.activador-item {
+    cursor:pointer;
+}
 .seleccionador-item {
     cursor:pointer;
 }

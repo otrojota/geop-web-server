@@ -76,6 +76,7 @@ class MapaGeoPortal {
     constructor(panelMapa) {
         this.panelMapa = panelMapa;
         this.siguienteIdPanel = 1;
+        this.mouseListeners = [];
         this.map = L.map(panelMapa.id, {zoomControl:false, attributionControl:false}).setView([-33.034454, -71.592093], 6);
         this.map.on("moveend", _ => this.movioMapa());
         let mapDef = this.getMapa(window.geoportal.preferencias.mapa.mapaBase);
@@ -149,13 +150,25 @@ class MapaGeoPortal {
             let lng = e.latlng.lng;
             let point = this.map.latLngToContainerPoint([lat, lng]);
             window.geoportal.mapClick({lat:lat, lng:lng}, {x:point.x, y:point.y});
+            this.mouseListeners.forEach(l => {
+                if (l.onMouseClick) l.onMouseClick(e, {lat:lat, lng:lng}, {x:point.x, y:point.y});
+            })
         });
         this.map.on("mousemove", e => {
             let lat = e.latlng.lat;
             let lng = e.latlng.lng;
             let point = this.map.latLngToContainerPoint([lat, lng]);
             window.geoportal.mapMouseMove({lat:lat, lng:lng}, {x:point.x, y:point.y});
+            this.mouseListeners.forEach(l => {
+                if (l.onMouseMove) l.onMouseMove(e, {lat:lat, lng:lng}, {x:point.x, y:point.y});
+            })
         });
+    }
+
+    addMouseListener(l) {this.mouseListeners.push(l)}
+    removeMouseListener(l) {
+        let idx = this.mouseListeners.indexOf(l);
+        if (idx >= 0) this.mouseListeners.splice(idx,1);
     }
 
     getMapa(codigo) {
@@ -264,8 +277,12 @@ class MapaGeoPortal {
         let b = this.map.getBounds();
         return {lng0:b.getWest(), lat0:b.getSouth(), lng1:b.getEast(), lat1:b.getNorth()}
     }
-    setCenter(lat, lng) {
-        this.map.panTo(new L.LatLng(lat, lng));
+    setCenter(lat, lng, zoom) {
+        if (zoom) {
+            this.map.flyTo([lat, lng], zoom);
+        } else {
+            this.map.panTo(new L.LatLng(lat, lng));
+        }
     }
 
     setCursorAgregandoObjeto() {
@@ -358,4 +375,10 @@ class MapaGeoPortal {
         this.dibujaObjetos();
         window.geoportal.objetoMovido(objeto);
     }
+
+    setPointer() {
+        if (this.panelMapa.view.style.cursor != "pointer") this.savedCursor = this.panelMapa.view.style.cursor;
+        this.panelMapa.view.style.cursor = "pointer"
+    }
+    unsetPointer() {this.panelMapa.view.style.cursor = this.savedCursor}
 }

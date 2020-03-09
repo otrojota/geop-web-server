@@ -205,14 +205,28 @@ class RectArea3D extends ZCustomController {
                             return escala.getColor(z);
                         }
                     },
-                    data: serieData
+                    data: serieData,
+                    shading: 'realistic',
+                    realisticMaterial: {
+                        roughness: 0.1,
+                        metalness: 0.5
+                    },
                 }]
             }
             if (!this.chart) {
                 this.doResize();
                 this.chart = echarts.init(this.grafico.view);
+                this.chart.setOption(options);
+            } else {
+                let changedOptions = {
+                    xAxis3D:options.xAxis3D,
+                    yAxis3D:options.yAxis3D,
+                    zAxis3D:options.zAxis3D,
+                    series:options.series,
+                    title:options.title
+                }
+                this.chart.setOption(changedOptions);
             }
-            this.chart.setOption(options);
         } catch(error) {
             throw error;
         }
