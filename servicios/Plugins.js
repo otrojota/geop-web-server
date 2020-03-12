@@ -5,6 +5,7 @@ class PluginGeoPortal {
     constructor(codigo) {
         this.codigo = codigo;
         this._basePath = null;
+        this.proveedoresLocales = {};
     }
     get basePath() {return this._basePath}
     
@@ -12,6 +13,24 @@ class PluginGeoPortal {
     getClientScripts() {
         return [];
     }
+    registraProveedorLocal(proveedor) {
+        this.proveedoresLocales[proveedor.codigo] = proveedor;
+    }    
+}
+class ProveedorLocal {
+    constructor(codigo) {
+        this.codigo = codigo;
+        this.origenes = [];
+        this.capas = [];
+    }
+    get url() {return "/" + this.codigo}
+    registraOrigen(codigo, nombre, url, icono) {
+        this.origenes.push({codigo, nombre, url, icono});
+    }
+    registraCapa(proveedor, codigo, nombre, origen, tipo, formatos, opciones, grupos, icono, opacidad) {
+        this.capas.push({proveedor, codigo, nombre, origen, tipo, formatos, opciones, grupos, icono, opacidad});
+    }
+
 }
 class Plugins extends ZModule {
     static get instance() {
@@ -55,7 +74,15 @@ class Plugins extends ZModule {
         })
         return files;
     }
+
+    getProveedoresLocales() {
+        return Object.values(this.plugins).reduce((lista, plugin) => {
+            lista = lista.concat(Object.values(plugin.proveedoresLocales));
+            return lista;
+        }, []);
+    }
 }
 
 global.PluginGeoPortal = PluginGeoPortal;
+global.ProveedorLocal = ProveedorLocal;
 module.exports = Plugins.instance;

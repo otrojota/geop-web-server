@@ -9,7 +9,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
         super("isolineas", capa, conf); 
         this.configPanel = {
             flotante:false,
-            height:180, width:300,
+            height:280, width:300,
             configSubPaneles:{}
         }       
     }

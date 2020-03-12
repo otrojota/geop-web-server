@@ -1,6 +1,7 @@
 const ZModule = require("./z-server").ZModule;
 const config = require("./Config").getConfig();
 const request = require("request");
+const plugins = require("./Plugins");
 
 class Capas extends ZModule {
     static get instance() {
@@ -40,7 +41,7 @@ class Capas extends ZModule {
         try {
             let origenes = {};
             let capas = {};
-            let proveedores = config.proveedores;
+            let proveedores = JSON.parse(JSON.stringify(config.proveedores));
             for (let i=0; i<proveedores.length; i++) {
                 let proveedor = proveedores[i];
                 try {
@@ -60,6 +61,21 @@ class Capas extends ZModule {
                     console.error("Error sincronizando con proveedor '" + proveedor.codigo + "'", errProv);
                 }
             }
+
+            let locales = plugins.getProveedoresLocales();
+            Object.values(locales).forEach(proveedorLocal => {
+                proveedores.push({codigo:proveedorLocal.codigo, url:proveedorLocal.url});
+                proveedorLocal.origenes.forEach(o => {
+                    origenes[o.codigo] = {codigo:o.codigo, nombre:o.nombre, url:o.url};
+                    let icono = o.icono;
+                    if (icono.startsWith(".")) icono = proveedorLocal.url + "/" + icono.substr(2);
+                    origenes[o.codigo].icono = icono;
+                });
+                proveedorLocal.capas.forEach(c => {
+                    c.codigoProveedor = proveedorLocal.codigo;
+                    capas[proveedorLocal.codigo + "." + c.codigo] = c;
+                });
+            });
             this.proveedores = proveedores;
             this.origenes = origenes;
             this.capas = capas;

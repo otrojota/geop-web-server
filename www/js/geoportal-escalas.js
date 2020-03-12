@@ -2,6 +2,7 @@ class EscalaGeoportal {
     constructor(config) {
         this.config = config;
         this.dinamica = config.dinamica;
+        this.bloqueada = config.bloqueada;
         this.min = config.min;
         this.max = config.max;
     }
@@ -49,6 +50,9 @@ class EscalaGeoportal {
             return escala.init();
         } else if (config.tipo == "color-fijo-azul") {
             let escala = new Azul(config);
+            return escala.init();
+        } else if (config.tipo == "escala-rangos") {
+            let escala = new EscalaRangos(config);
             return escala.init();
         }
         throw "Escala '" + config.tipo + "' no implementada";
@@ -108,7 +112,7 @@ class EsquemaURL extends EscalaGeoportal {
         if (v < 0) v = 0;
         if (v > 1) v = 1;
         */
-       if (v < 0 || v > 1) return "rgba(0,0,0,0)";
+        if (v < 0 || v > 1) return "rgba(0,0,0,0)";
         let i = parseInt(this.rangos.length / 2);
         return this.busquedaBinaria(v, i, 0, this.rangos.length - 1);
     }
@@ -288,6 +292,74 @@ class Verde extends ColorFijo {
     constructor(config) {super({color:"#00FF00"})}
 }
 
+class EscalaRangos extends EscalaGeoportal {
+    constructor(config) {
+        super(config);
+        let minRef = config.min || 0;
+        let maxRef = config.max || 1;
+        this.rangos = [];
+        for (let i=0; i<(config.rangos.length - 1); i++) {
+            let r0 = config.rangos[i];
+            let r1 = config.rangos[i+1];
+            this.rangos.push({
+                min:(r0[0] - minRef) / (maxRef - minRef),
+                max:(r1[0] - minRef) / (maxRef - minRef),
+                color:config.rangos[i][1]
+            })
+        }
+        this.min = minRef;
+        this.max = maxRef;
+    }
+
+    init() {return this}
+    getColor(valor) {
+        let v;
+        if (this.min == this.max) v = 0;
+        else v = (valor - this.min) / (this.max - this.min);
+        if (this.config.ajustarALimites) {
+            if (v < 0) v = 0;
+            if (v > 1) v = 1;
+        } else {
+            if (v < 0 || v > 1) return "rgba(0,0,0,0)";
+        }
+        let i = parseInt(this.rangos.length / 2);
+        return this.busquedaBinaria(v, i, 0, this.rangos.length - 1);
+    }
+    busquedaBinaria(v, i, i0, i1) {        
+        let r = this.rangos[i];
+        if (v >= r.min && v <= r.max || (i1 - i0) <= 1) return r.color;
+        if (v < r.min) {
+            let newI = parseInt(i0 + (i - i0) / 2);
+            if (newI == i) {
+                console.error("Error en búsqueda binaria .. rango menor inválido");
+                return r.color;
+            }
+            return this.busquedaBinaria(v, newI, i0, i-1);
+        } else if (v >= r.max) {
+            let newI = i + (i1 - i) / 2;
+            if (newI != parseInt(newI)) newI = 1 + parseInt(newI);
+            if (newI == i) {
+                console.error("Error en búsqueda binaria .. rango mayor inválido");
+                return r.color;
+            }
+            return this.busquedaBinaria(v, newI, i+1, i1);
+        } else if (isNaN(v)) {
+            return null;
+        } else {
+            console.error("Error en búsqueda binaria .. condición no manejada", r, v);
+            return r.color;
+        }
+    }
+    refrescaPreview(div) {
+        let gradSteps = this.rangos.reduce((steps, r, i) => {
+            steps += ", " + r.color + " " + (100 * r.min) + "%";
+            return steps;
+        }, "");
+        let style = "linear-gradient(90deg" + gradSteps + ")";
+        div.css({"background-image":style})
+    }
+}
+
 EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/nasa-oc-sst.pg", nombre:"sst - NASA OceanColor"});
 EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/nasa-oc-rainbow.pg", nombre:"rainbow - NASA OceanColor"});
 EscalaGeoportal.registraEscala({tipo:"esquemaPG", url:"/js/escalas-pg/nasa-oc-zeu.pg", nombre:"zeu - NASA OceanColor"});
@@ -311,3 +383,83 @@ EscalaGeoportal.registraEscala({tipo:"color-fijo-blanco", nombre:"Color Fijo: Bl
 EscalaGeoportal.registraEscala({tipo:"color-fijo-rojo", nombre:"Color Fijo: Rojo"});
 EscalaGeoportal.registraEscala({tipo:"color-fijo-verde", nombre:"Color Fijo: Verde"});
 EscalaGeoportal.registraEscala({tipo:"color-fijo-azul", nombre:"Color Fijo: Azul"});
+EscalaGeoportal.registraEscala({
+    tipo:"escala-rangos", nombre:"Open Weather - Classic Rain",
+    ajustarALimites:true,
+    min:0, max:140, unidad:"mm",
+    rangos:[
+        [0, "rgba(225, 200, 100, 0)"],
+        [0.1, "rgba(200, 150, 150, 0)"],
+        [0.2, "rgba(150, 150, 170, 0)"],
+        [0.5, "rgba(120, 120, 190, 0)"],
+        [1, "rgba(110, 110, 205, 0.3)"],
+        [140, "rgba(20, 20, 255, 0.9)"]
+    ]
+});
+EscalaGeoportal.registraEscala({
+    tipo:"escala-rangos", nombre:"Open Weather - Classic Clouds",
+    ajustarALimites:true,
+    min:0, max:100, unidad:"%",
+    rangos:[
+        [0,   "rgba(255, 255, 255, 0.0)"],
+        [10,  "rgba(253, 253, 255, 0.1)"],
+        [20,  "rgba(252, 251, 255, 0.2)"],
+        [30,  "rgba(250, 250, 255, 0.3)"],
+        [40,  "rgba(249, 248, 255, 0.4)"],
+        [50,  "rgba(247, 247, 255, 0.5)"],
+        [60,  "rgba(246, 245, 255, 0.75)"],
+        [70,  "rgba(244, 244, 255, 1)"],
+        [80,  "rgba(243, 242, 255, 1)"],
+        [90,  "rgba(242, 241, 255, 1)"],
+        [100, "rgba(240, 240, 255, 1)"]
+    ]
+});
+EscalaGeoportal.registraEscala({
+    tipo:"escala-rangos", nombre:"Open Weather - Temperature",
+    ajustarALimites:true,
+    min:-65, max:30, unidad:"ºF",
+    rangos:[
+        [-65, "rgba(130, 22, 146, 1)"],
+        [-55, "rgba(130, 22, 146, 1)"],
+        [-45, "rgba(130, 22, 146, 1)"],
+        [-40, "rgba(130, 22, 146, 1)"],
+        [-30, "rgba(130, 87, 219, 1)"],
+        [-20, "rgba(32, 140, 236, 1)"],
+        [-10, "rgba(32, 196, 232, 1)"],
+        [0,   "rgba(35, 221, 221, 1)"],
+        [10,  "rgba(194, 255, 40, 1)"],
+        [20,  "rgba(255, 240, 40, 1)"],
+        [25,  "rgba(255, 194, 40,1)"],
+        [30,  "rgba(252, 128, 20, 1)"]
+    ]
+});
+EscalaGeoportal.registraEscala({
+    tipo:"escala-rangos", nombre:"Open Weather - Pressure",
+    ajustarALimites:true,
+    min:94000, max:108000, unidad:"Pa",
+    rangos:[
+        [94000, "rgba(0,115,255,1)"],
+        [96000, "rgba(0,170,255,1)"],
+        [98000, "rgba(75,208,214,1)"],
+        [100000, "rgba(141,231,199,1)"],
+        [101000, "rgba(176,247,32,1)"],
+        [102000, "rgba(240,184,0,1)"],
+        [104000, "rgba(251,85,21,1)"],
+        [106000, "rgba(243,54,59,1)"],
+        [108000, "rgba(198,0,0,1)"]
+    ]
+});
+EscalaGeoportal.registraEscala({
+    tipo:"escala-rangos", nombre:"Open Weather - Wind",
+    ajustarALimites:true,
+    min:0, max:200, unidad:"m/s",
+    rangos:[
+        [1, "rgba(255,255,255, 0)"],
+        [5, "rgba(238,206,206, 0.4)"],
+        [15, "rgba(179,100,188, 0.7)"],
+        [25, "rgba(63,33,59, 0.8)"],
+        [50, "rgba(116,76,172, 0.9)"],
+        [100, "rgba(70,0,175,1)"],
+        [200, "rgba(13,17,38,1)"]
+    ]
+});

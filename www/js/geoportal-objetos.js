@@ -54,7 +54,7 @@ class ObjetoGeoportal {
         this._capa = null;
         this.configPanel = {
             flotante:false,
-            height:180, width:300,
+            height:260, width:300,
             configSubPaneles:{}
         }
         this.configAnalisis = {

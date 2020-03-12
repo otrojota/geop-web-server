@@ -13,6 +13,7 @@ class GeoPortal {
         this.tiempo = dt.getTime();
         this.listenersEdicion = [];
         this.cacheImagenes = {};
+        this.helperCapas = {};
     }
     loadScripts() {
         return new Promise((resolve, reject) => {
@@ -49,6 +50,8 @@ class GeoPortal {
     registerPlugin(plugin) {
         this.plugins[plugin.codigo] = plugin;
     }
+    registraHelperCapas(h) {this.helperCapas[h.codigo] = h}
+    getHelperCapas(codigo) {return this.helperCapas[codigo]};
 
     async init() {
         await this.loadScripts();
@@ -70,6 +73,7 @@ class GeoPortal {
     }
     async doSync() {
         let config = await zPost("getConfig.ly");
+        console.log("config", config);
         this.proveedores = config.proveedores;
         this.origenes = config.origenes;
         this.capasDisponibles = config.capas;

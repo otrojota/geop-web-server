@@ -262,7 +262,11 @@ class Capas extends ZCustomController {
             }
             html += "<td>";
             if (item.item) {
-                html += "<i class='fas fa-spin fa-spinner' style='display: none; ' data-id-item='" + item.item.id + "'></i>";
+                if (item.item.isWorking) {
+                    html += "<i class='fas fa-spin fa-spinner' style='display: inline-block; ' data-id-item='" + item.item.id + "'></i>";
+                } else {
+                    html += "<i class='fas fa-spin fa-spinner' style='display: none; ' data-id-item='" + item.item.id + "'></i>";
+                }
             }
             html += "</td>";
             html += "<td>";

@@ -12,7 +12,7 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         super("isobandas", capa, conf);
         this.configPanel = {
             flotante:false,
-            height:200, width:300,
+            height:280, width:300,
             configSubPaneles:{}
         }  
     }
@@ -47,8 +47,12 @@ class VisualizadorIsobandas extends VisualizadorCapa {
         if (this.worker) this.worker.terminate();
         this.worker = undefined;
     }
-    doInWorker(operation, data) {
+    doInWorker(operation, data) {        
         return new Promise((onOk, onError) => {
+            if (!this.worker) {
+                onOk();
+                return;
+            }
             this.workerCallbacks[this.workerOpIndex] = {onOk:onOk, onError:onError};
             this.worker.postMessage({operation:operation, operationId:this.workerOpIndex++, data:data});
         });

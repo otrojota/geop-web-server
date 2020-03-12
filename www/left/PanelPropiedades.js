@@ -142,6 +142,18 @@ class PanelPropiedades extends ZCustomController {
             codigo:"mensajes",
             path:"left/propiedades/Mensajes"
         }].concat(this.item.getPanelesPropiedades());
+        paneles.forEach(p => p.item = this.item);
+        // Agregar visualizadores "hidden" de la capa
+        if (this.item instanceof Capa) {
+            this.item.listaVisualizadoresActivos.forEach(vis => {
+                if  (vis.constructor.hidden) {
+                    let pans = vis.getPanelesPropiedades();
+                    pans.forEach(p => p.item = vis)
+                    paneles = paneles.concat(pans);
+                }
+            })
+        }
+
         let html = paneles.reduce((html, panel) => {
             html += "<div id='panprop-" + panel.codigo + "' class='subpanel-propiedades' data-z-component='" + panel.path + "'></div>";
             return html;
@@ -150,7 +162,7 @@ class PanelPropiedades extends ZCustomController {
         for (let i=0; i<paneles.length; i++) {
             let panel = paneles[i];
             let subPanelContainer = this.contenedorPaneles.find("#panprop-" + panel.codigo);
-            let controller = await ZVC.fromElement(subPanelContainer, {item:this.item, contenedor:this});
+            let controller = await ZVC.fromElement(subPanelContainer, {item:panel.item, contenedor:this});
             this.paneles.push(controller);
         }
     }

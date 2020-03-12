@@ -24,7 +24,7 @@ class Capa {
         this.tiempoFijo = null;
         this.configPanel = {
             flotante:false,
-            height:180, width:300,
+            height:280, width:300,
             configSubPaneles:{}
         }
         this.workingListeners = []; // {accion:"start"|"finish"|"refrescar", listener:function}
@@ -89,8 +89,14 @@ class Capa {
         let idx = this.workingListeners.findIndex(l => l.listener == listener);
         if (idx >= 0) this.workingListeners.splice(idx,1);
     }
-    startWorking() {this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())}
-    finishWorking() {this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())}
+    startWorking() {
+        this.isWorking = true;
+        this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())
+    }
+    finishWorking() {
+        this.isWorking = false;
+        this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())
+    }
     async triggerRefrescar() {
         let listeners = this.workingListeners.filter(l => l.accion == "refrescar");
         for (let i=0; i<listeners.length; i++) {
@@ -127,6 +133,7 @@ class Capa {
     }
     destruye() {
         this.listaVisualizadoresActivos.forEach(v => v.destruye());
+        if (this.helper) this.helper.destruyeCapa(this);
     }
     getVisualizador(codigo) {return this.visualizadoresActivos[codigo]}
     getItems() {
@@ -439,7 +446,7 @@ class GrupoCapas {
         this.itemActivo = this;
         this.configPanel = {
             flotante:false,
-            height:120, width:300,
+            height:220, width:300,
             configSubPaneles:{}
         }
         this.panelesFlotantes = [];
@@ -568,7 +575,16 @@ class Capas {
         this.listener = listener;
     }
     add(config) {
-        let capa = new Capa(config);
+        let capa;
+        console.log("creando capa con ", config);
+        if (config.opciones && config.opciones.helperCapas) {
+            let helper = window.geoportal.getHelperCapas(config.opciones.helperCapas);
+            if (!helper) throw "NO se encontró el helper de capas '" + config.opciones.helperCapas + "'";
+            capa = helper.creaCapa(config);
+            capa.helper = helper;
+        } else {
+            capa = new Capa(config);
+        }
         capa.abierto = true;
         this.getGrupoActivo().addCapa(capa);
         this.getGrupoActivo().itemActivo = capa;

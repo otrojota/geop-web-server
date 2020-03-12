@@ -6,14 +6,15 @@ class VisualizadorParticulas extends VisualizadorCapa {
             velocidad:0.70,
             escala:{
                 dinamica:true,
-                nombre:"Magma - MatplotLib"
+                nombre:"Magma - MatplotLib",
+                unidad:capa.unidad || "s/u"
             }
         }
         let conf = $.extend(defaultConfig, config);
         super("particulas", capa, conf); 
         this.configPanel = {
             flotante:false,
-            height:180, width:300,
+            height:280, width:300,
             configSubPaneles:{}
         }       
     }
@@ -67,8 +68,11 @@ class VisualizadorParticulas extends VisualizadorCapa {
                 return;
             }
             this.mensajes.parse(data);
-            console.log("data", data);
             this.data = data;
+            if (data.min !== undefined && data.max !== undefined) {
+                this.config.escala.min = data.min;
+                this.config.escala.max = data.max;
+            }
             await (new Promise(resolve => {
                 let img = new Image();
                 img.crossOrigin = "anonymous";
@@ -85,21 +89,22 @@ class VisualizadorParticulas extends VisualizadorCapa {
 
     async repinta() {
         let data = this.data;
-        console.log("data", data);
-
         let baseURL = window.location.origin + window.location.pathname;
         if (baseURL.endsWith("/")) baseURL = baseURL.substr(0, baseURL.length - 1);
         let escala = await EscalaGeoportal.porNombre(this.config.escala.nombre, baseURL);
         escala.dinamica = this.config.escala.dinamica;
         escala.actualizaLimites(0, 1);
 
-        this.rampColors = {};
+        this.rampColors = {};        
         for (let v=0; v<=1; v+=0.05) {
             this.rampColors[v] = escala.getColor(v);
-        }
-
+        }                
+        //this.rampColors[0.7] = "rgba(0,0,0,0)";
+        //this.rampColors[1] = "rgba(0,0,0,0)";
+        
         let p0 = window.geoportal.mapa.map.latLngToContainerPoint([data.lat0, data.lng0]);
         let p1 = window.geoportal.mapa.map.latLngToContainerPoint([data.lat1, data.lng1]);
+        //console.log("data", this.data, p0, p1);
         this.canvas.style.left = p0.x + "px";
         this.canvas.style.top = p1.y + "px";
         this.canvas.style.width = (p1.x - p0.x + 1) + "px";
@@ -116,7 +121,7 @@ class VisualizadorParticulas extends VisualizadorCapa {
             this.wind.resize();
         }
         this.wind.numParticles = this.config.nParticulas;
-        this.wind.speedFactor = this.config.velocidad;
+        this.wind.speedFactor = this.config.velocidad * (data.vectorSinMagnitud?5:1);
         this.wind.setColorRamp(this.rampColors);
         this.wind.setWind(data);
     }

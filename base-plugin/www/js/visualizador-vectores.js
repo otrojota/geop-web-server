@@ -11,7 +11,7 @@ class VisualizadorVectores extends VisualizadorCapa {
         super("vectores", capa, conf); 
         this.configPanel = {
             flotante:false,
-            height:180, width:300,
+            height:280, width:300,
             configSubPaneles:{}
         }       
     }
