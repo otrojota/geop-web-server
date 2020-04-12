@@ -271,7 +271,6 @@ class ColorFijo extends EscalaGeoportal{
         return this.color;
     }
     refrescaPreview(div) {
-        console.log("div", div);
         div[0].style.removeProperty("background-image");
         div.css({"background-color":this.color})
     }

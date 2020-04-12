@@ -73,7 +73,6 @@ class GeoPortal {
     }
     async doSync() {
         let config = await zPost("getConfig.ly");
-        console.log("config", config);
         this.proveedores = config.proveedores;
         this.origenes = config.origenes;
         this.capasDisponibles = config.capas;
@@ -83,7 +82,6 @@ class GeoPortal {
             defCapa.urlIcono = prov.url + "/" + defCapa.icono;
         });      
         this.grupos = config.grupos;
-        console.log("Sincronizado con capas", this.capasDisponibles);
     }
 
     get listaCapasDisponibles() {
@@ -107,8 +105,6 @@ class GeoPortal {
             this.listaCapasDisponibles.forEach(capa => {
                 let soportaFormato = !formato || capa.formatos[formato];
                 if (soportaFormato && capa.grupos.includes(grupo.codigo)) {
-                    console.log("origen", capa.origen, this.getOrigen(capa.origen));
-
                     subitems.push({code:capa.codigo, label:"[" + this.getOrigen(capa.origen).nombre + "] " + capa.nombre, icon:capa.urlIcono, tipo:"capa", capa:capa});
                 }
             })

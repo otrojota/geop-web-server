@@ -57,7 +57,6 @@ class Capa {
                         console.error("Capa de dataObjects no maneja [aún] objetos del tipo '" + o.tipo + "'");
                 }
             });
-            console.log("Cargados objetos", this.objetos);
             this.invalida();
         }
     }
@@ -576,7 +575,6 @@ class Capas {
     }
     add(config) {
         let capa;
-        console.log("creando capa con ", config);
         if (config.opciones && config.opciones.helperCapas) {
             let helper = window.geoportal.getHelperCapas(config.opciones.helperCapas);
             if (!helper) throw "NO se encontró el helper de capas '" + config.opciones.helperCapas + "'";

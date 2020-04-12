@@ -131,10 +131,10 @@ class VisualizadorIsobandas extends VisualizadorCapa {
             //this.worker.data({url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
             this.doInWorker("getIsobandas", {url:shpURL, config:this.config, min:min, max:max, baseURL:baseURL})
                 .then(ret => {
-                    if (ret.error) {
+                    if (!ret || ret.error) {
                         this.finishWorking();
-                        this.mensajes.addError(ret.error);
-                        console.error(ret.error);
+                        this.mensajes.addError(ret?ret.error:"No hay Respuesta");
+                        console.error(ret?ret.error:"No hay Respuesta");
                         return;
                     }
                     this.geoJSON = ret.isobandas;
