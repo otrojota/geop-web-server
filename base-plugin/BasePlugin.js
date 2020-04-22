@@ -17,6 +17,7 @@ class BasePlugin extends global.PluginGeoPortal {
             "js/echarts-gl.min.js",
             "js/analizador-rect-area-3d.js",
             "js/visualizador-shader.js",
+            "js/observador-geojson-minz.js"
         ]
     }
 }

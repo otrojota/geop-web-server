@@ -32,7 +32,10 @@ class Main extends ZCustomController {
             global:{
                 timezone:window.timeZone
             }
-        });  
+        });
+        zPost("getMinZConfig.ly", {}, config => {
+            window.minz = new MinZClient(config.url, config.token, config.espacios);
+        }, error => console.error(error));
     }
     async onThis_activated() {
         $(window).resize(() => {            

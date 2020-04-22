@@ -168,6 +168,44 @@ class GeoPortal {
         return arbol;
     }
 
+    async getArbolAgregarObservadorGeoJson(capa) {
+        try {
+            // Punto central poligonos
+            // Raster (promedio, min, max)
+            // minz / espacio => ruta hasta dimension
+            let items = [];
+            if (capa.config.opciones && capa.config.opciones.dimensionMinZ) {
+                let rutas = await window.minz.getVariablesFiltrables(capa.config.opciones.dimensionMinZ);
+                // Separar por espacio
+                let espacios = {};
+                rutas.forEach(r => {
+                    let code = r.variable.code;
+                    let p = code.indexOf(".");
+                    if (p < 0) throw "La variable '" + r.variable.code + "' no incluye codigo de espacio";
+                    let nombreEspacio = r.variable.code.substr(0,p);
+                    if (!espacios[nombreEspacio]) {
+                        espacios[nombreEspacio] = window.minz.espacios[nombreEspacio]?window.minz.espacios[nombreEspacio].nombre:nombreEspacio;
+                    }
+                });
+                Object.keys(espacios).forEach(codigoEspacio => {
+                    let itemEspacio = {code:codigoEspacio, label:espacios[codigoEspacio], icon:window.minz.espacios[codigoEspacio].icono, items:[]};
+                    items.push(itemEspacio)
+                    rutas.forEach(r => {
+                        let code = r.variable.code;
+                        let p = code.indexOf(".");
+                        let nombreEspacio = r.variable.code.substr(0,p);
+                        if (nombreEspacio == codigoEspacio) {
+                            itemEspacio.items.push({code:r.ruta, label:r.variable.name, icon:"img/iconos/dashboard.svg", item:r})
+                        }
+                    })
+                });
+            }
+            return items;
+        } catch(error) {
+            throw error;
+        }
+    }
+
     getCapasEstaciones() {
         let lista = this.listaCapasDisponibles.reduce((lista, capa) => {
             if (capa.menuEstaciones) {

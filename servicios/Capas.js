@@ -94,6 +94,10 @@ class Capas extends ZModule {
             grupos:config.grupos
         }
     }
+
+    getMinZConfig() {
+        return {url:config.minZ.url, token:config.minZ.token, espacios:config.minZ.espacios}
+    }
 }
 
 module.exports = Capas.instance;

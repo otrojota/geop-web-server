@@ -291,8 +291,15 @@ class Capa {
             });
     }
 
-    resuelveConsulta(formato, args, callback) {
+    async resuelveConsulta(formato, args, callback) {
         this.startWorking();
+        if (this.observadorGeoJson) {
+            try {
+                await this.observadorGeoJson.preConsulta(formato, args);
+            } catch(error) {
+                callback(error);
+            }
+        }
         this.listenersConsulta.push(callback);
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor); 
         let idConsulta = this.nextIdConsulta;      
@@ -313,16 +320,32 @@ class Capa {
             body:JSON.stringify({formato:formato, args:args})
         })
         .then(res => {
-            if (idConsulta != this.nextIdConsulta) return;
+            if (idConsulta != this.nextIdConsulta) {
+                this.finishWorking();
+                return;
+            }
             if (res.status != 200) {
+                this.finishWorking();
                 res.text().then(t => {
                     callback(t)
                 });
                 return;
             }
-            res.json().then(j => {
-                callback(null, j);
+            res.json().then(async j => {
+                this.finishWorking();
+                this.resultadoConsulta = j;
+                if (this.observadorGeoJson) {
+                    try {
+                        await this.observadorGeoJson.refresca();
+                        callback(null, j);
+                    } catch(error) {
+                        callback(error);
+                    }
+                } else {
+                    callback(null, j);
+                }
             }).catch(err => {
+                this.finishWorking();
                 callback(err);
             });
         })
@@ -332,7 +355,6 @@ class Capa {
         .finally(_ => {
             let idx = this.listenersConsulta.indexOf(callback);
             if (idx >= 0) this.listenersConsulta.splice(idx,1);
-            this.finishWorking();
         })
     }
 
@@ -378,6 +400,15 @@ class Capa {
                 path:"left/propiedades/FechaCapa"
             })
         }
+        if (this.formatos.geoJSON) {
+            paneles.push({
+                codigo:"geojson-observa",
+                path:"left/propiedades/GeoJsonObserva"
+            })
+            if (this.observadorGeoJson) {
+                paneles = paneles.concat(this.observadorGeoJson.getPanelesPropiedades())  
+            }
+        }
         return paneles;
     }
 
@@ -389,12 +420,22 @@ class Capa {
         this.listaVisualizadoresActivos.forEach(v => v.cambioOpacidadCapa(this.opacidad));
         if (this.tieneObjetos) window.geoportal.mapa.callDibujaObjetos(100);
     }
-    cambioTiempo(forzar) {   
+    async cambioTiempo(forzar) {   
+        if (this.formatos.geoJSON && this.observadorGeoJson) {
+            await this.observadorGeoJson.refresca();
+            let visGeoJson = this.listaVisualizadoresActivos.find(v => v instanceof VisualizadorGeoJSON);
+            if (visGeoJson) visGeoJson.repinta();
+        }
         if ((!this.temporal && this.tipo != "dataObjects") || (this.tiempoFijo && !forzar)) return;
-        this.refresca();
+        await this.refresca();
     }
     cambioNivel() {
         this.refresca();
+    }
+    cambioObservadorGeoJson() {
+        if (window.capasController) window.capasController.refresca();
+        let visGeoJson = this.listaVisualizadoresActivos.find(v => v instanceof VisualizadorGeoJSON);
+        if (visGeoJson) visGeoJson.repinta();
     }
 
     /* Filtros */
@@ -428,11 +469,50 @@ class VisualizadorCapa {
         let idx = this.workingListeners.findIndex(l => l.listener == listener);
         if (idx >= 0) this.workingListeners.splice(idx,1);
     }
-    startWorking() {this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())}
-    finishWorking() {this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())}
+    startWorking() {
+        this.isWorking = true;
+        this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())
+    }
+    finishWorking() {
+        this.isWorking = false;
+        this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())
+    }
     cambioOpacidadCapa(opacidad) {
         console.log("cambioOpacidad no se sobreescribió");
     }
+}
+
+class ObservadorGeoJson {
+    static registraClaseObservadora(clase) {
+        if (!ObservadorGeoJson.clasesObservadoras) ObservadorGeoJson.clasesObservadoras = [];
+        ObservadorGeoJson.clasesObservadoras.push(clase);
+    }
+    static creaObservador(capa, item) {
+        if (!ObservadorGeoJson.clasesObservadoras) return null;        
+        for (let i=0; i<ObservadorGeoJson.clasesObservadoras.length; i++) {
+            let clase = ObservadorGeoJson.clasesObservadoras[i];
+            let fAplica = clase.aplicaAItem;
+            if ((fAplica)(item)) return new (clase)(capa, item);
+        }
+        return null;
+    }
+    constructor(capa, item) {
+        this.capa = capa;
+        this.item = item;
+        this.cambioEscalaListener = null;
+    }
+    getPanelesPropiedades() {
+        return [];
+    }
+    getTituloPanel() {return "Titulo no sobreescrito"}
+    getNombreItem() {return "Nombre Item no sobreescrito"}
+    setCambioEscalaListener(l) {this.cambioEscalaListener = l}
+    getCambioEscalaListener() {return this.cambioEscalaListener};
+    cambioEscala() {}
+    async refresca() {}
+    getValorDeFeature(f) {return undefined}
+    getValorFormateadoDeFeature(f) {return undefined}
+    getColorDeFeature(f) {return undefined}
 }
 
 class GrupoCapas {

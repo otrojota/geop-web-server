@@ -164,12 +164,15 @@ class Capas extends ZCustomController {
         await this.refrescaPanelPropiedades();
     }
 
-    async refrescaPanelPropiedades() {        
+    async refrescaPanelPropiedades(forzarCreacion) {        
         let itemActivo = window.geoportal.capas.getGrupoActivo().itemActivo;
         if (itemActivo.configPanel && !itemActivo.configPanel.flotante) {
-            if (itemActivo.id == this.panelPropiedades.idItem) {
+            if (itemActivo.id == this.panelPropiedades.idItem && !forzarCreacion) {
                 await this.panelPropiedades.refresca();
             } else {
+                if (forzarCreacion) {
+                    await this.panelPropiedades.creaDesde(null);
+                }
                 await this.panelPropiedades.creaDesde(itemActivo)
                 this.mostrandoPanelPropiedades = true;
                 this.panelPropiedades.show();
