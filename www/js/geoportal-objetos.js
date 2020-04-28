@@ -81,7 +81,7 @@ class ObjetoGeoportal {
     desselecciona() {this.seleccionado = false}
     getIcono() {return "img/iconos/punto.svg"}
     aseguraVisible() {}
-    isVisible() {throw "isVisible no Implementado en '" + this.nombre + "'"}
+    isVisible(limites) {throw "isVisible no Implementado en '" + this.nombre + "'"}
     editoPadre() {}
 
     getAnalizadoresAplicables() {
@@ -458,8 +458,10 @@ class Punto extends ObjetoGeoportal {
         if (idx < 0) return;
         this.recalculaValoresObservados();        
     }
-    isVisible() {
-        return window.geoportal.mapa.map.getBounds().contains(L.latLng(this.lat, this.lng));
+    isVisible(limites) {
+        if (!limites) limites = window.geoportal.mapa.getLimites();
+        return this.lat >= limites.lat0 && this.lat <= limites.lat1 && this.lng >= limites.lng0 && this.lng <= limites.lng1;
+        //return window.geoportal.mapa.map.getBounds().contains(L.latLng(this.lat, this.lng));
     }
     aseguraVisible() {
         if (this.isVisible()) return;
@@ -678,11 +680,15 @@ class Area extends ObjetoGeoportal {
         }
         window.geoportal.mapa.movioObjeto(this);
     }
-    isVisible() {
+    isVisible(limites) {
+        if (!limites) limites = window.geoportal.mapa.getLimites();
+        return this.lat0 <= limites.lat1 && this.lat1 >= limites.lat0 && this.lng0 <= limites.lng1 && this.lng1 >= limites.lng0;
+        /*
         return window.geoportal.mapa.map.getBounds().contains(L.latLngBounds(
             L.latLng(this.lat0, this.lng0),
             L.latLng(this.lat1, this.lng1)
         ));
+        */
     }
     aseguraVisible() {
         if (this.isVisible()) return;
@@ -703,6 +709,221 @@ class Area extends ObjetoGeoportal {
             path:"left/propiedades/PropArea"
         }];
         return paneles;
+    }
+
+    getTituloPanel() {
+        return this.nombre;
+    }
+}
+
+class Poligonos extends ObjetoGeoportal {    
+    constructor(feature, capa, estilo) {
+        let nombre = feature.properties.nombre || "Polígonos";
+        let id = feature.properties.id;
+        let defaultConfig = {
+            nombre:nombre,            
+            movible:false
+        }
+        super(defaultConfig, id?id:uuidv4());
+        this._capa = capa;
+        this.estilo = estilo;
+        this.properties = feature.properties;
+        this.tipo = "poligonos";
+        this.poligonos = [];
+        this.areas = [];
+        this.minLat = this.maxLat = this.minLng = this.maxLng = undefined;
+        let c = turf.centroid(feature);
+        this.centroide = {lat:c.geometry.coordinates[1], lng:c.geometry.coordinates[0]};
+        this.poligonos = [];
+        this.agregaCoordenadas(feature.geometry.coordinates);
+    }
+
+    agregaCoordenadas(coordinates) {
+        if (!coordinates.length) {
+            console.error("Arreglo vacío en coordenadas");
+            return;
+        }
+        if (!Array.isArray(coordinates[0])) {
+            console.error("Elemento 0 no es array");
+            return;
+        }
+        // Es poligono si los elementos son arreglos de dos numeros cada uno
+        let esPoligono = (coordinates[0].length == 2 && !isNaN(coordinates[0][0]))
+        if (esPoligono) {
+            if (coordinates.length >= 4) {
+                let pol = [], areaPolCoords = [[]];            
+                coordinates.forEach(c => {
+                    let lat = c[1], lng = c[0];
+                    if (this.minLat === undefined || lat < this.minLat) this.minLat = lat;
+                    if (this.maxLat === undefined || lat > this.maxLat) this.maxLat = lat;
+                    if (this.minLng === undefined || lng < this.minLng) this.minLng = lng;
+                    if (this.maxLng === undefined || lng > this.maxLng) this.maxLng = lng;
+                    pol.push({lat:lat, lng:lng})
+                    areaPolCoords[0].push([lat, lng]);
+                });
+                this.poligonos.push(pol);
+                let area = 10000;
+                try {
+                    area = turf.area(turf.polygon(areaPolCoords));
+                } catch(error) {
+                    console.error(error);
+                    console.log(areaPolCoords);
+                }
+                this.areas.push(area);
+            } else {
+                console.warn("Se descarta poligono por tener menos de 4 coordenadas");
+            }
+        } else {
+            coordinates.forEach(c => this.agregaCoordenadas(c));
+        }
+    }
+
+    describe() {return this.nombre}
+    getIcono() {return "img/iconos/poligono.svg"}
+    get capa() {return this._capa}
+    set capa(c) {this._capa = c;}
+    dibuja(konvaLayer, konvaLayerEfectos) {   
+        const limitesAreas = [undefined, undefined, undefined, 200000, 180000, 150000, 100000, 90000, 60000, 10000, 1000, 300, 0];        
+        let map = geoportal.mapa.map;
+        let zoom = map.getZoom();
+        let limiteArea = zoom >= 12?0:limitesAreas[zoom];
+        this.konvaObjects = [];
+        let n = 0;
+        for (let i=0; i<this.poligonos.length; i++) {
+            if (this.areas[i] < limiteArea) continue;
+            n++;
+            let pol = this.poligonos[i];            
+            let points = pol.reduce((lista, puntoMapa) => {
+                let p = map.latLngToContainerPoint([puntoMapa.lat, puntoMapa.lng]);
+                lista.push(p.x, p.y);
+                return lista;
+            },[]);
+            let opacidadBase = this.estilo.opacity === undefined?1:this.estilo.opacity;
+            let poly = new Konva.Line({
+                points: points,
+                fill: this.estilo.fill,
+                stroke: this.seleccionado?"blue":this.estilo.stroke,
+                strokeWidth: this.seleccionado?2:this.estilo.strokeWidth,
+                closed: true,
+                opacity : this.capa.opacidad / 100 * opacidadBase
+            });
+            poly.on('mouseenter', _ => this.handleMouseEnter(konvaLayer));
+            poly.on('mouseout', _ => this.handleMouseExit(konvaLayer));
+            konvaLayer.add(poly);
+            this.konvaObjects.push(poly);
+        }
+
+        /*
+        let p0 = map.latLngToContainerPoint([this.lat0, this.lng0]);
+        let p1 = map.latLngToContainerPoint([this.lat1, this.lng1]);
+        let poly = new Konva.Line({
+            points: [p0.x, p0.y, p1.x, p0.y, p1.x, p1.y, p0.x, p1.y],
+            fill: 'rgba(0,0,0,0.05)',
+            stroke: this.seleccionado?"blue":'black',
+            strokeWidth: this.seleccionado?2:1,
+            closed: true,
+            draggable:this.movible,
+            shadowOffsetX : 5,
+            shadowOffsetY : 5,
+            shadowBlur : 10,
+        });
+        konvaLayer.add(poly);
+        this.poly = poly;
+        poly.on('mouseenter', _ => {
+            map.dragging.disable();
+            document.body.style.cursor = 'pointer'
+            poly.setStroke("blue");
+            poly.setStrokeWidth(2);
+            konvaLayer.draw();
+            let html = "<div class='tooltip-titulo'>" + this.nombre + "</div>";
+            window.geoportal.showTooltip(p1.x + 12, p1.y + 10, html);
+        });
+        poly.on('mouseout', _ => {
+            map.dragging.enable();
+            document.body.style.cursor = 'default';
+            poly.setStroke(this.seleccionado?"blue":"black");
+            poly.setStrokeWidth(this.seleccionado?2:1);
+            konvaLayer.draw();
+            window.geoportal.hideTooltip();
+        });        
+        if (this.movible) {
+            poly.on("dragstart", _ => window.geoportal.hideTooltip());
+            poly.on("dragend", e => {
+                let newX0 = poly.points()[0] + poly.x();
+                let newY0 = poly.points()[1] + poly.y();
+                let newOrigin = map.containerPointToLatLng({x:newX0, y:newY0});
+                let deltaLng = newOrigin.lng - this.lng0;
+                let deltaLat = newOrigin.lat - this.lat0;
+                this.objetos.forEach(o => {
+                    o.lng += deltaLng;
+                    o.lat += deltaLat;
+                });
+                window.geoportal.mapa.movioObjeto(this);
+            });
+            poly.on("dragmove", e => {
+                this.dragged = true;
+            });
+        }
+        poly.on("mousedown", e => {
+            window.geoportal.mapa.ignoreNextClick = true;
+            this.dragged = false;
+        })  
+        poly.on("mouseup", e => {
+            if (!this.dragged) {
+                window.geoportal.mapa.seleccionaObjeto(this);
+            }
+        }) 
+        this.objetos.forEach(o => o.dibuja(konvaLayer, konvaLayerEfectos))  
+        */      
+    }
+
+    handleMouseEnter(konvaLayer) {
+        this.konvaObjects.forEach(o => {
+            o.setStroke("#021ebd");
+            o.setStrokeWidth(2.1);
+        });
+        konvaLayer.draw();
+        let html = "<div class='tooltip-titulo'>" + this.properties._titulo + "</div>";
+        let p = window.geoportal.mapa.map.latLngToContainerPoint([this.centroide.lat, this.centroide.lng]);
+        window.geoportal.showTooltip(p.x + 12, p.y + 10, html);
+    }
+    handleMouseExit(konvaLayer) {
+        window.geoportal.hideTooltip();
+        this.konvaObjects.forEach(o => {
+            o.setStroke(this.seleccionado?"blue":this.estilo.stroke);
+            o.setStrokeWidth(this.seleccionado?2:this.estilo.strokeWidth);
+        });
+        konvaLayer.draw();
+    }
+
+    destruye() {
+    }
+    isVisible(limites) {
+        if (!limites) limites = window.geoportal.mapa.getLimites();
+        return this.minLat <= limites.lat1 && this.maxLat >= limites.lat0 && this.minLng <= limites.lng1 && this.maxLng >= limites.lng0;
+    }
+    aseguraVisible() {
+        if (this.isVisible()) return;
+        setTimeout(_ => {
+            let dLat = (this.maxLat - this.minLat) / 5;
+            let dLng = (this.maxLng - this.minLng) / 5;
+            window.geoportal.mapa.map.fitBounds(L.latLngBounds(
+                L.latLng(this.minLat - dLat * 2, this.minLng - dLng),
+                L.latLng(this.maxLat + dLat, this.maxLng - dLng)
+            ))
+        }, 300);        
+    }
+
+    /* Panel de Propiedades */
+    getPanelesPropiedades() {
+        return [];
+        /*
+        let paneles = [{
+            codigo:"props",
+            path:"left/propiedades/PropArea"
+        }];
+        return paneles;
+        */
     }
 
     getTituloPanel() {

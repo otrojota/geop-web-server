@@ -31,33 +31,10 @@ class Capa {
         this.objetos = null;
         this.mensajes = new MensajesGeoportal(this, this.origen);
         if (this.tipo == "dataObjects") {
-            this.objetos = [];
-            this.config.objetos.forEach(o => {
-                switch(o.tipo) {
-                    case "punto":
-                        let proveedor = window.geoportal.getProveedor(this.codigoProveedor);
-                        o.variables.forEach(v => v.icono = proveedor.url + "/" + v.icono);
-                        o.urlIcono = proveedor.url + "/" + o.icono;
-                        let configPunto = {
-                            iconoEnMapa: proveedor.url + "/" + o.icono,
-                            variables: o.variables,
-                            movible:false
-                        }
-                        let punto = new Punto({lat:o.lat, lng:o.lng}, o.nombre, configPunto);
-                        punto.codigo = o.codigo;
-                        punto.capa = this;
-                        if (o.extraConfig) {
-                            if (o.extraConfig.configAnalisis) {
-                                punto.configAnalisis = $.extend(true, {}, punto.configAnalisis, o.extraConfig.configAnalisis);
-                            }
-                        }
-                        this.objetos.push(punto);
-                        break;
-                    default:
-                        console.error("Capa de dataObjects no maneja [aún] objetos del tipo '" + o.tipo + "'");
-                }
-            });
-            this.invalida();
+            if (!this.config.opciones || !this.config.opciones.geoJSON) {
+                this.parseConfigDataObjects();
+                this.invalida();
+            }
         }
     }
     get tipo() {return this.config.tipo}
@@ -222,6 +199,7 @@ class Capa {
         this.preConsultando = false;
         this.nextIdConsulta++;
         this.listaVisualizadoresActivos.forEach(visualizador => visualizador.refresca());
+        if (this.tipo == "dataObjects") this.cargaGeoJSONDataObjects();
     }
     getURLResultado(fileName) {
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor);
@@ -409,6 +387,12 @@ class Capa {
                 paneles = paneles.concat(this.observadorGeoJson.getPanelesPropiedades())  
             }
         }
+        if (this.tieneObjetos && this.objetosCargados && this.filtros) {
+            paneles.push({
+                codigo:"filtros",
+                path:"left/propiedades/FiltrosCapa"
+            })
+        }
         return paneles;
     }
 
@@ -442,7 +426,106 @@ class Capa {
     async cambioFiltros() {
         if (this.formatos.geoJSON && this.visualizadoresActivos.geojson) {
             await this.visualizadoresActivos.geojson.cambioFiltros();
+        } else if (this.tieneObjetos) {
+            this.aplicaFiltros();
+            if (window.capasController) window.capasController.refresca();
+            window.geoportal.mapa.callDibujaObjetos();
         }
+    }
+
+    /* Data Objects */
+    parseConfigDataObjects() {
+        this.objetos = [];
+        this.config.objetos.forEach(o => {
+            switch(o.tipo) {
+                case "punto":
+                    let proveedor = window.geoportal.getProveedor(this.codigoProveedor);                    
+                    o.variables.forEach(v => v.icono = proveedor.url + "/" + v.icono);
+                    o.urlIcono = proveedor.url + "/" + o.icono;
+                    let configPunto = {
+                        iconoEnMapa: proveedor.url + "/" + o.icono,
+                        variables: o.variables,
+                        movible:false
+                    }
+                    let punto = new Punto({lat:o.lat, lng:o.lng}, o.nombre, configPunto);
+                    punto.codigo = o.codigo;
+                    punto.capa = this;
+                    if (o.extraConfig) {
+                        if (o.extraConfig.configAnalisis) {
+                            punto.configAnalisis = $.extend(true, {}, punto.configAnalisis, o.extraConfig.configAnalisis);
+                        }
+                    }
+                    this.objetos.push(punto);
+                    break;
+                default:
+                    console.error("Capa de dataObjects no maneja [aún] objetos del tipo '" + o.tipo + "'");
+            }
+        });
+        this.objetosCargados = true;
+    }
+    cargaGeoJSONDataObjects() {
+        if (this.objetosCargados) return;
+        this.startWorking();
+        this.resuelveConsulta("geoJSON", {}, (err, geoJSON) => {
+            if (err) {
+                this.finishWorking();
+                console.error(err);
+                this.mensajes.addError(err);
+                return;
+            }
+            this.filtros = geoJSON._filtros;
+            this.filtros.forEach(f => {
+                f.filtros.forEach(s => {
+                    s.func = eval("(" + s.filtro + ")")
+                })
+            })
+            let fEstilo = this.config.opciones.estilos?eval("(" +this.config.estilos + ")"):_ => ({stroke:"black", strokeWidth:1})
+            if (this.config.opciones && this.config.opciones.estilos) fEstilo = eval("(" +this.config.opciones.estilos + ")");
+            this.objetos = [];
+            geoJSON.features.forEach(f => this.agregaGeoObjeto(f, f.geometry, fEstilo(f)));
+            this.aplicaFiltros();
+            this.objetosCargados = true;
+            if (window.capasController) {
+                window.capasController.refresca();
+                window.capasController.refrescaPanelPropiedades(true);
+            }
+            window.geoportal.mapa.callDibujaObjetos();
+        });
+    }
+    agregaGeoObjeto(f, geometry, estilo) {
+        if (geometry.type == "Polygon" || geometry.type == "MultiPolygon") {
+            this.objetos.push(new Poligonos(f, this, estilo));
+        } else if (geometry.type == "GeometryCollection") {
+            geometry.geometries.forEach((g, i) => {
+                let clone = JSON.parse(JSON.stringify(f));
+                clone.properties.id = clone.properties.id + "-" + (i+1);
+                clone.geometry = g;
+                this.agregaGeoObjeto(clone, g, estilo);
+            });
+        } else {
+            console.warn("Tipo de geometría '" + geometry.type + "' no soportado aún", f)
+        }
+    }
+    aplicaFiltros() {
+        if (!this.filtros) return;
+        if (!this.objetosOriginales) this.objetosOriginales = this.objetos;
+        let filtrados = [].concat(this.objetosOriginales);
+        for (let i=0; i<this.filtros.length; i++) {
+            let pasaron = [];
+            for (let k=0; k<filtrados.length; k++) {                
+                let pasa = false;
+                for (let j=0; j<this.filtros[i].filtros.length && !pasa; j++) {
+                    if (this.filtros[i].filtros[j].activo) {
+                    let func = this.filtros[i].filtros[j].func;
+                        let obj = filtrados[k];
+                        pasa = func(obj);
+                    }
+                }
+                if (pasa) pasaron.push(filtrados[k]);
+            }
+            filtrados = pasaron;
+        }
+        this.objetos = filtrados;
     }
 }
 

@@ -86,6 +86,7 @@ class ZPop {
             this.doShow(this.items);
         } else throw "Items must be a function or array";
         ZPop.addActive(this);
+        return this;
     }
 
     adjustPosition(popsContainer) {
@@ -203,6 +204,10 @@ class ZPop {
                     }
                 })
                 this.subPop.show();
+            } else {
+                if (this.options.onMouseEnter) {
+                    this.options.onMouseEnter(code, item);
+                }
             }
         });
         this.pop.find("#sub-items").find(".zpop-item-container").click(e => {

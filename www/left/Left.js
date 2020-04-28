@@ -67,5 +67,18 @@ class Left extends ZCustomController {
         this.doResize();
         return controller;
     }
+    
+    onOpcionesLoader_login() {this.refrescaSesion()}
+    onOpcionesLoader_logout() {this.refrescaSesion()}
+    refrescaSesion() {
+        if (this.opcionActiva == "sesion") {
+            this.opcionesLoader.content.refresca();
+        }
+        if (window.sesionUsuario) {
+            this.fotoUsuario.view.src = "foto-usuario?email=" + window.sesionUsuario.email;
+        } else {
+            this.fotoUsuario.view.src = "img/iconos/usuario.svg";
+        }
+    }
 }
 ZVC.export(Left);

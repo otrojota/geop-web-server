@@ -112,22 +112,44 @@ class Capas extends ZCustomController {
                 let item = this.mapaItems[indiceNivel];
                 if (item.tipo == "grupo") {
                     if (window.geoportal.capas.grupos.length == 1) return;
-                    await window.geoportal.capas.removeGrupo(item.indice);
+                    this.showDialog("common/WConfirm", {
+                            message:`¿Confirma que desea eliminar el grupo de capas '${item.nombre}'?`,
+                            title:"Esta Operación no se puede deshacer"
+                        }, 
+                        async _ => {
+                            await window.geoportal.capas.removeGrupo(item.indice);
+                            window.geoportal.admAnalisis.ajustaPanelAnalisis();
+                            this.refresca();
+                        })                    
                 } else if (item.tipo == "capa") {
-                    let capaDeItem = this.getCapaDeItem(this.mapaItemsPorId[idItemActivo]);
-                    if (capaDeItem && capaDeItem.id == item.item.id) {
-                        grupoActivo.itemActivo = grupoActivo;
-                    }
-                    item.grupo.removeCapa(item.indice);
+                    this.showDialog("common/WConfirm", {
+                        message:`¿Confirma que desea eliminar la capa '${item.nombre}'?`,
+                        title:"Esta Operación no se puede deshacer"
+                    }, 
+                    async _ => {
+                        let capaDeItem = this.getCapaDeItem(this.mapaItemsPorId[idItemActivo]);
+                        if (capaDeItem && capaDeItem.id == item.item.id) {
+                            grupoActivo.itemActivo = grupoActivo;
+                        }
+                        item.grupo.removeCapa(item.indice);
+                        window.geoportal.admAnalisis.ajustaPanelAnalisis();
+                        this.refresca();
+                    })   
                 } else if (item.tipo == "objeto") {
-                    if (item.item.id == idItemActivo) grupoActivo.itemActivo = grupoActivo;
-                    item.item.capa.removeObjeto(item.item);
-                    window.geoportal.mapa.dibujaObjetos();
+                    this.showDialog("common/WConfirm", {
+                        message:`¿Confirma que desea eliminar el objeto '${item.nombre}'?`,
+                        title:"Esta Operación no se puede deshacer"
+                    }, 
+                    async _ => {
+                        if (item.item.id == idItemActivo) grupoActivo.itemActivo = grupoActivo;
+                        item.item.capa.removeObjeto(item.item);
+                        window.geoportal.mapa.dibujaObjetos();    
+                        window.geoportal.admAnalisis.ajustaPanelAnalisis();
+                        this.refresca();
+                    })  
                 } else {
                     throw "Tipo de item '" + item.tipo + "' no se reconoce como eliminable";
                 }
-                window.geoportal.admAnalisis.ajustaPanelAnalisis();
-                this.refresca();
             }
         });
         this.cntItems.findAll(".nombre-item").forEach(e => {
@@ -200,6 +222,7 @@ class Capas extends ZCustomController {
                 html += "<tr><td colspan='4' style='height:10px;'></td></tr>";
             }
             let claseFila = (item.item && item.item.id == idItemActivo)?"fila-item-capa-activo":"fila-item-capa";
+            if (item.tipo == "grupo") claseFila += " fila-grupo";
             html += "<tr class='" + claseFila + "' data-indice-nivel='" + indiceNivel + "' style='" + (grupoInactivo?"opacity:0.5;":"") + "' data-grupo-activo='" + (!grupoInactivo) + "' >";            
             html += "<td style='width:14px; text-align:left;'>";
             if (subitems.length) {

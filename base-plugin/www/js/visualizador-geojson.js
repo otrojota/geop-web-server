@@ -24,6 +24,7 @@ class VisualizadorGeoJSON extends VisualizadorCapa {
         this.layerDeFeatureId = {};
         let fEstilo = this.capa.config.estilos?eval("(" +this.capa.config.estilos + ")"):_ => ({color:"#000000", fillOpacity:0, weight:1})
         options.onEachFeature = (f, layer) => {
+            if (f.geometry.type == "Point") return;
             layer.estiloOriginal = fEstilo(f);
             layer.estiloObservador = undefined;
             if (this.capa.observadorGeoJson) {
@@ -35,7 +36,8 @@ class VisualizadorGeoJSON extends VisualizadorCapa {
                 }
                 layer.setStyle(layer.estiloObservador);
             } else {
-                layer.setStyle(fEstilo(f));
+                let estilo = fEstilo(f);
+                layer.setStyle(estilo);
             }
             this.layerDeFeatureId[f.properties.id] = layer;
         }
@@ -158,6 +160,9 @@ class VisualizadorGeoJSON extends VisualizadorCapa {
         try {            
             this.lyGeoJSON.addData(this.geoJSON);
             this.pintaLeyendas();
+        } catch(error) {
+            console.error(error);
+            throw error;
         } finally {
             this.finishWorking();
         }

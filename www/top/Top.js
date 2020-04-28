@@ -37,11 +37,61 @@ class Top extends ZCustomController {
     onCmdZoomIn_click() {window.geoportal.mapa.zoomIn()}
     onCmdZoomOut_click() {window.geoportal.mapa.zoomOut()}
     async onEdBuscarUbicacion_change() {
+        if (this.ignoreNextChange) {
+            this.ignoreNextChange = false;
+            return;
+        }
+        if (this.buscador) this.buscador.abort();
+        if (this.zpop) {
+            this.zpop.close();
+            this.zpop = null;
+        }
+
         let filtro = this.edBuscarUbicacion.value.trim();
         if (filtro.length < 4) return;
         let pos = window.geoportal.mapa.map.getCenter();
         this.iconoBuscar.addClass("fa-spin fa-spinner");
         this.iconoBuscar.removeClass("fa-search");
+        
+        this.buscador = zPost("busca.plc", {filtro:filtro, maxResults:10, lat:pos.lat, lng:pos.lng}, ubis => {
+            this.iconoBuscar.removeClass("fa-spin fa-spinner");
+            this.iconoBuscar.addClass("fa-search");
+            this.buscador = null;
+            if (!ubis || !ubis.results || !ubis.results.length) return;
+            let rows = ubis.results.map((l, i) => ({
+                code:i,
+                label:l.highlightedTitle + " - " + parseInt(l.distance / 1000) + "[km] - " + "[" + l.category + "]",
+                icon:l.category == "city-town-village"?"img/iconos/ciudad.svg":"img/iconos/ubicacion.svg",
+                distancia:l.distance,
+                pos:l.position,
+                textoOriginal:l.title
+            }))
+                .filter(r => (!isNaN(r.distancia) && r.textoOriginal))
+                .sort((r1, r2) => (r1.distancia - r2.distancia))
+            this.zpop = new ZPop(this.leftM.view, rows,
+                {
+                    vMargin:2, hMargin:4, 
+                    onClick:(code, row) => {                        
+                        this.ignoreNextChange = true;
+                        this.edBuscarUbicacion.value = row.textoOriginal;
+                        window.geoportal.mapa.map.panTo(row.pos);
+                        return true;
+                    },
+                    onMouseEnter:(code, row) => {                        
+                        window.geoportal.mapa.map.flyTo(row.pos, 8, {animate:true, duration:0.5});
+                        if (this.timerResalta) clearTimeout(this.timerResalta);
+                        this.timerResalta = setTimeout(_ => window.geoportal.mapa.resaltaPunto(row.pos[0], row.pos[1]), 600);                        
+                    }
+                }
+            ).show();
+        }, error => {
+            console.error(error);
+            this.iconoBuscar.removeClass("fa-spin fa-spinner");
+            this.iconoBuscar.addClass("fa-search");
+            this.buscador = null;
+        })
+
+        /*
         let ubis;
         try {
             ubis = await zPost("busca.plc", {filtro:filtro, maxResults:10, lat:pos.lat, lng:pos.lng});
@@ -68,6 +118,7 @@ class Top extends ZCustomController {
                 }
             }
         ).show();
+        */
     }
 
     onCmdAgregarObjeto_click() {

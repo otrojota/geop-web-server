@@ -1,20 +1,6 @@
 class Login extends ZCustomController {
     async onThis_init() {
-        this.alerta.hide();
-        let storedSesion = localStorage.getItem("sesion");
-        if (storedSesion) {
-            try {
-                let sesion = await zPost("autoLogin.usu", {token:JSON.parse(storedSesion).token});
-                if (sesion) {
-                    window.sesionUsuario = sesion;
-                    window.zSecurityToken = sesion.token;
-                    this.triggerEvent("login");
-                    return;
-                } 
-            } catch(error) {
-                console.error(error);
-            }
-        }
+        this.alerta.hide();        
         this.view.onkeyup = e => {
             if (e.code == "Enter") this.onCmdLogin_click();
         }

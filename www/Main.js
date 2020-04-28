@@ -48,6 +48,21 @@ class Main extends ZCustomController {
         this.doResize();
         window.geoportal.admAnalisis = this;
         await window.geoportal.init();
+        // Autologin
+        let storedSesion = localStorage.getItem("sesion");
+        if (storedSesion) {
+            try {
+                let sesion = await zPost("autoLogin.usu", {token:JSON.parse(storedSesion).token});
+                if (sesion) {
+                    window.sesionUsuario = sesion;
+                    window.zSecurityToken = sesion.token;
+                    this.left.refrescaSesion();
+                    return;
+                } 
+            } catch(error) {
+                console.error(error);
+            }
+        }
     }
     doResize() {
         let w = window.innerWidth;

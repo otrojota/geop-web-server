@@ -36,7 +36,7 @@ body {
 }
 .top-menu-right {
     background-color: #16232f;
-    width: 105px;
+    width: 70px;
     color:white;
     border-radius: 0px 0px 0px 10px;
     -moz-border-radius: 0px 0px 0px 10px;
@@ -66,6 +66,11 @@ body {
     font-size: 16px;
     text-align: center;
     padding-top:5px;
+}
+.cuadro-logo {
+    padding:6px;
+    text-align: center;
+    font-size: 10px;    
 }
 .opcion-izquierda {
     padding:6px;
@@ -160,6 +165,9 @@ body {
 }
 .fila-item-capa-activo {
     color: blue;
+}
+.fila-grupo {
+    text-transform: uppercase;
 }
 .abridor {
     cursor: pointer;

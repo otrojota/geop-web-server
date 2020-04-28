@@ -42,13 +42,6 @@ const opMapasBase = [{
         maxZoom:13
     }
 }, {
-    codigo:"esri-world-street", nombre:"Esri - World Street Map",
-    url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
-    options:{
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri',
-        maxZoom:13
-    }
-}, {
     codigo:"esri-ocean-basemap", nombre:"Esri - Ocean Base Map",
     url:'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}',
     options:{
@@ -77,7 +70,11 @@ class MapaGeoPortal {
         this.panelMapa = panelMapa;
         this.siguienteIdPanel = 1;
         this.mouseListeners = [];
-        this.map = L.map(panelMapa.id, {zoomControl:false, attributionControl:false}).setView([-33.034454, -71.592093], 6);
+        this.map = L.map(panelMapa.id, {
+            zoomControl:false, 
+            attributionControl:false,
+            minZoom:3
+        }).setView([-33.034454, -71.592093], 6);
         this.map.on("moveend", _ => this.movioMapa());
         let mapDef = this.getMapa(window.geoportal.preferencias.mapa.mapaBase);
         let mapOpts = mapDef.options;
@@ -293,7 +290,7 @@ class MapaGeoPortal {
     }
     getObjetos() {
         return window.geoportal.capas.getCapas().reduce((lista, capa) => {
-            if (capa.tieneObjetos) lista = lista.concat(capa.objetos);
+            if (capa.esObjetosUsuario || (capa.tieneObjetos && capa.objetosCargados)) lista = lista.concat(capa.objetos);
             return lista;
         }, [])
     }
@@ -335,7 +332,12 @@ class MapaGeoPortal {
     dibujaObjetos() {
         this.konvaLayerEfectos.destroyChildren();
         this.konvaLayer.destroyChildren();
-        this.getObjetos().forEach(o => o.dibuja(this.konvaLayer, this.konvaLayerEfectos));
+        let limites = this.getLimites();
+        this.getObjetos().forEach(o => {
+            if (o.isVisible(limites)) {
+                o.dibuja(this.konvaLayer, this.konvaLayerEfectos)            
+            }
+        });
         this.konvaLayerEfectos.draw();
         this.konvaLayer.draw();
     }
@@ -381,4 +383,39 @@ class MapaGeoPortal {
         this.panelMapa.view.style.cursor = "pointer"
     }
     unsetPointer() {this.panelMapa.view.style.cursor = this.savedCursor}
+
+    resaltaPunto(lat, lng) {
+        this.konvaLayerAgregando.destroyChildren();
+        if (this.animacionResaltando && this.animacionResaltando.isRunning()) {
+            this.animacionResaltando.stop();
+        }
+        if (this.timerResaltando) {
+            clearTimeout(this.timerResaltando);
+        }
+        let point = this.map.latLngToContainerPoint([lat, lng]); 
+        this.resaltando = new Konva.Circle({
+            x: point.x,
+            y: point.y,
+            radius: 2,
+            stroke: 'red',
+            strokeWidth: 2,
+            opacity : 0
+        });
+        this.konvaLayerAgregando.add(this.resaltando);
+        this.animacionResaltando = new Konva.Animation(frame => {
+            let porc = (Date.now() % 1000) / 1000;     
+            this.resaltando.setRadius(5 + 20 * porc);
+            this.resaltando.setOpacity(1 - porc);
+        }, this.konvaLayerAgregando);
+        this.animacionResaltando.start();
+        this.timerResaltando = setTimeout(_ => {
+            if (this.animacionResaltando && this.animacionResaltando.isRunning()) {
+                this.animacionResaltando.stop();
+            }
+            this.animacionResaltando = null;
+            this.timerResaltando = null;
+            this.resaltando.destroy();
+            this.konvaLayerAgregando.draw();
+        }, 3000);
+    }
 }
