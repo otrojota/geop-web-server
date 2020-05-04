@@ -11,12 +11,12 @@ class ObjetoGeoportal {
     }
     static handleMouseClick(puntoMapa, puntoCanvas) {
         if (window.geoportal.agregandoObjeto == "punto") {
-            window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa, null, null));
+            window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa, null, {nombreEditable:true}));
         } else if (window.geoportal.agregandoObjeto == "area") {
             window.geoportal.mapa.konvaLayerAgregando.destroyChildren();
             window.geoportal.mapa.konvaLayerAgregando.draw();
             if (ObjetoGeoportal.agregandoArea) {
-                window.geoportal.mapa.agregaObjeto(new Area(ObjetoGeoportal.agregandoArea, puntoMapa));
+                window.geoportal.mapa.agregaObjeto(new Area(ObjetoGeoportal.agregandoArea, puntoMapa, null, {nombreEditable:true}));
                 ObjetoGeoportal.agregandoArea = null;
             } else {
                 ObjetoGeoportal.agregandoArea = puntoMapa;
@@ -48,7 +48,7 @@ class ObjetoGeoportal {
         this.config = config;
         this.seleccionado = false;
         this.usaAnalisis = true;
-        this.nombreEditable = true;
+        this.nombreEditable = config.nombreEditable;
         this.objetoPadre = null;
         this.dragBoundFunc = null;
         this._capa = null;
@@ -62,20 +62,26 @@ class ObjetoGeoportal {
             analizador:"no-sobreescrito",
             analizadores:{}
         }
+        this.mensajes = new MensajesGeoportal(this);
+        this.observa = []; // {capa:capasDisponibles, nivel:0}
+        this.valoresObservados = []; // indice de "observa"
     }
     get nombre() {return this.config.nombre}
     set nombre(n) {this.config.nombre = n}
 
-    get variables() {return this.config.variables} // dataObject
+    get variables() {return this.config.variables || []} // dataObject
 
+    getTituloPanel() {return this.nombre}
     describe() {return "Sin Descripción"}
     dibuja(konvaLayer, konvaLayerEfectos) {}
     destruye() {}
-    movio() {}
-    movioHijo(hijo) {}
+    movio() {this.recalculaValoresObservados()}
     cambioTiempo() {
-        console.error("cambioTiempo no sobreescrito en objeto");
+        let idx = this.observa.findIndex(o => (o.tipo == "queryMinZ" || o.variable && o.variable.temporal));
+        if (idx < 0) return;
+        this.recalculaValoresObservados();        
     }
+    movioHijo(hijo) {}
     getItems() {return null}
     selecciona() {this.seleccionado = true}
     desselecciona() {this.seleccionado = false}
@@ -83,6 +89,8 @@ class ObjetoGeoportal {
     aseguraVisible() {}
     isVisible(limites) {throw "isVisible no Implementado en '" + this.nombre + "'"}
     editoPadre() {}
+    getCentroide() {console.error("getCentroide no sobreescrito en objeto")}
+    getCodigoDimension() {return null}
 
     getAnalizadoresAplicables() {
         let ret = [];
@@ -91,66 +99,21 @@ class ObjetoGeoportal {
         })
         return ret;
     }
-    
-}
-
-class Punto extends ObjetoGeoportal {    
-    constructor(puntoMapa, nombre, config, id) {
-        if (!nombre) {
-            if (!Punto.siguienteNumeroPunto) Punto.siguienteNumeroPunto = 1;
-            nombre = "Punto " + Punto.siguienteNumeroPunto++
-        }
-        let defaultConfig = {
-            nombre:nombre,
-            movible:true, iconoEnMapa:null, nombreEditable:true
-        }        
-        let initialConfig = $.extend({}, defaultConfig, config?config:{});
-        super(initialConfig, id?id:uuidv4());
-        this.configAnalisis.analizador = "serie-tiempo";
-        this.configAnalisis.analizadores = {
-            "serie-tiempo":{
-                variable:"gfs4.TMP_2M",
-                nivelVariable:0,
-                tiempo:{tipo:"relativo", from:-2, to:4}
-            }
-        }
-
-        this.tipo = "punto";
-        this.lng = puntoMapa.lng;
-        this.lat = puntoMapa.lat;
-        this.observa = []; // {capa:capasDisponibles, nivel:0}
-        this.valoresObservados = []; // indice de "observa"
-        this.movible = initialConfig.movible;
-        this.iconoEnMapa = initialConfig.iconoEnMapa;
-        this.mensajes = new MensajesGeoportal(this);
-    }
-    editoPadre() {
-        let p = this.nombre.indexOf("-");
-        if (p > 0) {
-            this.nombre = this.objetoPadre.nombre + "-" + this.nombre.substr(p+1);
-        }
-    }
-    describe() {return this.nombre}
-    /* Panel de Propiedades */
     getPanelesPropiedades() {
         let paneles = [{
             codigo:"props",
-            path:"left/propiedades/PropPunto"
+            path:"left/propiedades/PropObjeto"
         }, {
             codigo:"observa",
-            path:"left/propiedades/PuntoObserva"
+            path:"left/propiedades/ObjetoObserva"
         }];
         return paneles;
     }
 
-    getTituloPanel() {
-        return this.nombre;
-    }
-
-    dibuja(konvaLayer, konvaLayerEfectos) {
-        let map = window.geoportal.mapa.map;
-        let point = map.latLngToContainerPoint([this.lat, this.lng]);        
+    dibujaValoresObservados(konvaLayer) {
         if (this.observa.length) {
+            let centroide = this.getCentroide();
+            let point = window.geoportal.mapa.map.latLngToContainerPoint([centroide.lat, centroide.lng]);
             let rect = new Konva.Rect({
                 x:point.x - 2,
                 y:point.y - 8 - 6 - 26 * this.observa.length,
@@ -168,15 +131,21 @@ class Punto extends ObjetoGeoportal {
                 let x = point.x + 3;
                 let value = this.valoresObservados[idx];
                 let text, textColor;
-                if (value && (value == "S/D" || value.value === undefined)) {
+                if (value && typeof value == "object" && (value == "S/D" || value.value === undefined)) {
                     text = "Sin Datos"; textColor = "orange";
                 } else if (value === null) {
                     text = "... ?? ..."; textColor = "orange";
                 } else if (typeof value == "string") {
                     text = value; textColor = "orange";
-                } else {
+                } else if (o.tipo == "capa") {
                     let v = window.geoportal.formateaValorVariable(o.variable, value.value);
                     text = v + " [" + o.variable.unidad + "]";
+                    textColor = "white";
+                } else if (o.tipo == "queryMinZ") {
+                    let dec = (o.query.variable.options && o.query.variable.options.decimals)?o.query.variable.options.decimals:2;
+                    let unit = (o.query.variable.options && o.query.variable.options.unit)?o.query.variable.options.unit:"s/u";
+                    let v = GeoPortal.round(value.value, dec).toLocaleString();
+                    text = v + " [" + unit + "]";
                     textColor = "white";
                 }                
                 let txt = new Konva.Text({
@@ -218,12 +187,12 @@ class Punto extends ObjetoGeoportal {
                 background.on("mouseenter", e => {
                     let variable = o.variable;
                     let html = "<div class='tooltip-titulo'>" + variable.nombre + "</div>";
-                    if (variable.niveles.length > 1) html += "<div class='tooltip-subtitulo'>" + variable.niveles[o.nivel].descripcion + "</div>";
+                    if (variable.niveles && variable.niveles.length > 1) html += "<div class='tooltip-subtitulo'>" + variable.niveles[o.nivel].descripcion + "</div>";
                     html += "<hr class='my-1 bg-white' />";
                     html += "<div class='tooltip-contenido'>";
                     html += "<table class='w-100'>";
                     html += "<tr>";
-                    let origen = window.geoportal.origenes[variable.origen];
+                    let origen = (o.tipo == "capa"?window.geoportal.origenes[variable.origen]:{icono:variable.urlIcono, nombre:variable.nombreEspacio});
                     html += "<td class='icono-tooltip'><img src='" + origen.icono + "' width='14px' /></td>";
                     html += "<td class='propiedad-tooltip'>Origen:</td>";
                     html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
@@ -259,6 +228,106 @@ class Punto extends ObjetoGeoportal {
                 });                
             });
         }
+    }
+
+    recalculaValoresObservados() {
+        this.mensajes.clear();
+        this.valoresObservados = this.observa.reduce((lista, o) => {
+            lista.push(null);
+            return lista;
+        }, []);        
+        this.observa.forEach((o, i) => {
+            if (o.tipo == "capa") {
+                let infoVar = window.geoportal.getInfoVarParaConsulta(o.codigoVariable, this);
+                this.mensajes.addOrigen(infoVar.variable.origen);
+                let centroide = this.getCentroide();
+                let query = {
+                    lat:centroide.lat, lng:centroide.lng, time:window.geoportal.tiempo,
+                    levelIndex:o.nivel !== undefined?o.nivel:0,
+                    codigoVariable:infoVar.codigoVariable,
+                    metadataCompleta:true
+                }
+                let capa = infoVar.capaQuery;
+                capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
+                    if (err) {
+                        this.valoresObservados[i] = "Error: " + err;
+                        this.mensajes.addError(infoVar.variable.nombre + ": " + err.toString());
+                    } else {
+                        this.valoresObservados[i] = resultado;
+                        if (resultado == "S/D" || resultado == null || resultado === undefined) this.mensajes.addError(infoVar.variable.nombre + ": Sin Datos");
+                        else if (typeof resultado == "string") this.mensajes.addError(infoVar.variable.nombre + ": " + resultado);  
+                        else if (resultado && resultado.value === undefined) this.mensajes.addError(infoVar.variable.nombre + ": Sin Datos");
+                        else this.mensajes.parse(resultado, infoVar.variable.nombre);
+                    }
+                    window.geoportal.mapa.callDibujaObjetos();
+                });
+            } else if (o.tipo == "queryMinZ") {
+                let query = o.query;
+                console.log("query", query);
+                let p = query.variable.code.indexOf(".");
+                //let origen = window.geoportal.getOrigen(query.variable.code.substr(0,p));
+                this.mensajes.addOrigen(query.variable.code.substr(0,p));
+                let {t0, t1, desc} = window.minz.normalizaTiempo(query.temporalidad, window.geoportal.tiempo);
+                window.minz.query(query, t0, t1)
+                    .then(valor => {
+                        let v = {atributos:{"Período":desc}};
+                        if (valor === null || valor === undefined) {
+                            this.mensajes.addError(query.variable.name + ": Sin Datos para el período");
+                        } else {
+                            v.value = valor;
+                        }
+                        this.valoresObservados[i] = v;
+                        window.geoportal.mapa.callDibujaObjetos();
+                    })
+                    .catch(err => {
+                        this.valoresObservados[i] = "Error: " + err;
+                        this.mensajes.addError(query.variable.name + ": " + err.toString());
+                        window.geoportal.mapa.callDibujaObjetos();
+                    })
+            }
+        });
+    }
+}
+
+class Punto extends ObjetoGeoportal {    
+    constructor(puntoMapa, nombre, config, id) {
+        if (!nombre) {
+            if (!Punto.siguienteNumeroPunto) Punto.siguienteNumeroPunto = 1;
+            nombre = "Punto " + Punto.siguienteNumeroPunto++
+        }
+        let defaultConfig = {
+            nombre:nombre,
+            movible:true, iconoEnMapa:null, nombreEditable:true
+        }        
+        let initialConfig = $.extend({}, defaultConfig, config?config:{});
+        super(initialConfig, id?id:uuidv4());
+        this.configAnalisis.analizador = "serie-tiempo";
+        this.configAnalisis.analizadores = {
+            "serie-tiempo":{
+                variable:"gfs4.TMP_2M",
+                nivelVariable:0,
+                tiempo:{tipo:"relativo", from:-2, to:4}
+            }
+        }
+
+        this.tipo = "punto";
+        this.lng = puntoMapa.lng;
+        this.lat = puntoMapa.lat;
+        this.movible = initialConfig.movible;
+        this.iconoEnMapa = initialConfig.iconoEnMapa;
+    }
+    editoPadre() {
+        let p = this.nombre.indexOf("-");
+        if (p > 0) {
+            this.nombre = this.objetoPadre.nombre + "-" + this.nombre.substr(p+1);
+        }
+    }
+    describe() {return this.nombre}
+    getCentroide() {return {lat:this.lat, lng:this.lng}}
+
+    dibuja(konvaLayer, konvaLayerEfectos) {
+        let map = window.geoportal.mapa.map;
+        let point = map.latLngToContainerPoint([this.lat, this.lng]);
         this.selectedCircle = new Konva.Circle({
             x: point.x,
             y: point.y,
@@ -413,51 +482,9 @@ class Punto extends ObjetoGeoportal {
             this.animation.stop();
         }
     }
-    getRutaPanelConfiguracion() {return "main/config-objetos/PConfigPunto"}
+    //getRutaPanelConfiguracion() {return "main/config-objetos/PConfigPunto"}
     getIcono() {return this.iconoEnMapa || "img/iconos/punto.svg"}
-    recalculaValoresObservados() {
-        this.mensajes.clear();
-        this.valoresObservados = this.observa.reduce((lista, o) => {
-            lista.push(null);
-            return lista;
-        }, []);        
-        this.observa.forEach((o, i) => {
-            let infoVar = window.geoportal.getInfoVarParaConsulta(o.codigoVariable, this);
-            this.mensajes.addOrigen(infoVar.variable.origen);
-            let tUTC = moment.tz(window.geoportal.tiempo, "UTC");
-            let tLocal = moment.tz(window.geoportal.tiempo, "America/Santiago");
-            let query = {
-                lat:this.lat, lng:this.lng, time:window.geoportal.tiempo,
-                levelIndex:o.nivel !== undefined?o.nivel:0,
-                codigoVariable:infoVar.codigoVariable,
-                metadataCompleta:true
-            }
-            let capa = infoVar.capaQuery;
-            capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
-                if (err) {
-                    this.valoresObservados[i] = "Error: " + err;
-                    this.mensajes.addError(infoVar.variable.nombre + ": " + err.toString());
-                } else {
-                    this.valoresObservados[i] = resultado;
-                    if (resultado == "S/D" || resultado == null || resultado === undefined) this.mensajes.addError(infoVar.variable.nombre + ": Sin Datos");
-                    else if (typeof resultado == "string") this.mensajes.addError(infoVar.variable.nombre + ": " + resultado);  
-                    else if (resultado && resultado.value === undefined) this.mensajes.addError(infoVar.variable.nombre + ": Sin Datos");
-                    else this.mensajes.parse(resultado, infoVar.variable.nombre);
-                }
-                window.geoportal.mapa.callDibujaObjetos();
-            });
-        });
-    }
-
-    movio() {
-        this.recalculaValoresObservados();
-        super.movio();
-    }
-    cambioTiempo() {
-        let idx = this.observa.findIndex(o => o.variable.temporal);
-        if (idx < 0) return;
-        this.recalculaValoresObservados();        
-    }
+    
     isVisible(limites) {
         if (!limites) limites = window.geoportal.mapa.getLimites();
         return this.lat >= limites.lat0 && this.lat <= limites.lat1 && this.lng >= limites.lng0 && this.lng <= limites.lng1;
@@ -544,6 +571,7 @@ class Area extends ObjetoGeoportal {
     get lng1() {return this.objetos[1].lng}
     get lat0() {return this.objetos[2].lat}
     get lat1() {return this.objetos[0].lat}
+    getCentroide() {return {lat:(this.lat0 + this.lat1) / 2, lng:(this.lng0 + this.lng1) / 2}}
     describe() {return this.nombre}
     getIcono() {return "img/iconos/area.svg"}
     getItems() {
@@ -633,9 +661,11 @@ class Area extends ObjetoGeoportal {
         this.objetos.forEach(o => o.destruye())
     }
     cambioTiempo() {
+        super.cambioTiempo();
         this.objetos.forEach(o => o.cambioTiempo())
     }
     movio() {
+        super.movio();
         this.objetos.forEach(o => {
             o.movio();
             window.geoportal.objetoMovido(o);
@@ -679,16 +709,11 @@ class Area extends ObjetoGeoportal {
             window.geoportal.objetoMovido(this.objetos[2]);
         }
         window.geoportal.mapa.movioObjeto(this);
+        super.movio();
     }
     isVisible(limites) {
         if (!limites) limites = window.geoportal.mapa.getLimites();
         return this.lat0 <= limites.lat1 && this.lat1 >= limites.lat0 && this.lng0 <= limites.lng1 && this.lng1 >= limites.lng0;
-        /*
-        return window.geoportal.mapa.map.getBounds().contains(L.latLngBounds(
-            L.latLng(this.lat0, this.lng0),
-            L.latLng(this.lat1, this.lng1)
-        ));
-        */
     }
     aseguraVisible() {
         if (this.isVisible()) return;
@@ -700,19 +725,6 @@ class Area extends ObjetoGeoportal {
                 L.latLng(this.lat1 + dLat, this.lng1 - dLng)
             ))
         }, 300);        
-    }
-
-    /* Panel de Propiedades */
-    getPanelesPropiedades() {
-        let paneles = [{
-            codigo:"props",
-            path:"left/propiedades/PropArea"
-        }];
-        return paneles;
-    }
-
-    getTituloPanel() {
-        return this.nombre;
     }
 }
 
@@ -737,6 +749,8 @@ class Poligonos extends ObjetoGeoportal {
         this.poligonos = [];
         this.agregaCoordenadas(feature.geometry.coordinates);
     }
+    getCentroide() {return this.centroide}
+    getCodigoDimension() {return this.properties._codigoDimension}
 
     agregaCoordenadas(coordinates) {
         if (!coordinates.length) {
@@ -767,7 +781,6 @@ class Poligonos extends ObjetoGeoportal {
                     area = turf.area(turf.polygon(areaPolCoords));
                 } catch(error) {
                     console.error(error);
-                    console.log(areaPolCoords);
                 }
                 this.areas.push(area);
             } else {
@@ -783,16 +796,21 @@ class Poligonos extends ObjetoGeoportal {
     get capa() {return this._capa}
     set capa(c) {this._capa = c;}
     dibuja(konvaLayer, konvaLayerEfectos) {   
-        const limitesAreas = [undefined, undefined, undefined, 200000, 180000, 150000, 100000, 90000, 60000, 10000, 1000, 300, 0];        
+        const limitesAreas = [undefined, undefined, undefined, 2000000, 1500000, 1000000, 600000, 200000, 100000, 5000, 1000, 50, 0];        
         let map = geoportal.mapa.map;
         let zoom = map.getZoom();
         let limiteArea = zoom >= 12?0:limitesAreas[zoom];
+        let colorObserva;
+        if (this.capa.escalaColorear) {
+            let v = this.capa.valoresColorear[this.id];
+            if (v !== undefined) colorObserva = this.capa.escalaColorear.getColor(v);
+        }
         this.konvaObjects = [];
-        let n = 0;
+        //let nPintados = 0;
         for (let i=0; i<this.poligonos.length; i++) {
             if (this.areas[i] < limiteArea) continue;
-            n++;
-            let pol = this.poligonos[i];            
+            //nPintados++;
+            let pol = this.poligonos[i];
             let points = pol.reduce((lista, puntoMapa) => {
                 let p = map.latLngToContainerPoint([puntoMapa.lat, puntoMapa.lng]);
                 lista.push(p.x, p.y);
@@ -801,86 +819,33 @@ class Poligonos extends ObjetoGeoportal {
             let opacidadBase = this.estilo.opacity === undefined?1:this.estilo.opacity;
             let poly = new Konva.Line({
                 points: points,
-                fill: this.estilo.fill,
+                fill: colorObserva?colorObserva:this.estilo.fill,
                 stroke: this.seleccionado?"blue":this.estilo.stroke,
-                strokeWidth: this.seleccionado?2:this.estilo.strokeWidth,
+                strokeWidth: this.estilo.strokeWidth,
                 closed: true,
                 opacity : this.capa.opacidad / 100 * opacidadBase
             });
-            poly.on('mouseenter', _ => this.handleMouseEnter(konvaLayer));
-            poly.on('mouseout', _ => this.handleMouseExit(konvaLayer));
             konvaLayer.add(poly);
-            this.konvaObjects.push(poly);
-        }
-
-        /*
-        let p0 = map.latLngToContainerPoint([this.lat0, this.lng0]);
-        let p1 = map.latLngToContainerPoint([this.lat1, this.lng1]);
-        let poly = new Konva.Line({
-            points: [p0.x, p0.y, p1.x, p0.y, p1.x, p1.y, p0.x, p1.y],
-            fill: 'rgba(0,0,0,0.05)',
-            stroke: this.seleccionado?"blue":'black',
-            strokeWidth: this.seleccionado?2:1,
-            closed: true,
-            draggable:this.movible,
-            shadowOffsetX : 5,
-            shadowOffsetY : 5,
-            shadowBlur : 10,
-        });
-        konvaLayer.add(poly);
-        this.poly = poly;
-        poly.on('mouseenter', _ => {
-            map.dragging.disable();
-            document.body.style.cursor = 'pointer'
-            poly.setStroke("blue");
-            poly.setStrokeWidth(2);
-            konvaLayer.draw();
-            let html = "<div class='tooltip-titulo'>" + this.nombre + "</div>";
-            window.geoportal.showTooltip(p1.x + 12, p1.y + 10, html);
-        });
-        poly.on('mouseout', _ => {
-            map.dragging.enable();
-            document.body.style.cursor = 'default';
-            poly.setStroke(this.seleccionado?"blue":"black");
-            poly.setStrokeWidth(this.seleccionado?2:1);
-            konvaLayer.draw();
-            window.geoportal.hideTooltip();
-        });        
-        if (this.movible) {
-            poly.on("dragstart", _ => window.geoportal.hideTooltip());
-            poly.on("dragend", e => {
-                let newX0 = poly.points()[0] + poly.x();
-                let newY0 = poly.points()[1] + poly.y();
-                let newOrigin = map.containerPointToLatLng({x:newX0, y:newY0});
-                let deltaLng = newOrigin.lng - this.lng0;
-                let deltaLat = newOrigin.lat - this.lat0;
-                this.objetos.forEach(o => {
-                    o.lng += deltaLng;
-                    o.lat += deltaLat;
-                });
-                window.geoportal.mapa.movioObjeto(this);
+            let polyBorder = new Konva.Line({
+                points: points,
+                stroke: "#021ebd",
+                strokeWidth: this.estilo.strokeWidth + 1,
+                closed: true,
+                opacity : 0
             });
-            poly.on("dragmove", e => {
-                this.dragged = true;
-            });
+            poly.on('mouseenter', _ => this.handleMouseEnter(konvaLayerEfectos));
+            poly.on('mouseout', _ => this.handleMouseExit(konvaLayerEfectos));
+            poly.on("mousedown", e => window.geoportal.mapa.ignoreNextClick = true);  
+            poly.on("mouseup", e => window.geoportal.mapa.seleccionaObjeto(this));            
+            konvaLayerEfectos.add(polyBorder);
+            this.konvaObjects.push(polyBorder);
         }
-        poly.on("mousedown", e => {
-            window.geoportal.mapa.ignoreNextClick = true;
-            this.dragged = false;
-        })  
-        poly.on("mouseup", e => {
-            if (!this.dragged) {
-                window.geoportal.mapa.seleccionaObjeto(this);
-            }
-        }) 
-        this.objetos.forEach(o => o.dibuja(konvaLayer, konvaLayerEfectos))  
-        */      
+        //console.log(this.nombre + " pinta:" + nPintados + " / " + this.poligonos.length + " con zoom " + zoom);
     }
 
     handleMouseEnter(konvaLayer) {
         this.konvaObjects.forEach(o => {
-            o.setStroke("#021ebd");
-            o.setStrokeWidth(2.1);
+            o.setOpacity(1);
         });
         konvaLayer.draw();
         let html = "<div class='tooltip-titulo'>" + this.properties._titulo + "</div>";
@@ -890,8 +855,132 @@ class Poligonos extends ObjetoGeoportal {
     handleMouseExit(konvaLayer) {
         window.geoportal.hideTooltip();
         this.konvaObjects.forEach(o => {
-            o.setStroke(this.seleccionado?"blue":this.estilo.stroke);
-            o.setStrokeWidth(this.seleccionado?2:this.estilo.strokeWidth);
+            o.setOpacity(0);
+        });
+        konvaLayer.draw();
+    }
+
+    destruye() {
+    }
+    isVisible(limites) {
+        if (!limites) limites = window.geoportal.mapa.getLimites();
+        return this.minLat <= limites.lat1 && this.maxLat >= limites.lat0 && this.minLng <= limites.lng1 && this.maxLng >= limites.lng0;
+    }
+    isCompletamenteVisible(limites) {
+        if (!limites) limites = window.geoportal.mapa.getLimites();
+        return this.minLat >= limites.lat0 && this.maxLat <= limites.lat1 && this.minLng >= limites.lng0 && this.maxLng <= limites.lng1;
+    }
+    aseguraVisible() {
+        if (this.isCompletamenteVisible()) return;
+        setTimeout(_ => {
+            let dLat = (this.maxLat - this.minLat) / 5;
+            let dLng = (this.maxLng - this.minLng) / 5;
+            window.geoportal.mapa.map.fitBounds(L.latLngBounds(
+                L.latLng(this.minLat - dLat * 2, this.minLng - dLng),
+                L.latLng(this.maxLat + dLat, this.maxLng - dLng)
+            ))
+        }, 300);        
+    }
+}
+
+class Lineas extends ObjetoGeoportal {    
+    constructor(feature, capa, estilo) {
+        let nombre = feature.properties.nombre || "Líneas";
+        let id = feature.properties.id;
+        let defaultConfig = {
+            nombre:nombre,            
+            movible:false
+        }
+        super(defaultConfig, id?id:uuidv4());
+        this._capa = capa;
+        this.estilo = estilo;
+        this.properties = feature.properties;
+        this.tipo = "lineas";
+        this.lineas = [];
+        this.minLat = this.maxLat = this.minLng = this.maxLng = undefined;
+        let c = turf.centroid(feature);
+        this.centroide = {lat:c.geometry.coordinates[1], lng:c.geometry.coordinates[0]};
+        this.lineas = [];
+        this.agregaCoordenadas(feature.geometry.coordinates);
+    }
+    getCentroide() {return this.centroide}
+    getCodigoDimension() {return this.properties._codigoDimension}
+
+    agregaCoordenadas(coordinates) {
+        if (!coordinates.length) {
+            console.error("Arreglo vacío en coordenadas");
+            return;
+        }
+        if (!Array.isArray(coordinates[0])) {
+            console.error("Elemento 0 no es array");
+            return;
+        }
+        // Es linea si los elementos son arreglos de dos numeros cada uno
+        let esLinea = (coordinates[0].length == 2 && !isNaN(coordinates[0][0]))
+        if (esLinea) {
+            if (coordinates.length >= 2) {
+                let linea = [];
+                coordinates.forEach(c => {
+                    let lat = c[1], lng = c[0];
+                    if (this.minLat === undefined || lat < this.minLat) this.minLat = lat;
+                    if (this.maxLat === undefined || lat > this.maxLat) this.maxLat = lat;
+                    if (this.minLng === undefined || lng < this.minLng) this.minLng = lng;
+                    if (this.maxLng === undefined || lng > this.maxLng) this.maxLng = lng;
+                    linea.push({lat:lat, lng:lng})
+                });
+                this.lineas.push(linea);
+            } else {
+                console.warn("Se descarta linea por tener menos de 2 coordenadas");
+            }
+        } else {
+            coordinates.forEach(c => this.agregaCoordenadas(c));
+        }
+    }
+
+    describe() {return this.nombre}
+    getIcono() {return "img/iconos/lineas.svg"}
+    get capa() {return this._capa}
+    set capa(c) {this._capa = c;}
+    dibuja(konvaLayer, konvaLayerEfectos) {   
+        let map = geoportal.mapa.map;
+        this.konvaObjects = [];
+        for (let i=0; i<this.lineas.length; i++) {
+            let linea = this.lineas[i];            
+            let points = linea.reduce((lista, puntoMapa) => {
+                let p = map.latLngToContainerPoint([puntoMapa.lat, puntoMapa.lng]);
+                lista.push(p.x, p.y);
+                return lista;
+            },[]);
+            let opacidadBase = this.estilo.opacity === undefined?1:this.estilo.opacity;
+            let kLinea = new Konva.Line({
+                points: points,
+                stroke: this.seleccionado?"red":this.estilo.stroke,
+                strokeWidth: this.seleccionado?2.5:this.estilo.strokeWidth,
+                closed: false,
+                opacity : this.capa.opacidad / 100 * opacidadBase
+            });
+            kLinea.on('mouseenter', _ => this.handleMouseEnter(konvaLayer));
+            kLinea.on('mouseout', _ => this.handleMouseExit(konvaLayer));
+            konvaLayer.add(kLinea);
+            this.konvaObjects.push(kLinea);
+        }
+    }
+
+    handleMouseEnter(konvaLayer) {
+        this.konvaObjects.forEach(o => {
+            o.setStroke("#f2ef29");
+            o.setStrokeWidth(2.5);
+        });
+        konvaLayer.draw();
+        let html = "<div class='tooltip-titulo'>" + this.properties._titulo + "</div>";
+        let p = window.geoportal.mapa.map.latLngToContainerPoint([this.centroide.lat, this.centroide.lng]);
+        window.geoportal.showTooltip(p.x + 12, p.y + 10, html);
+    }
+    handleMouseExit(konvaLayer) {
+        window.geoportal.hideTooltip();
+        this.konvaObjects.forEach(o => {
+            o.setStroke(this.seleccionado?"red":this.estilo.stroke);
+            o.setStrokeWidth(this.seleccionado?2.5:this.estilo.strokeWidth);
         });
         konvaLayer.draw();
     }
@@ -903,7 +992,7 @@ class Poligonos extends ObjetoGeoportal {
         return this.minLat <= limites.lat1 && this.maxLat >= limites.lat0 && this.minLng <= limites.lng1 && this.maxLng >= limites.lng0;
     }
     aseguraVisible() {
-        if (this.isVisible()) return;
+        if (this.isVisible()) return;        
         setTimeout(_ => {
             let dLat = (this.maxLat - this.minLat) / 5;
             let dLng = (this.maxLng - this.minLng) / 5;
@@ -911,23 +1000,7 @@ class Poligonos extends ObjetoGeoportal {
                 L.latLng(this.minLat - dLat * 2, this.minLng - dLng),
                 L.latLng(this.maxLat + dLat, this.maxLng - dLng)
             ))
-        }, 300);        
-    }
-
-    /* Panel de Propiedades */
-    getPanelesPropiedades() {
-        return [];
-        /*
-        let paneles = [{
-            codigo:"props",
-            path:"left/propiedades/PropArea"
-        }];
-        return paneles;
-        */
-    }
-
-    getTituloPanel() {
-        return this.nombre;
+        }, 300);
     }
 }
 

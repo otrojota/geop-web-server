@@ -21,87 +21,126 @@ class MinZClient {
     }
 
     normalizaTiempo(temporality, time) {
-        let d = moment.tz(time, window.timeZone), t0;
+        let d = moment.tz(time, window.timeZone), t0, t1, desc;
         d.seconds(0);
         d.milliseconds(0);
         switch(temporality) {
             case "5m":
                 d.minutes(5 * parseInt(d.minutes() / 5));
                 t0 = d.valueOf();
+                desc = d.format("DD/MM/YYYY HH:mm:ss");
                 d.minutes(d.minutes() + 5);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - HH:mm:ss");
+                return {t0:t0, t1:t1, desc:desc};
             case "15m":
                 d.minutes(15 * parseInt(d.minutes() / 15));
                 t0 = d.valueOf();
+                desc = d.format("DD/MM/YYYY HH:mm:ss");
                 d.minutes(d.minutes() + 15);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - HH:mm:ss");
+                return {t0:t0, t1:t1, desc:desc};
             case "30m":
                 d.minutes(30 * parseInt(d.minutes() / 30));
                 t0 = d.valueOf();
+                desc = d.format("DD/MM/YYYY HH:mm:ss");
                 d.minutes(d.minutes() + 30);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - HH:mm:ss");
+                return {t0:t0, t1:t1, desc:desc};
             case "1h":
                 d.minutes(0);
                 t0 = d.valueOf();
-                d.hours(d.hours() + 1);
-                return {t0:t0, t1:d.valueOf()};
+                desc = d.format("DD/MM/YYYY HH:mm:ss");
+                d.hours(d.hours() + 1);                
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - HH:mm:ss");
+                return {t0:t0, t1:t1, desc:desc};
             case "6h":
                 d.minutes(0);
                 d.hours(6 * parseInt(d.hours() / 6));
                 t0 = d.valueOf();
+                desc = d.format("DD/MM/YYYY HH:mm:ss");
                 d.hours(d.hours() + 6);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - HH:mm:ss");
+                return {t0:t0, t1:t1, desc:desc};
             case "12h":
                 d.minutes(0);
                 d.hours(12 * parseInt(d.hours() / 12));
                 t0 = d.valueOf();
+                desc = d.format("DD/MM/YYYY HH:mm:ss");
                 d.hours(d.hours() + 12);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - HH:mm:ss");
+                return {t0:t0, t1:t1, desc:desc};
             case "1d":
                 d.minutes(0);                
                 d.hours(0);
                 t0 = d.valueOf();
+                desc = d.format("DD/MM/YYYY");
                 d.date(d.date() + 1);
-                return {t0:t0, t1:d.valueOf()};
+                return {t0:t0, t1:d.valueOf(), desc:desc};
             case "1M":
                 d.minutes(0);                
                 d.hours(0);
                 d.date(1);
                 t0 = d.valueOf();
+                desc = d.format("MMM/YYYY");
                 d.month(d.month() + 1);
-                return {t0:t0, t1:d.valueOf()};
+                return {t0:t0, t1:d.valueOf(), desc:desc};
             case "3M":
                 d.minutes(0);                
                 d.hours(0);
                 d.date(1);
                 d.month(3 * parseInt(d.month() / 3));
                 t0 = d.valueOf();
+                desc = d.format("YYYY MMM");
                 d.month(d.month() + 3);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - MMM");
+                return {t0:t0, t1:t1, desc:desc};
             case "4M":
                 d.minutes(0);                
                 d.hours(0);
                 d.date(1);
                 d.month(4 * parseInt(d.month() / 4));
                 t0 = d.valueOf();
+                desc = d.format("YYYY MMM");
                 d.month(d.month() + 4);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - MMM");
+                return {t0:t0, t1:t1, desc:desc};
             case "6M":
                 d.minutes(0);                
                 d.hours(0);
                 d.date(1);
                 d.month(6 * parseInt(d.month() / 6));
                 t0 = d.valueOf();
+                desc = d.format("YYYY MMM");
                 d.month(d.month() + 6);
-                return {t0:t0, t1:d.valueOf()};
+                t1 = d.valueOf();
+                d.seconds(d.seconds() - 1);
+                desc += d.format(" - MMM");
+                return {t0:t0, t1:t1, desc:desc};
             case "1y":
                 d.minutes(0);                
                 d.hours(0);
                 d.date(1);
                 d.month(0);
                 t0 = d.valueOf();
+                desc = d.format("YYYY");
                 d.year(d.year() + 1);
-                return {t0:t0, t1:d.valueOf()};
+                return {t0:t0, t1:d.valueOf(), desc:desc};
             default:
                 throw("Temporality '" + temporality + "' not handled");
         }
@@ -115,6 +154,11 @@ class MinZClient {
         } catch(error) {
             throw error;
         }
+    }
+    async getDimension(code) {
+        let dims = await this.getDimensiones();
+        if (!dims) return null;
+        return dims.find(d => d.code == code);
     }
     async getVariables() {
         if (this.variables) return this.variables;
@@ -151,7 +195,76 @@ class MinZClient {
         }
     }
 
+    // Filas Dimensiones
+    async getValorDimension(codigoDimension, codigoFila) {
+        try {
+            console.log("get Valor dimension", codigoDimension, codigoFila);
+            let f = await fetch(this.url + "/dim/" + codigoDimension + "/rows/" + codigoFila + "?token=" + this.token);
+            if (f.status != 200) throw await f.text();
+            else return await f.json();
+        } catch(error) {
+            throw error;
+        }
+    }
+
     // Queries
+    getFiltroDeRuta(ruta, valorDimension) {
+        // ruta:{variable:object, ruta:path.path...}
+        let filtro = {};
+        this.construyeFiltro(filtro, ruta.ruta, valorDimension);
+        return filtro;
+    }
+    construyeFiltro(filtro, path, valor) {
+        let elementosPath = path.split(".");
+        let elementoFiltro = filtro;
+        elementosPath.forEach((e, i) => {
+            if (i == (elementosPath.length - 1)) elementoFiltro[e] = valor;
+            else {
+                let nuevoElementoFiltro;
+                if (!elementoFiltro[e]) {
+                    nuevoElementoFiltro = {};
+                    elementoFiltro[e] = nuevoElementoFiltro;
+                } else {
+                    nuevoElementoFiltro = elementoFiltro[e];
+                }
+                elementoFiltro = nuevoElementoFiltro;
+            }
+        });
+        return filtro;
+    }
+    extraeAcumulador(resultado, acumulador) {
+        if (!resultado) return null;
+        switch(acumulador) {
+            case "sum": return resultado.value !== undefined?resultado.value:null;
+            case "min": return resultado.min !== undefined?resultado.min:null;
+            case "max": return resultado.max !== undefined?resultado.max:null;
+            case "n"  : return resultado.n !== undefined?resultado.n:0;
+            case "avg": return (resultado.n > 0?resultado.value / resultado.n:null);
+            default: throw "Acumulador '" + acumulador + "' no manejado";
+        }
+    }
+    async query(query, startTime, endTime) {
+        try {
+            let filtro, resultado;
+            switch (query.tipoQuery) {
+                case "period-summary":
+                    filtro = {};
+                    if (query.filtroFijo) this.construyeFiltro(filtro, query.filtroFijo.ruta, query.filtroFijo.valor);
+                    resultado = await this.queryPeriodSummary(query.variable.code, startTime, endTime, filtro);
+                    return this.extraeAcumulador(resultado, query.acumulador);
+                case "dim-serie":
+                    filtro = {};
+                    resultado = await this.queryDimSerie(query.variable.code, startTime, endTime, filtro, query.dimensionAgrupado);
+                    console.log("resultado", resultado);
+                    resultado.forEach(r => r.resultado = this.extraeAcumulador(r, query.acumulador));
+                    return resultado;
+                default:
+                    throw "Tipo de query '" + query.tipoQuery + "' no implementado";
+            }
+        } catch(error) {
+            throw error;
+        }
+    }
     async queryPeriodSummary(codigoVariable, startTime, endTime, filter) {
         try {
             await this.getDimensiones();
@@ -161,6 +274,20 @@ class MinZClient {
             url += "&filter=" + encodeURIComponent(JSON.stringify(filter));
             let summary = (await (await fetch(url)).json());
             return summary;
+        } catch(error) {
+            throw error;
+        }
+    }
+    async queryDimSerie(codigoVariable, startTime, endTime, filter, dimensionAgrupado) {
+        try {
+            await this.getDimensiones();
+            await this.getVariables();
+            let url = this.url + "/data/" + codigoVariable + "/dim-serie?token=" + this.token;
+            url += "&startTime=" + startTime + "&endTime=" + endTime;
+            url += "&filter=" + encodeURIComponent(JSON.stringify(filter));
+            url += "&groupDimension=" + dimensionAgrupado
+            let ret = (await (await fetch(url)).json());
+            return ret;
         } catch(error) {
             throw error;
         }

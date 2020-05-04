@@ -104,10 +104,12 @@ class MapaGeoPortal {
             height:200
         });
         this.konvaLayer = new Konva.Layer();  
+        this.konvaLayerLeyendas = new Konva.Layer();
         this.konvaLayerEfectos = new Konva.Layer();  
-        this.konvaLayerAgregando = new Konva.Layer();  
+        this.konvaLayerAgregando = new Konva.Layer();
         this.konvaStage.add(this.konvaLayerEfectos);    
         this.konvaStage.add(this.konvaLayer);
+        this.konvaStage.add(this.konvaLayerLeyendas);
         this.konvaStage.add(this.konvaLayerAgregando);
                 
         this.lyEfectos = new L.customLayer({
@@ -128,10 +130,20 @@ class MapaGeoPortal {
             this.dibujaObjetos();
         });
 
+        this.lyLeyendas = new L.customLayer({
+            container:div,
+            minZoom:0, maxZoom:18, opacity:1, visible:true, zIndex:1501,
+            pane:this.creaPanelMapa("leyendas", "base", 1)
+        })
+        this.lyLeyendas.on("layer-render", _ => {
+            this.dibujaLeyendas();
+        });
+
         this.lyBase.addTo(this.map);
         this.lyBordes.addTo(this.map);
         this.lyEfectos.addTo(this.map);
         this.lyObjetos.addTo(this.map);
+        this.lyLeyendas.addTo(this.map);
         if (window.geoportal.preferencias.mapa.etiquetas) {
             this.lyLabels.addTo(this.map);
         }
@@ -192,6 +204,9 @@ class MapaGeoPortal {
         } else if (capa == "objetos") {
             idBase = "objetos";
             idxCapa = 55;
+        } else if (capa == "leyendas") {
+            idBase = "leyendas";
+            idxCapa = 56;
         } else {
             idBase = capa.idBasePanel;
             idxCapa = window.geoportal.capas.getCapas().findIndex(c => c === capa);
@@ -331,15 +346,25 @@ class MapaGeoPortal {
     }
     dibujaObjetos() {
         this.konvaLayerEfectos.destroyChildren();
-        this.konvaLayer.destroyChildren();
-        let limites = this.getLimites();
-        this.getObjetos().forEach(o => {
-            if (o.isVisible(limites)) {
-                o.dibuja(this.konvaLayer, this.konvaLayerEfectos)            
-            }
-        });
         this.konvaLayerEfectos.draw();
+        this.konvaLayer.destroyChildren();
         this.konvaLayer.draw();
+        let limites = this.getLimites();
+        setTimeout(_ => {
+            let visibles = this.getObjetos().filter(o => o.isVisible(limites));
+            visibles.forEach(o => {
+                if (o.isVisible(limites)) {
+                    o.dibuja(this.konvaLayer, this.konvaLayerEfectos)            
+                }
+            });
+            visibles.forEach(o => {
+                if (o.isVisible(limites)) {
+                    o.dibujaValoresObservados(this.konvaLayer);
+                }
+            });
+            this.konvaLayerEfectos.draw();
+            this.konvaLayer.draw();
+        }, 10);
     }
     callDibujaObjetos(delay) {
         if (!delay) delay = 200;
@@ -367,6 +392,7 @@ class MapaGeoPortal {
             });
         })
         await window.geoportal.objetoSeleccionado(objeto);
+        this.dibujaObjetos();
     }
     movioObjeto(objeto) {
         if (objeto.objetoPadre) {
@@ -375,6 +401,7 @@ class MapaGeoPortal {
         }
         objeto.movio();
         this.dibujaObjetos();
+        objeto.capa.recalculaValoresObservados();
         window.geoportal.objetoMovido(objeto);
     }
 
@@ -417,5 +444,155 @@ class MapaGeoPortal {
             this.resaltando.destroy();
             this.konvaLayerAgregando.draw();
         }, 3000);
+    }
+
+    dibujaLeyendas() {
+        this.konvaLayerLeyendas.destroyChildren();
+        let limites = this.getLimites();
+        let grupoActivo = window.geoportal.capas.getGrupoActivo();
+        for (let i=0; i<grupoActivo.capas.length; i++) {
+            let capa = grupoActivo.capas[i];
+            if (capa.tieneObjetos && capa.observa && capa.observa.length) {
+                let leyendasPorObjeto = {}
+                capa.valoresObservados.filter(v => v !== null && v.observa.leyenda).forEach(v => {
+                    let o = v.observa;
+                    if (o.tipo == "capa") {
+                        let objeto = v.objeto;
+                        if (objeto.isVisible(limites)) {
+                            let leyendas = leyendasPorObjeto[objeto.id];
+                            if (!leyendas) {
+                                leyendas = {objeto, leyendas:[]};
+                                leyendasPorObjeto[objeto.id] = leyendas;
+                            }
+                            leyendas.leyendas.push({label:o.variable.nombre, decimales:o.variable.decimales, unidad:o.variable.unidad, valor:v.value?v.value.value:"S/D"}); 
+                        }
+                    } else if (o.tipo == "queryMinZ") {
+                        if (v.value && v.value.length) {
+                            v.value.forEach(dimValue => {
+                                let obj = capa.objetos.find(o => o.getCodigoDimension() == dimValue.dim.code);
+                                if (obj && obj.isVisible(limites)) {
+                                    let o = v.observa;
+                                    let leyendas = leyendasPorObjeto[obj.id];
+                                    if (!leyendas) {
+                                        leyendas = {objeto:obj, leyendas:[]};
+                                        leyendasPorObjeto[obj.id] = leyendas;
+                                    }
+                                    leyendas.leyendas.push({label:o.query.variable.name, decimales:o.query.variable.options.decimals, unidad:o.query.variable.options.unit, valor:dimValue.value?dimValue.value:"S/D"}); 
+                                }
+                            })
+                        }
+                    }
+                });
+                let centrosLeyenda = [];
+                Object.keys(leyendasPorObjeto).forEach(id => {
+                    let leyendas = leyendasPorObjeto[id];
+                    let p = leyendas.objeto.getCentroide();
+                    let point = window.geoportal.mapa.map.latLngToContainerPoint([p.lat, p.lng]);
+                    let x = point.x, y = point.y, path, hPos = capa.configPanel.configSubPaneles.observa.leyenda.hPos, vPos = capa.configPanel.configSubPaneles.observa.leyenda.vPos;
+                    let dx = 100, dy = 60;
+                    if (hPos == "centro") {
+                        if (vPos == "arriba") {
+                            path = [x, y, x, y - dy];
+                            y -= dy;
+                        } else if (vPos == "abajo") {
+                            path = [x, y, x, y + dy];
+                            y += dy;
+                        }
+                    } else if (hPos == "izquierda") {
+                        if (vPos == "centro") {
+                            path = [x, y, x - dx, y];
+                            x -= dx;
+                        } else if (vPos == "arriba") {
+                            path = [x, y, x - dx/2, y, x - dx, y - dy];
+                            x -= dx; y -= dy;
+                        } else if (vPos == "abajo") {
+                            path = [x, y, x - dx/2, y, x - dx, y + dy];
+                            x -= dx; y += dy;
+                        }
+                    } else if (hPos == "derecha") {
+                        if (vPos == "centro") {
+                            path = [x, y, x + dx, y];
+                            x += dx;
+                        } else if (vPos == "arriba") {
+                            path = [x, y, x + dx/2, y, x + dx, y - dy];
+                            x += dx; y -= dy;
+                        } else if (vPos == "abajo") {
+                            path = [x, y, x + dx/2, y, x + dx, y + dy];
+                            x += dx; y += dy;
+                        }
+                    }
+                    this.konvaLayerLeyendas.add(new Konva.Line({
+                        points:path,
+                        stroke:"white", strokeWidth:5,
+                        lineCap: 'round', lineJoin: 'round',
+                        dash: [10, 7, 0.001, 7]
+                    }));
+                    this.konvaLayerLeyendas.add(new Konva.Line({
+                        points:path,
+                        stroke:"black", strokeWidth:3,
+                        lineCap: 'round', lineJoin: 'round',
+                        dash: [10, 7, 0.001, 7]
+                    }));
+                    centrosLeyenda.push({x:x, y:y});
+                });
+                Object.keys(leyendasPorObjeto).forEach((id, i) => {
+                    let leyendas = leyendasPorObjeto[id];
+                    let x = centrosLeyenda[i].x, y = centrosLeyenda[i].y;;
+                    let width, height = 0;
+                    let kTexts = leyendas.leyendas.reduce((lista, l) => {
+                        //let txt = l.label + ": ";
+                        let txt = "";
+                        if (!isNaN(l.valor)) {
+                            txt += GeoPortal.round(l.valor, l.decimales).toLocaleString();
+                        } else {
+                            txt += l.valor
+                        }
+                        txt += " [" + l.unidad + "]";
+                        let kText = new Konva.Text({
+                            x:x, y:y,
+                            text:txt,
+                            fontSize:12,
+                            fontFamily:"Calibri",
+                            fill:"#000000",
+                            opacity:1
+                        });
+                        let txtWidth = kText.width();
+                        let txtHeight = kText.height();
+                        height += txtHeight;
+                        if (width === undefined || txtWidth > width) width = txtWidth;
+                        lista.push(kText);
+                        return lista;
+                    }, []);
+                    let roundedRect = new Konva.Rect({
+                        x:x - width / 2 - 5, y:y - height / 2 - 6, width:width + 10, height:height + 8,
+                        fill: 'rgba(255,255,255,255)',
+                        stroke: '#000000',
+                        strokeWidth: 1,
+                        shadowColor: 'black',
+                        shadowBlur: 10,
+                        shadowOffset: { x: 4, y: 4 },
+                        shadowOpacity: 0.5,
+                        cornerRadius:3,
+                        opacity:1
+                    });
+                    this.konvaLayerLeyendas.add(roundedRect);
+                    let yText = y - height / 2 - 1;
+                    kTexts.forEach(kText => {
+                        kText.absolutePosition({x:x - width / 2, y:yText});
+                        yText += height / kTexts.length;
+                        this.konvaLayerLeyendas.add(kText);
+                    });
+                });
+            }
+        }
+        this.konvaLayerLeyendas.draw();
+    }
+    callDibujaLeyendas(delay) {
+        if (!delay) delay = 200;
+        if (this.timerDibujaLeyendas) clearTimeout(this.timerDibujaLeyendas);
+        this.timerDibujaLeyendas = setTimeout(_ => {
+            this.timerDibujaLeyendas = null;
+            this.dibujaLeyendas()
+        }, delay);
     }
 }

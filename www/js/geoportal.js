@@ -116,7 +116,7 @@ class GeoPortal {
         });
         return items;
     }
-    getArbolAgregarAMapa(formato, dataObject) {
+    async getArbolAgregarAMapa(formato, dataObject, codigoDimension, capa) {
         let grupos = this.getNivelAgregarGrupos(this.grupos, formato);
         let nodoDataObject = null;
         if (dataObject) {
@@ -129,6 +129,21 @@ class GeoPortal {
             }, []);
             if (variables.length) {
                 nodoDataObject = {code:"dataObject", label:dataObject.nombre, icon:dataObject.getIcono(), tipo:"origen", items:variables}
+            }
+        } else if (capa && capa.tieneObjetos && capa.objetos && capa.objetos.length) {
+            let variablesAgregadas = {}, variables = [];            
+            capa.objetos.forEach(o => {
+                if (o.variables) {
+                    o.variables.forEach(v => {
+                        if (!variablesAgregadas[v.codigo]) {
+                            variables.push({code:capa.codigo + ".${codigo-objeto}." + v.codigo, label:v.nombre, icon:v.icono, tipo:"capa", capa:capa})
+                            variablesAgregadas[v.codigo] = true;
+                        }
+                    })
+                }
+            });
+            if (variables.length) {
+                nodoDataObject = {code:"dataObject", label:capa.nombre, icon:capa.urlIcono, tipo:"origen", items:variables}
             }
         }
         let origenes = Object.keys(this.origenes).map(codigo => {
@@ -165,41 +180,86 @@ class GeoPortal {
                 ]
             })
         }
+        if (codigoDimension) {
+            let nombreGrupo, tipoQuery;
+            if (dataObject) {
+                if (dataObject.getCodigoDimension()) {
+                    let fila = await window.minz.getValorDimension(codigoDimension, dataObject.getCodigoDimension());
+                    if (fila) {
+                        nombreGrupo = fila.name;
+                        tipoQuery = "period-summary";
+                    }
+                }
+            } else {
+                let dim = await window.minz.getDimension(codigoDimension);
+                if (dim) {
+                    nombreGrupo = dim.name;
+                    tipoQuery = "dim-serie";
+                }
+            }
+            if (nombreGrupo) {
+                let itemsMinZ = await this.getSubArbolMinZ(codigoDimension);
+                if (itemsMinZ && itemsMinZ.length) {                    
+                    arbol.push({code:"sep"});                    
+                    itemsMinZ.forEach(itemOrigen => {
+                        itemOrigen.items.forEach(item => {
+                            if (tipoQuery == "period-summary") {
+                                item.item = {
+                                    tipo:"queryMinZ",
+                                    tipoQuery:tipoQuery,
+                                    variable:item.item.variable,
+                                    filtroFijo:{ruta:item.item.ruta, valor:dataObject.getCodigoDimension()},
+                                    temporalidad:item.item.variable.temporality,
+                                    acumulador:"sum",
+                                }
+                            } else if (tipoQuery == "dim-serie") {
+                                item.item = {
+                                    tipo:"queryMinZ",
+                                    tipoQuery:tipoQuery,
+                                    variable:item.item.variable,
+                                    temporalidad:item.item.variable.temporality,
+                                    dimensionAgrupado:item.item.ruta,
+                                    acumulador:"sum",
+                                }
+                            }
+                        })
+                    })
+                    arbol.push({
+                        code:"grupo", icon:"img/iconos/dashboard.svg", label:nombreGrupo, items:itemsMinZ
+                    })                    
+                }                
+            }
+        }
         return arbol;
     }
 
-    async getArbolAgregarObservadorGeoJson(capa) {
+    async getSubArbolMinZ(codigoDimension) {
         try {
-            // Punto central poligonos
-            // Raster (promedio, min, max)
-            // minz / espacio => ruta hasta dimension
+            // minz / origen => ruta hasta dimension
             let items = [];
-            if (capa.config.opciones && capa.config.opciones.dimensionMinZ) {
-                let rutas = await window.minz.getVariablesFiltrables(capa.config.opciones.dimensionMinZ);
-                // Separar por espacio
-                let espacios = {};
+            let rutas = await window.minz.getVariablesFiltrables(codigoDimension);
+            // Separar por origen
+            let origenes = {};
+            rutas.forEach(r => {
+                let code = r.variable.code;
+                let p = code.indexOf(".");
+                if (p < 0) throw "La variable '" + r.variable.code + "' no incluye codigo de origen";
+                let codigoOrigen = r.variable.code.substr(0,p);
+                if (!this.getOrigen(codigoOrigen)) throw "No se encontró el origen '" + codigoOrigen + "'";
+                origenes[codigoOrigen] = this.getOrigen(codigoOrigen);
+            });
+            Object.keys(origenes).forEach(codigoOrigen => {
+                let o = origenes[codigoOrigen];
+                let itemOrigen = {code:o.codigo, label:o.nombre, icon:o.icono, items:[], tipo:"origen"};
+                items.push(itemOrigen)
                 rutas.forEach(r => {
                     let code = r.variable.code;
                     let p = code.indexOf(".");
-                    if (p < 0) throw "La variable '" + r.variable.code + "' no incluye codigo de espacio";
-                    let nombreEspacio = r.variable.code.substr(0,p);
-                    if (!espacios[nombreEspacio]) {
-                        espacios[nombreEspacio] = window.minz.espacios[nombreEspacio]?window.minz.espacios[nombreEspacio].nombre:nombreEspacio;
+                    if (r.variable.code.substr(0,p) == codigoOrigen) {
+                        itemOrigen.items.push({tipo:"queryMinZ", code:r.variable.name + "->" + r.ruta, label:r.variable.name, icon:"img/iconos/dashboard.svg", item:r})
                     }
-                });
-                Object.keys(espacios).forEach(codigoEspacio => {
-                    let itemEspacio = {code:codigoEspacio, label:espacios[codigoEspacio], icon:window.minz.espacios[codigoEspacio].icono, items:[]};
-                    items.push(itemEspacio)
-                    rutas.forEach(r => {
-                        let code = r.variable.code;
-                        let p = code.indexOf(".");
-                        let nombreEspacio = r.variable.code.substr(0,p);
-                        if (nombreEspacio == codigoEspacio) {
-                            itemEspacio.items.push({code:r.ruta, label:r.variable.name, icon:"img/iconos/dashboard.svg", item:r})
-                        }
-                    })
-                });
-            }
+                })
+            });
             return items;
         } catch(error) {
             throw error;
@@ -342,10 +402,12 @@ class GeoPortal {
             else throw "No se encontró la capa '" + codCapa + "'";
         }
         if (capa.tipo == "raster") return capa;
-        let objeto = capa.objetos.find(o => o.codigo == codObjeto);
-        if (!objeto) {
-            // Intentar con id
-            objeto = capa.objetos.find(o => o.id == codObjeto);
+        let objeto;
+        if (codObjeto == "${codigo-objeto}") {
+            // Buscar primero que declare la variable
+            objeto = capa.objetos.find(o => o.variables && o.variables.find(v => v.codigo == codVariable));
+        } else {
+            objeto = capa.objetos.find(o => o.codigo == codObjeto || o.id == codObjeto);
         }
         if (!objeto) throw "No se encontró el objeto '" + codObjeto + "' en la capa";        
         let v = objeto.variables.find(v => v.codigo == codVariable);

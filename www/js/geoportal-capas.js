@@ -36,6 +36,8 @@ class Capa {
                 this.invalida();
             }
         }
+        this.codigoDimension = this.config.opciones?this.config.opciones.dimensionMinZ:null;
+        this.observa = [];
     }
     get tipo() {return this.config.tipo}
     get codigo() {return this.config.codigo}
@@ -271,13 +273,6 @@ class Capa {
 
     async resuelveConsulta(formato, args, callback) {
         this.startWorking();
-        if (this.observadorGeoJson) {
-            try {
-                await this.observadorGeoJson.preConsulta(formato, args);
-            } catch(error) {
-                callback(error);
-            }
-        }
         this.listenersConsulta.push(callback);
         let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor); 
         let idConsulta = this.nextIdConsulta;      
@@ -312,16 +307,7 @@ class Capa {
             res.json().then(async j => {
                 this.finishWorking();
                 this.resultadoConsulta = j;
-                if (this.observadorGeoJson) {
-                    try {
-                        await this.observadorGeoJson.refresca();
-                        callback(null, j);
-                    } catch(error) {
-                        callback(error);
-                    }
-                } else {
-                    callback(null, j);
-                }
+                callback(null, j);
             }).catch(err => {
                 this.finishWorking();
                 callback(err);
@@ -352,6 +338,7 @@ class Capa {
         o.capa = this;
         this.objetos.push(o);
         await this.triggerRefrescar();
+        this.recalculaValoresObservados();
     }
 
     removeObjeto(o) {
@@ -378,16 +365,13 @@ class Capa {
                 path:"left/propiedades/FechaCapa"
             })
         }
-        if (this.formatos.geoJSON) {
+        if (this.tieneObjetos) {
             paneles.push({
-                codigo:"geojson-observa",
-                path:"left/propiedades/GeoJsonObserva"
-            })
-            if (this.observadorGeoJson) {
-                paneles = paneles.concat(this.observadorGeoJson.getPanelesPropiedades())  
-            }
+                codigo:"observa",
+                path:"left/propiedades/CapaObserva"
+            });
         }
-        if (this.tieneObjetos && this.objetosCargados && this.filtros) {
+        if (this.tieneObjetos && this.objetosCargados && this.filtros && this.filtros.length) {
             paneles.push({
                 codigo:"filtros",
                 path:"left/propiedades/FiltrosCapa"
@@ -405,21 +389,12 @@ class Capa {
         if (this.tieneObjetos) window.geoportal.mapa.callDibujaObjetos(100);
     }
     async cambioTiempo(forzar) {   
-        if (this.formatos.geoJSON && this.observadorGeoJson) {
-            await this.observadorGeoJson.refresca();
-            let visGeoJson = this.listaVisualizadoresActivos.find(v => v instanceof VisualizadorGeoJSON);
-            if (visGeoJson) visGeoJson.repinta();
-        }
-        if ((!this.temporal && this.tipo != "dataObjects") || (this.tiempoFijo && !forzar)) return;
+        this.recalculaValoresObservados();
+        if ((!this.temporal && this.tipo != "dataObjects") || (this.tiempoFijo && !forzar)) return;        
         await this.refresca();
     }
     cambioNivel() {
         this.refresca();
-    }
-    cambioObservadorGeoJson() {
-        if (window.capasController) window.capasController.refresca();
-        let visGeoJson = this.listaVisualizadoresActivos.find(v => v instanceof VisualizadorGeoJSON);
-        if (visGeoJson) visGeoJson.repinta();
     }
 
     /* Filtros */
@@ -445,7 +420,7 @@ class Capa {
                     let configPunto = {
                         iconoEnMapa: proveedor.url + "/" + o.icono,
                         variables: o.variables,
-                        movible:false
+                        movible:false, nombreEditable:false
                     }
                     let punto = new Punto({lat:o.lat, lng:o.lng}, o.nombre, configPunto);
                     punto.codigo = o.codigo;
@@ -473,7 +448,7 @@ class Capa {
                 this.mensajes.addError(err);
                 return;
             }
-            this.filtros = geoJSON._filtros;
+            this.filtros = geoJSON._filtros || [];
             this.filtros.forEach(f => {
                 f.filtros.forEach(s => {
                     s.func = eval("(" + s.filtro + ")")
@@ -495,6 +470,8 @@ class Capa {
     agregaGeoObjeto(f, geometry, estilo) {
         if (geometry.type == "Polygon" || geometry.type == "MultiPolygon") {
             this.objetos.push(new Poligonos(f, this, estilo));
+        } else if (geometry.type == "LineString" || geometry.type == "MultiLineString") {
+            this.objetos.push(new Lineas(f, this, estilo));
         } else if (geometry.type == "GeometryCollection") {
             geometry.geometries.forEach((g, i) => {
                 let clone = JSON.parse(JSON.stringify(f));
@@ -526,6 +503,184 @@ class Capa {
             filtrados = pasaron;
         }
         this.objetos = filtrados;
+        this.recalculaValoresObservados();
+    }
+    async recalculaValoresObservados() {
+        try {            
+            if (!this.observa || !this.objetos) return;
+            if (this.cancelandoRecalculoValoresObservados) return; // va a recalcular igual
+            if (this.recalculandoValoresObservados) {
+                console.warn("Cancelando consulta de valores observados");
+                this.cancelandoRecalculoValoresObservados = true;
+                if (this.recalculoListener) this.recalculoListener();
+                await new Promise(resolve => {
+                    this.listenerFinishRecalculo = _ => resolve()
+                })
+                this.cancelandoRecalculoValoresObservados = false;
+                this.listenerFinishRecalculo = null;
+                console.warn("Consulta cancelada");
+            }
+            this.pendientesQueryObservados = [];
+            this.valoresObservados = [];
+            this.minObserva = this.maxObserva = undefined;
+            this.valoresColorear = {}; // idObjeto:number
+            this.escalaColorear = undefined;
+            if (!this.observa.length || !this.objetos.length) {
+                if (this.recalculoListener) this.recalculoListener();
+                this.finalizoRecalculoValoresObservados();
+                return;
+            }
+            this.recalculandoValoresObservados = true;
+            this.nCalculados = 0;
+            if (this.recalculoListener) this.recalculoListener();
+            this.startWorking();
+            for (let i=0; i<this.observa.length; i++) {
+                this.valoresObservados[i] = null;
+                let o = this.observa[i];
+                if (o.tipo == "queryMinZ") {
+                    this.pendientesQueryObservados.push({indiceObserva:this.pendientesQueryObservados.length, running:false, observa:o});
+                } else if (o.tipo == "capa") {
+                    this.objetos.forEach(obj => {
+                        this.pendientesQueryObservados.push({indiceObserva:this.pendientesQueryObservados.length, running:false, observa:o, objeto:obj});
+                    })
+                }
+            }
+            window.geoportal.mapa.callDibujaLeyendas();
+            this.totalPendientesRecalculo = this.pendientesQueryObservados.length;
+            this.avanceRecalculoValoresObservados = 0;
+            let n = 0;
+            while (n < 5 && this.pendientesQueryObservados.filter(p => !p.running).length > 0) {
+                this.iniciaSiguienteQueryObservados();
+                n++;
+            }
+            await (new Promise(resolve => {
+                this.finishRecalculaValores = _ => resolve()
+            }))
+            this.finishRecalculaValores = null;
+            this.finishWorking();
+            this.recalculandoValoresObservados = false;
+            if (this.listenerFinishRecalculo) this.listenerFinishRecalculo(); 
+            else {
+                if (this.recalculoListener) this.recalculoListener();
+                this.finalizoRecalculoValoresObservados();
+            }
+            window.geoportal.mapa.callDibujaLeyendas();
+        } catch(error) {
+            console.error(error);
+            this.recalculandoValoresObservados = false;
+            if (this.recalculoListener) this.recalculoListener();
+            this.finishWorking();
+            throw error;
+        }
+    }
+    async iniciaSiguienteQueryObservados() {
+        try {
+            let pendiente = this.pendientesQueryObservados.find(p => !p.running);
+            if (pendiente) {
+                pendiente.running = true;
+                let o = pendiente.observa;
+                try {
+                    if (o.tipo == "queryMinZ") {
+                        let query = o.query;
+                        let {t0, t1, desc} = window.minz.normalizaTiempo(query.temporalidad, window.geoportal.tiempo);
+                        let res = await window.minz.query(query, t0, t1);
+                        this.valoresObservados[pendiente.indiceObserva] = {value:res, atributos:{"Período":desc}, observa:o};
+                        if (o.colorear) {
+                            res.filter(r => r.value !== undefined).forEach(r => {
+                                if (this.minObserva === undefined || r.value < this.minObserva) this.minObserva = r.value;
+                                if (this.maxObserva === undefined || r.value > this.maxObserva) this.maxObserva = r.value;
+                                let obj = this.objetos.find(o => o.getCodigoDimension() == r.dim.code);
+                                if (obj) this.valoresColorear[obj.id] = r.value;
+                            })
+                        }
+                    } else if (o.tipo == "capa") {
+                        let obj = pendiente.objeto;
+                        let codigoVariable = o.codigoVariable;
+                        let p = codigoVariable.indexOf("${codigo-objeto}");
+                        if (p > 0) {
+                            codigoVariable = codigoVariable.substr(0,p) + obj.codigo + codigoVariable.substr(p + 16);
+                        }
+                        let infoVar = window.geoportal.getInfoVarParaConsulta(codigoVariable, obj);
+                        let centroide = obj.getCentroide();
+                        let query = {
+                            lat:centroide.lat, lng:centroide.lng, time:window.geoportal.tiempo,
+                            levelIndex:o.nivel !== undefined?o.nivel:0,
+                            codigoVariable:infoVar.codigoVariable,
+                            metadataCompleta:true
+                        }
+                        let capa = infoVar.capaQuery;
+                        await new Promise(resolve => {
+                            capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
+                                if (err) {
+                                    this.valoresObservados[pendiente.indiceObserva] = {value:err, observa:o};
+                                    //this.mensajes.addError(infoVar.variable.nombre + ": " + err.toString());
+                                } else if (resultado && (resultado.value === undefined || resultado.value === null)) {
+                                    // Mantener en nulo para no desplegar
+                                    this.valoresObservados[pendiente.indiceObserva] = null;
+                                } else {
+                                    this.valoresObservados[pendiente.indiceObserva] = {value:resultado, observa:o, objeto:obj};
+                                    let v = resultado.value;
+                                    if (o.colorear && !isNaN(v)) {
+                                        if (this.minObserva === undefined || v < this.minObserva) this.minObserva = v;
+                                        if (this.maxObserva === undefined || v > this.maxObserva) this.maxObserva = v;
+                                        this.valoresColorear[obj.id] = v;
+                                    }
+                                }
+                                resolve();
+                            });
+                        });                                
+                    }
+                } catch(error) {
+                    console.error(error);
+                } finally {
+                    this.nCalculados++;
+                    let idx = this.pendientesQueryObservados.indexOf(pendiente);
+                    this.pendientesQueryObservados.splice(idx, 1);
+                    if (this.totalPendientesRecalculo > 0) this.avanceRecalculoValoresObservados = 100 - parseInt(100 * this.pendientesQueryObservados.length / this.totalPendientesRecalculo);
+                    if (this.recalculoListener) this.recalculoListener();
+                    if (this.cancelandoRecalculoValoresObservados) {
+                        let nCorriendo = this.pendientesQueryObservados.filter(p => p.running).length;
+                        console.warn("Esperando que finalicen " + nCorriendo + " consultas activas");
+                        if (!nCorriendo) this.finishRecalculaValores();
+                    } else {
+                        if (!this.pendientesQueryObservados.length) {
+                            window.geoportal.mapa.callDibujaLeyendas();                            
+                            this.finishRecalculaValores();
+                        } else if (this.pendientesQueryObservados.filter(p => !p.running).length > 0) {
+                            if (!(this.nCalculados % 5)) window.geoportal.mapa.callDibujaLeyendas();
+                            this.iniciaSiguienteQueryObservados();    
+                        }
+                    }
+                }
+            }
+        } catch(error) {
+            throw error;
+        }
+    }
+
+    finalizoRecalculoValoresObservados() {
+        window.geoportal.mapa.dibujaLeyendas();
+        if (this.observa.find(o => o.colorear)) {
+            let config = this.configPanel.configSubPaneles["observa"];
+            if (config.escala.dinamica) {
+                config.escala.min = this.minObserva;
+                config.escala.max = this.maxObserva;
+            }            
+        } else {
+            this.escalaColorear = null;
+        }
+        this.colorea();
+    }
+    async colorea() {
+        if (this.recalculandoValoresObservados || this.cancelandoRecalculoValoresObservados) return; 
+        if (this.observa.find(o => o.colorear)) {
+            let config = this.configPanel.configSubPaneles["observa"];
+            this.escalaColorear = await EscalaGeoportal.porNombre(config.escala.nombre);
+            this.escalaColorear.actualizaLimites(config.escala.min, config.escala.max);
+        } else {
+            this.escalaColorear = null;
+        }
+        window.geoportal.mapa.callDibujaObjetos();
     }
 }
 
@@ -565,39 +720,6 @@ class VisualizadorCapa {
     }
 }
 
-class ObservadorGeoJson {
-    static registraClaseObservadora(clase) {
-        if (!ObservadorGeoJson.clasesObservadoras) ObservadorGeoJson.clasesObservadoras = [];
-        ObservadorGeoJson.clasesObservadoras.push(clase);
-    }
-    static creaObservador(capa, item) {
-        if (!ObservadorGeoJson.clasesObservadoras) return null;        
-        for (let i=0; i<ObservadorGeoJson.clasesObservadoras.length; i++) {
-            let clase = ObservadorGeoJson.clasesObservadoras[i];
-            let fAplica = clase.aplicaAItem;
-            if ((fAplica)(item)) return new (clase)(capa, item);
-        }
-        return null;
-    }
-    constructor(capa, item) {
-        this.capa = capa;
-        this.item = item;
-        this.cambioEscalaListener = null;
-    }
-    getPanelesPropiedades() {
-        return [];
-    }
-    getTituloPanel() {return "Titulo no sobreescrito"}
-    getNombreItem() {return "Nombre Item no sobreescrito"}
-    setCambioEscalaListener(l) {this.cambioEscalaListener = l}
-    getCambioEscalaListener() {return this.cambioEscalaListener};
-    cambioEscala() {}
-    async refresca() {}
-    getValorDeFeature(f) {return undefined}
-    getValorFormateadoDeFeature(f) {return undefined}
-    getColorDeFeature(f) {return undefined}
-}
-
 class GrupoCapas {
     constructor(nombre, activo) {
         this.id = uuidv4();
@@ -620,7 +742,10 @@ class GrupoCapas {
         let necesitaDibujar = capa.tieneObjetos;
         capa.destruye();
         this.capas.splice(idx,1)
-        if (necesitaDibujar) window.geoportal.mapa.dibujaObjetos();
+        if (necesitaDibujar) {
+            window.geoportal.mapa.dibujaObjetos();
+            window.geoportal.mapa.dibujaLeyendas();
+        }
     }
     getCapa(idx) {return this.capas[idx]}
     findCapa(id) {return this.capas.find(c => c.id == id)}

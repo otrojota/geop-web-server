@@ -1,10 +1,10 @@
 class PropSerieTiempoVars extends ZCustomController {
-    onThis_init(options) {      
+    async onThis_init(options) {      
         this.codigo = "vars";  
         this.options = options;
         this.analizador = options.analizador; 
         let dataObject = this.analizador.objeto.capa.tipo == "dataObjects"?this.analizador.objeto:null;
-        this.arbolAgregar = window.geoportal.getArbolAgregarAMapa("serieTiempo", dataObject);
+        this.arbolAgregar = await window.geoportal.getArbolAgregarAMapa("serieTiempo", dataObject);
         this.zpop = null;
     }    
     async destruye() {}

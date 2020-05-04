@@ -1,9 +1,9 @@
 class PropRectArea3D extends ZCustomController {
-    onThis_init(options) {      
+    async onThis_init(options) {      
         this.codigo = "prop";  
         this.options = options;
         this.analizador = options.analizador; 
-        this.arbolAgregar = window.geoportal.getArbolAgregarAMapa("matrizRectangular");
+        this.arbolAgregar = await window.geoportal.getArbolAgregarAMapa("matrizRectangular");
         this.zpop = null;
     }    
     async destruye() {}

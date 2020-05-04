@@ -212,6 +212,12 @@ class Capas extends ZCustomController {
     getHTMLItems(items, nivel, indicePadre, inactivo) {
         let grupoActivo = window.geoportal.capas.getGrupoActivo();
         let idItemActivo = grupoActivo.itemActivo?grupoActivo.itemActivo.id:null;
+        if (items.length > 700) {
+            items = [{
+                tipo:"advertencia", activo:false, icono:"img/iconos/advertencia.svg",
+                nombre:"Demasiados elementos [" + items.length + "]"
+            }]
+        }
         let html = items.reduce((html, item, i) => {
             let grupoInactivo = inactivo || (item.tipo == "grupo" && !item.activo);
             let subitems = item.items?item.items:[];

@@ -2,10 +2,13 @@ class PanelAgregar extends ZCustomController {
     onThis_init() {
         this.items = [];
     }
+    /*
     refresca() {
+        console.log("refresca1!");
         this.edBuscadorAgregar.value = "";
         this.doBuscar();
     }
+    */
 
     onEdBuscadorAgregar_change() {this.doBuscar()}
     onLimpiador_click() {
@@ -50,8 +53,8 @@ class PanelAgregar extends ZCustomController {
             this.subPop = null;
         }
     }
-    refresca() {
-        this.items = window.geoportal.getArbolAgregarAMapa();
+    async refresca() {
+        this.items = await window.geoportal.getArbolAgregarAMapa();
         this.doShow(this.items);
     }
     doShow(items) {
