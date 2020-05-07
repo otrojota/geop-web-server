@@ -23,27 +23,6 @@ class CapaObserva extends ZCustomController {
         this.config.abierto = !this.config.abierto;
         this.refresca();
     }
-    onCmdObservar_click() {
-        this.zpop = new ZPop(this.caretObservar.view, this.arbolAgregar, {vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, onClick:(codigo, item) => {
-            if (item.tipo == "capa") {
-                let codigoVariable = item.capa.codigoProveedor + "." + item.code;
-                let variable = window.geoportal.getVariable(codigoVariable);
-                let nivelInicial = variable.nivelInicial;
-                if (nivelInicial === undefined) nivelInicial = 0;
-                this.capa.observa.push({tipo:"capa", variable:variable, nivel:nivelInicial, codigoVariable:codigoVariable, leyenda:true, colorear:true});
-            } else if (item.tipo == "queryMinZ") {
-                let p = item.item.variable.code.indexOf(".");
-                let origen = window.geoportal.getOrigen(item.item.variable.code.substr(0,p));
-                this.capa.observa.push({tipo:"queryMinZ", variable:{nombre:item.item.variable.name, urlIcono:origen.icono}, query:item.item, leyenda:true, colorear:true});
-            }
-            this.capa.observa.forEach((o, i) => {
-                if (i < (this.capa.observa.length - 1)) o.colorear = false;
-            });
-            this.refresca();
-            this.capa.recalculaValoresObservados();
-        }});
-        this.zpop.show();
-    }
     refresca() {
         if (this.config.abierto) {
             this.imgAbierto.removeClass("fa-plus-square");
@@ -56,6 +35,7 @@ class CapaObserva extends ZCustomController {
         }
         this.titulo.text = "Observar Variables [" + this.capa.observa.length + "]";
         if (this.capa.recalculandoValoresObservados) {
+            this.rowNueva.html = "";
             if (this.capa.cancelandoRecalculoValoresObservados) {
                 this.rowNueva.hide();
                 this.rowWorking.hide();
@@ -70,6 +50,17 @@ class CapaObserva extends ZCustomController {
             this.rowNueva.show();
             this.rowWorking.hide();
             this.rowCancelando.hide();
+            let seleccionador = ConsultaGeoportal.nuevoSeleccionadorVacio("[Observar Nueva Variable]");
+            this.rowNueva.html = seleccionador.getHTML(true);
+            seleccionador.registraListeners(this.rowNueva, {
+                arbolItems:this.arbolAgregar,
+                onSelecciona:consulta => {
+                    this.capa.observa.forEach(o => o.colorear = false);
+                    this.capa.observa.push({leyenda:true, colorear:true, consulta:consulta})
+                    this.refresca();
+                    this.capa.recalculaValoresObservados();
+                }
+            });
         }
         this.edHPos.value = this.config.leyenda.hPos;
         this.edVPos.value = this.config.leyenda.vPos;
@@ -78,28 +69,7 @@ class CapaObserva extends ZCustomController {
         else this.cntLeyendas.hide();
         let html = "";
         this.capa.observa.forEach((o, i) => {
-            html += `<div class="row mt-1">`;
-            html += `  <div class="col">`;
-            html += `    <i data-indice="${i}" class="fas fa-trash-alt mr-2 float-left mt-1" style="cursor: pointer;"></i>`;
-            html += `    <img class="mr-1 float-left" height="16px" src="${o.variable.urlIcono}" />`;
-            html += `    <span>${o.variable.nombre}</span>`;
-            html += `  </div>`;
-            html += `</div>`;
-            if (o.variable.niveles && o.variable.niveles.length > 1) {
-                html += `<div class="row mt-1 ml-2">`;
-                html += `  <div class="col-4">`;
-                html += `    <label class="etiqueta-subpanel-propiedades mb-0">Nivel</label>`;
-                html += `  </div>`;
-                html += `  <div class="col-8">`;
-                html += `    <div id="edNivel${i}" class="slider-nivel" data-indice="${i}"></div>`;
-                html += `  </div>`;
-                html += `</div>`;
-                html += `<div class="row ml-2">`;
-                html += `  <div class="col">`;
-                html += `    <label id="lblNivel${i}" class="etiqueta-subpanel-propiedades mb-0">${o.variable.niveles[o.nivel].descripcion}</label>`;
-                html += `  </div>`;
-                html += `</div>`;
-            }
+            html += o.consulta.getHTML(false);
             // Leyenda y colorear
             html += `<div class="row mt-1">`;
             html += `  <div class="col selectorLeyenda" style="cursor: pointer;" data-indice="${i}">`;
@@ -116,34 +86,22 @@ class CapaObserva extends ZCustomController {
             }
         });
         this.cntObserva.html = html;
-        this.cntObserva.findAll(".fa-trash-alt").forEach(eliminador => {
-            eliminador.onclick = _ => {
-                let indice = parseInt(eliminador.getAttribute("data-indice"));
-                this.capa.observa.splice(indice, 1);
-                this.refresca();
-                this.capa.recalculaValoresObservados();
-                window.geoportal.mapa.dibujaObjetos();
-                window.geoportal.mapa.callDibujaLeyendas();
-            }
-        })
-        this.cntObserva.findAll(".slider-nivel").forEach(slider => {
-            let indice = parseInt(slider.getAttribute("data-indice"));
-            let o = this.capa.observa[indice];
-            let lbl = this.cntObserva.find("#lblNivel" + indice);
-            noUiSlider.create(slider, {
-                start: o.nivel,
-                step:1,
-                range: {'min': 0,'max': o.variable.niveles.length - 1}
-            });
-            slider.noUiSlider.on("slide", v => {
-                let value = parseInt(v[0]);
-                o.nivel = value;
-                lbl.textContent = o.variable.niveles[o.nivel].descripcion;
-            });
-            slider.noUiSlider.on("change", v => {
-                this.capa.recalculaValoresObservados();
-            });
-        })
+        this.capa.observa.forEach(o => {
+            o.consulta.registraListeners(this.cntObserva, {
+                onElimina:_ => {
+                    let idx = this.capa.observa.findIndex(oo => oo.consulta.id == o.consulta.id);
+                    this.capa.observa.splice(idx, 1);
+                    this.refresca();
+                    this.capa.recalculaValoresObservados();
+                    window.geoportal.mapa.dibujaObjetos();
+                    window.geoportal.mapa.callDibujaLeyendas();
+                },
+                onChange:_ => {
+                    this.refresca();
+                    this.capa.recalculaValoresObservados();
+                }
+            })
+        });
         this.cntObserva.findAll(".selectorLeyenda").forEach(selector => {
             selector.onclick = _ => {
                 let indice = parseInt(selector.getAttribute("data-indice"));

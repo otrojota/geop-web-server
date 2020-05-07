@@ -1,9 +1,9 @@
-class AnalizadorRectArea3D extends AnalizadorObjeto {
-    static aplicaAObjeto(o) {
+class AnalizadorRectArea3D extends Analizador {
+    static aplicaAObjetoCapa(o, c) {
         return o instanceof Area;        
     }
-    constructor(objeto, config) {
-        super("rect-area-3d", objeto, config);
+    constructor(objeto, capa, config) {
+        super("rect-area-3d", objeto, capa, config);
     }
 
     get escala() {return this.config.escala}    

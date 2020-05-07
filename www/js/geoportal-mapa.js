@@ -456,7 +456,7 @@ class MapaGeoPortal {
                 let leyendasPorObjeto = {}
                 capa.valoresObservados.filter(v => v !== null && v.observa.leyenda).forEach(v => {
                     let o = v.observa;
-                    if (o.tipo == "capa") {
+                    if (o.consulta.tipo == "capa") {
                         let objeto = v.objeto;
                         if (objeto.isVisible(limites)) {
                             let leyendas = leyendasPorObjeto[objeto.id];
@@ -464,9 +464,9 @@ class MapaGeoPortal {
                                 leyendas = {objeto, leyendas:[]};
                                 leyendasPorObjeto[objeto.id] = leyendas;
                             }
-                            leyendas.leyendas.push({label:o.variable.nombre, decimales:o.variable.decimales, unidad:o.variable.unidad, valor:v.value?v.value.value:"S/D"}); 
+                            leyendas.leyendas.push({label:o.consulta.variable.nombre, decimales:o.consulta.decimales, unidad:o.consulta.unidad, valor:v.value?v.value:"S/D"}); 
                         }
-                    } else if (o.tipo == "queryMinZ") {
+                    } else if (o.consulta.tipo == "queryMinZ") {
                         if (v.value && v.value.length) {
                             v.value.forEach(dimValue => {
                                 let obj = capa.objetos.find(o => o.getCodigoDimension() == dimValue.dim.code);
@@ -477,7 +477,7 @@ class MapaGeoPortal {
                                         leyendas = {objeto:obj, leyendas:[]};
                                         leyendasPorObjeto[obj.id] = leyendas;
                                     }
-                                    leyendas.leyendas.push({label:o.query.variable.name, decimales:o.query.variable.options.decimals, unidad:o.query.variable.options.unit, valor:dimValue.value?dimValue.value:"S/D"}); 
+                                    leyendas.leyendas.push({label:o.consulta.nombre, decimales:o.consulta.decimales, unidad:o.consulta.unidad, valor:dimValue.value?dimValue.value:"S/D"}); 
                                 }
                             })
                         }

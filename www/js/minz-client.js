@@ -252,6 +252,13 @@ class MinZClient {
                     if (query.filtroFijo) this.construyeFiltro(filtro, query.filtroFijo.ruta, query.filtroFijo.valor);
                     resultado = await this.queryPeriodSummary(query.variable.code, startTime, endTime, filtro);
                     return this.extraeAcumulador(resultado, query.acumulador);
+                case "time-serie":
+                    filtro = {};
+                    if (query.filtroFijo) this.construyeFiltro(filtro, query.filtroFijo.ruta, query.filtroFijo.valor);
+                    resultado = await this.queryTimeSerie(query.variable.code, startTime, endTime, filtro, query.temporalidad);
+                    console.log("resultado", resultado);
+                    resultado.forEach(r => r.resultado = this.extraeAcumulador(r, query.acumulador));
+                    return resultado;
                 case "dim-serie":
                     filtro = {};
                     resultado = await this.queryDimSerie(query.variable.code, startTime, endTime, filtro, query.dimensionAgrupado);
@@ -272,6 +279,20 @@ class MinZClient {
             let url = this.url + "/data/" + codigoVariable + "/period-summary?token=" + this.token;
             url += "&startTime=" + startTime + "&endTime=" + endTime;
             url += "&filter=" + encodeURIComponent(JSON.stringify(filter));
+            let summary = (await (await fetch(url)).json());
+            return summary;
+        } catch(error) {
+            throw error;
+        }
+    }
+    async queryTimeSerie(codigoVariable, startTime, endTime, filter, temporality) {
+        try {
+            await this.getDimensiones();
+            await this.getVariables();
+            let url = this.url + "/data/" + codigoVariable + "/time-serie?token=" + this.token;
+            url += "&startTime=" + startTime + "&endTime=" + endTime;
+            url += "&filter=" + encodeURIComponent(JSON.stringify(filter));
+            url += "&temporality=" + temporality;
             let summary = (await (await fetch(url)).json());
             return summary;
         } catch(error) {

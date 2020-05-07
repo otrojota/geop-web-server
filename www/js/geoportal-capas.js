@@ -24,8 +24,13 @@ class Capa {
         this.tiempoFijo = null;
         this.configPanel = {
             flotante:false,
-            height:280, width:300,
+            height:340, width:300,
             configSubPaneles:{}
+        }
+        this.configAnalisis = {
+            height:320, width:300,
+            analizador:null,
+            analizadores:{}
         }
         this.workingListeners = []; // {accion:"start"|"finish"|"refrescar", listener:function}
         this.objetos = null;
@@ -422,14 +427,17 @@ class Capa {
                         variables: o.variables,
                         movible:false, nombreEditable:false
                     }
+                    if (o.extraConfig) {
+                        if (o.extraConfig.configAnalisis) {
+                            configPunto.analizadorDefault = {
+                                analizador:o.extraConfig.configAnalisis.analizador,
+                                config:o.extraConfig.configAnalisis.analizadores[o.extraConfig.configAnalisis.analizador]
+                            }
+                        }
+                    }
                     let punto = new Punto({lat:o.lat, lng:o.lng}, o.nombre, configPunto);
                     punto.codigo = o.codigo;
                     punto.capa = this;
-                    if (o.extraConfig) {
-                        if (o.extraConfig.configAnalisis) {
-                            punto.configAnalisis = $.extend(true, {}, punto.configAnalisis, o.extraConfig.configAnalisis);
-                        }
-                    }
                     this.objetos.push(punto);
                     break;
                 default:
@@ -537,13 +545,13 @@ class Capa {
             for (let i=0; i<this.observa.length; i++) {
                 this.valoresObservados[i] = null;
                 let o = this.observa[i];
-                if (o.tipo == "queryMinZ") {
+                if (o.consulta.tipo == "queryMinZ") {
                     this.pendientesQueryObservados.push({indiceObserva:this.pendientesQueryObservados.length, running:false, observa:o});
-                } else if (o.tipo == "capa") {
+                } else if (o.consulta.tipo == "capa") {
                     this.objetos.forEach(obj => {
                         this.pendientesQueryObservados.push({indiceObserva:this.pendientesQueryObservados.length, running:false, observa:o, objeto:obj});
                     })
-                }
+                } else throw "Tipo de consulta '" + o.consulta.tipo + "' no implementado";
             }
             window.geoportal.mapa.callDibujaLeyendas();
             this.totalPendientesRecalculo = this.pendientesQueryObservados.length;
@@ -580,20 +588,31 @@ class Capa {
                 pendiente.running = true;
                 let o = pendiente.observa;
                 try {
-                    if (o.tipo == "queryMinZ") {
-                        let query = o.query;
-                        let {t0, t1, desc} = window.minz.normalizaTiempo(query.temporalidad, window.geoportal.tiempo);
-                        let res = await window.minz.query(query, t0, t1);
-                        this.valoresObservados[pendiente.indiceObserva] = {value:res, atributos:{"Período":desc}, observa:o};
+                    if (o.consulta.tipo == "queryMinZ") {
+                        let res = await o.consulta.getDimSerie(window.geoportal.tiempo);
+                        this.valoresObservados[pendiente.indiceObserva] = {value:res.valor, atributos:res.atributos, observa:o};
                         if (o.colorear) {
-                            res.filter(r => r.value !== undefined).forEach(r => {
-                                if (this.minObserva === undefined || r.value < this.minObserva) this.minObserva = r.value;
-                                if (this.maxObserva === undefined || r.value > this.maxObserva) this.maxObserva = r.value;
+                            res.valor.filter(r => r.resultado !== undefined).forEach(r => {
+                                if (this.minObserva === undefined || r.resultado < this.minObserva) this.minObserva = r.resultado;
+                                if (this.maxObserva === undefined || r.resultado > this.maxObserva) this.maxObserva = r.resultado;
                                 let obj = this.objetos.find(o => o.getCodigoDimension() == r.dim.code);
-                                if (obj) this.valoresColorear[obj.id] = r.value;
+                                if (obj) this.valoresColorear[obj.id] = r.resultado;
                             })
                         }
-                    } else if (o.tipo == "capa") {
+                    } else if (o.consulta.tipo == "capa") {
+                        try {
+                            let resultado = await o.consulta.getValorEnPunto(window.geoportal.tiempo, pendiente.objeto);
+                            this.valoresObservados[pendiente.indiceObserva] = {value:resultado.value, observa:o, objeto:pendiente.objeto};
+                            let v = resultado.value;
+                            if (o.colorear && !isNaN(v)) {
+                                if (this.minObserva === undefined || v < this.minObserva) this.minObserva = v;
+                                if (this.maxObserva === undefined || v > this.maxObserva) this.maxObserva = v;
+                                this.valoresColorear[pendiente.objeto.id] = v;
+                            }
+                        } catch(err) {
+                            this.valoresObservados[pendiente.indiceObserva] = {value:err, observa:o};
+                        }
+                        /*
                         let obj = pendiente.objeto;
                         let codigoVariable = o.codigoVariable;
                         let p = codigoVariable.indexOf("${codigo-objeto}");
@@ -628,7 +647,8 @@ class Capa {
                                 }
                                 resolve();
                             });
-                        });                                
+                        });  
+                        */                              
                     }
                 } catch(error) {
                     console.error(error);
@@ -670,6 +690,7 @@ class Capa {
             this.escalaColorear = null;
         }
         this.colorea();
+        console.log("valoresObservados", this.valoresObservados);
     }
     async colorea() {
         if (this.recalculandoValoresObservados || this.cancelandoRecalculoValoresObservados) return; 
@@ -717,6 +738,34 @@ class VisualizadorCapa {
     }
     cambioOpacidadCapa(opacidad) {
         console.log("cambioOpacidad no se sobreescribió");
+    }
+}
+
+// Analizadores
+class Analizador {
+    static aplicaAObjetoCapa(o, c) {
+        console.error("aplicaAObjetoCapa no sobreescrito en Analizador");
+        return false
+    }
+
+    constructor(codigo, objeto, capa, config) {
+        this.id = uuidv4();
+        this.codigo = codigo;
+        this.objeto = objeto;
+        this.capa = capa;
+        this._config = config;
+        this.mensajes = new MensajesGeoportal(this);
+    }
+
+    get config() {return this.capa.configAnalisis.analizadores[this.codigo]}
+    
+    getPanelesPropiedades() {
+        console.error("getPanelesPropiedades no sobreescrito en Analizador");
+        return [];
+    }
+    getRutaPanelAnalisis() {
+        console.error("getRutaPanelAnalisis no sobreescrito en Analizador");
+        return "common/Empty";
     }
 }
 
@@ -938,10 +987,11 @@ class Capas {
         if (grupo.activo) await this.activaGrupo(0);
     }
 
-    getAnalizadoresAplicables(objeto) {
-        if (!(objeto instanceof ObjetoGeoportal)) return [];
+    getAnalizadoresAplicables(objeto, capa) {
+        // TODO: Agregar capas
+        //if (!(objeto instanceof ObjetoGeoportal)) return [];
         return this.clasesAnalizadores.reduce((lista, a) => {
-            if (a.clase.aplicaAObjeto(objeto)) lista.push(a);
+            if (a.clase.aplicaAObjetoCapa(objeto, capa)) lista.push(a);
             return lista;
         }, []);
     }

@@ -78,7 +78,7 @@ class PropTiempoSerieTiempo extends ZCustomController {
         await this.options.contenedor.refrescaPanelAnalisis();
     }
     async onEdToDate_change() {
-        this.analizador.config.tiempo.fromDate = this.edToDate.value.valueOf();
+        this.analizador.config.tiempo.toDate = this.edToDate.value.valueOf();
         this.refrescaTitulo();
         await this.options.contenedor.refrescaPanelAnalisis();
     }

@@ -1,7 +1,11 @@
 class PanelAnalisis extends ZCustomController {
     get configAnalisis() {
+        if (this.capa) return this.capa.configAnalisis;
+        return null;
+        /*
         if (!this.objeto) return null;
         return this.objeto.configAnalisis;
+        */
     }
 
     onThis_init() {
@@ -20,8 +24,9 @@ class PanelAnalisis extends ZCustomController {
                 },
                 end: e => {
                     let p = this.vsplitAnalisis.pos;
-                    if (this.objeto) {
-                        this.objeto.configAnalisis.width = p.left;
+                    if (this.capa) {
+                        //this.objeto.configAnalisis.width = p.left;
+                        this.configAnalisis.width = p.left;
                         this.doResize();
                     }
                 }
@@ -35,22 +40,53 @@ class PanelAnalisis extends ZCustomController {
         this.destruyePaneles();
         await this.destruyePanelAnalisis();
         this.objeto = null;
+        this.capa = null;
     }
 
     async refresca() {
-        this.objeto = window.geoportal.capas.getGrupoActivo().itemActivo;        
+        // this.objeto = window.geoportal.capas.getGrupoActivo().itemActivo;
+        let o = window.geoportal.capas.getGrupoActivo().itemActivo;
+        if (o instanceof Capa) {
+            this.capa = o;
+            this.objeto = null;
+            console.log("PanelAnalisis refrescando desde capa", this.capa);
+        } else if (o instanceof ObjetoGeoportal) {
+            this.capa = o.capa;
+            this.objeto = o;
+            console.log("PanelAnalisis refrescando desde objeto", this.objeto, " en capa", this.capa);
+        }
         this.refrescaAnalizadores();
         this.doResize();
     }
     
     async refrescaAnalizadores() {
-        let analizadores = window.geoportal.capas.getAnalizadoresAplicables(this.objeto);
+        //let analizadores = window.geoportal.capas.getAnalizadoresAplicables(this.objeto);
+        let analizadores = window.geoportal.capas.getAnalizadoresAplicables(this.objeto, this.capa);
+        if (!this.configAnalisis.analizador || !analizadores.find(a => a.codigo == this.configAnalisis.analizador)) {
+            console.log("Buscando analiador default para el objeto seleccionado");
+            // TODO: Agregar el caso de analizador para capa, sin objeto
+            let analizador, configInicialAnalizador;
+            if (this.objeto) {
+                analizador = this.objeto.getAnalizadorDefault().analizador;
+                configInicialAnalizador = this.objeto.getAnalizadorDefault().config;
+            } else {
+                throw "Caso no manejado aún: analizador de capa sin objeto seleccionado"
+            }
+            this.configAnalisis.analizador = analizador;
+            if (!this.configAnalisis.analizadores[analizador]) {
+                this.configAnalisis.analizadores[analizador] = configInicialAnalizador;
+            }
+            console.log("seteada configuracion inicial de analizador para la capa", this.configAnalisis);
+        } else if (this.objeto) {
+            // Caso que el objeto no soporta el analizador activo
+            let analizadoresObjeto = this.objeto.getAnalizadoresAplicables()
+        }
         this.edAnalizador.setRows(analizadores, this.configAnalisis.analizador);
         await this.refrescaDetallesAnalizador();
     }    
     doResize() {
         let s = this.size;
-        if (!this.objeto) return;
+        if (!this.capa) return;
         this.vsplitAnalisis.pos = {left:this.configAnalisis.width, top:0}
         this.vsplitAnalisis.size = {width:6, height:s.height};
         this.rowAnalizador.size = {width:this.configAnalisis.width, height:39};
@@ -74,7 +110,7 @@ class PanelAnalisis extends ZCustomController {
             this.configAnalisis.analizadores[definicionAnalizador.codigo].paneles = {};
         }
         let configAnalisis = this.configAnalisis.analizadores[definicionAnalizador.codigo];
-        this.analizador = new (definicionAnalizador.clase)(this.objeto, configAnalisis);
+        this.analizador = new (definicionAnalizador.clase)(this.objeto, this.capa, configAnalisis);
         await this.creaPaneles();
         await this.creaPanelAnalisis();
         await this.refrescaPaneles();

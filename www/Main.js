@@ -21,8 +21,8 @@ class Main extends ZCustomController {
                 },
                 end: e => {
                     let p = this.hsplitAnalisis.pos;
-                    if (this.panelAnalisis.objeto) {
-                        this.panelAnalisis.objeto.configAnalisis.height = window.innerHeight - p.top - 6;
+                    if (this.panelAnalisis.capa) {
+                        this.panelAnalisis.configAnalisis.height = window.innerHeight - p.top - 6;
                         this.doResize();
                     }
                 }
@@ -68,7 +68,7 @@ class Main extends ZCustomController {
         let w = window.innerWidth;
         let h = window.innerHeight;
         this.size = {width:w, height:h}
-        let altoAnalisis = this.panelAnalisis.objeto?this.panelAnalisis.objeto.configAnalisis.height:80;
+        let altoAnalisis = this.panelAnalisis.capa?this.panelAnalisis.configAnalisis.height:80;
         if (altoAnalisis > h - 30) altoAnalisis = h-30;
         if (altoAnalisis < 30) altoAnalisis = 30;
 

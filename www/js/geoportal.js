@@ -116,13 +116,13 @@ class GeoPortal {
         });
         return items;
     }
-    async getArbolAgregarAMapa(formato, dataObject, codigoDimension, capa) {
+    async getArbolAgregarAMapa(formato, dataObject, codigoDimension, capa, sinCodigoObjeto) {
         let grupos = this.getNivelAgregarGrupos(this.grupos, formato);
         let nodoDataObject = null;
         if (dataObject) {
             let variables = dataObject.variables.reduce((lista, v) => {
                 if (!formato || v.formatos.indexOf(formato) >= 0) {
-                    lista.push({code:dataObject.capa.codigo + "." + dataObject.codigo + "." + v.codigo, label:v.nombre, icon:v.icono, tipo:"capa", capa:dataObject.capa});
+                    lista.push({code:dataObject.capa.codigo + "." + (sinCodigoObjeto?"${codigo-objeto}":dataObject.codigo) + "." + v.codigo, label:v.nombre, icon:v.icono, tipo:"capa", capa:dataObject.capa});
                 }
                 lista.sort((i1, i2) => (i1.label < i2.label?-1:1));
                 return lista;
@@ -432,9 +432,14 @@ class GeoPortal {
                 variable:this.getVariable(codigo)
             }
         }
+        let codigoVariable = codigo.substr(p0+1);
+        p0 = codigoVariable.indexOf("${codigo-objeto}");
+        if (p0 >= 0) {
+            codigoVariable = codigoVariable.substr(0,p0) + objeto.codigo + codigoVariable.substr(p0+16);
+        }
         return {
             capaQuery:objeto.capa,
-            codigoVariable:codigo.substr(p0+1),
+            codigoVariable:codigoVariable,
             variable:this.getVariable(codigo)
         }
     }

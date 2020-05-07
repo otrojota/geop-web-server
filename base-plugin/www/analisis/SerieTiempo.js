@@ -7,24 +7,25 @@ class SerieTiempo extends ZCustomController {
     onThis_init(options) {
         this.options = options;
         this.t0 = null; this.t1 = null;
-        this.var1 = null; this.nivelVar1 = null; this.serie1 = null;
-        this.var2 = null; this.nivelVar2 = null; this.serie2 = null;
+        this.var1 = null; this.serie1 = null;
+        this.var2 = null; this.serie2 = null;
         this.lat = null; this.lng = null;
         this.grafico = null;
     }
     doResize() {
         let size = this.size;        
         this.divGrafico.size = size;
-        if(this.grafico) this.grafico.setSize(size.width, size.height);
+        if (this.grafico) this.grafico.setSize(size.width, size.height);
     }
     async refresca(objeto) {
         this.options.contenedor.iniciaTrabajando();
-        this.objeto = objeto;        
+        this.objeto = objeto;
         let cambioVar1 = false, cambioVar2 = false;
         let cambioTiempo = false;
-        let cambioPosicion = this.objeto.lat != this.lat || this.objeto.lng != this.lng;
-        this.lat = this.objeto.lat;
-        this.lng = this.objeto.lng;
+        let centroide = objeto.getCentroide();
+        let cambioPosicion = centroide.lat != this.lat || centroide.lng != this.lng;
+        this.lat = centroide.lat;
+        this.lng = centroide.lng;
         let recrearGrafico = this.grafico?false:true;
         let tiempo = this.config.tiempo;
         if (tiempo.tipo == "relativo") {
@@ -46,66 +47,41 @@ class SerieTiempo extends ZCustomController {
             }
         }
         let promesas = [];
+        if (this.analizador.variable) {
+            if (this.var1) {
+                if (this.analizador.variable.codigo != this.var1.codigo) recrearGrafico = true;
+                cambioVar1 = !this.analizador.variable.esIgualA(this.var1);
+            } else {
+                cambioVar1 = true; recrearGrafico = true;
+            }
+        } else {
+            cambioVar1 = true; recrearGrafico = true;
+        }
+        if (this.analizador.variable2) {
+            if (this.var2) {
+                if (this.analizador.variable2.codigo != this.var2.codigo) recrearGrafico = true;
+                cambioVar2 = !this.analizador.variable2.esIgualA(this.var2);
+            } else {
+                cambioVar2 = true; recrearGrafico = true;
+            }
+        } else {
+            cambioVar2 = true; recrearGrafico = true;
+        }
 
-        let var1 = this.config.variable, nivelVar1 = this.config.nivelVariable;
-        if (var1 != this.var1) recrearGrafico = true;
-        cambioVar1 = var1 != this.var1 || nivelVar1 != this.nivelVar1;
-        let var2 = this.config.variable2, nivelVar2 = this.config.nivelVariable2;
-        if (var2 != this.var2) recrearGrafico = true;
-        cambioVar2 = var2 != this.var2 || nivelVar2 != this.nivelVar2;
         if (cambioVar1 || cambioVar2 || cambioTiempo || cambioPosicion) {
             this.analizador.mensajes.clear();
-            this.var1 = var1; this.nivelVar1 = nivelVar1; this.serie1 = null;
-            if (this.var1) {
-                let infoVar = window.geoportal.getInfoVarParaConsulta(this.var1, this.objeto);
-                this.analizador.mensajes.addOrigen(infoVar.variable.origen);
-                promesas.push(new Promise((resolve, reject) => {
-                    infoVar.capaQuery.resuelveConsulta("serieTiempo", {
-                        codigoVariable:infoVar.codigoVariable,
-                        lat:this.objeto.lat, lng:this.objeto.lng,
-                        levelIndex:this.nivelVar1,
-                        time0:this.t0, time1:this.t1
-                    }, (err, result) => {
-                        if (err) {
-                            this.analizador.mensajes.addError(err.toString());
-                            reject(err); 
-                            return;
-                        }
-                        this.analizador.mensajes.parse(result, infoVar.variable.nombre);
-                        if (!result.data.length) this.analizador.mensajes.addError(infoVar.variable.nombre + ": No hay datos para el período seleccionado");
-                        let serie = result.data.reduce((lista, punto) => {
-                            lista.push({x:punto.time, y:punto.value, atributos:punto.atributos})
-                            return lista;
-                        }, [])                    
-                        resolve(serie);                    
-                    })
-                }));
+            if (!(this.objeto instanceof Punto)) {
+                if (this.analizador.variable && this.analizador.variable.tipo == "capa" || this.analizador.variable2 && this.analizador.variable2.tipo == "capa") {
+                    this.analizador.mensajes.addAdvertencia(`El objeto seleccionado no es un punto. Se muestran valores para su centroide, ubicado en [lat:${this.objeto.getCentroide().lat}, lng:${this.objeto.getCentroide().lng}]`);
+                }
             }
-            this.var2 = var2; this.nivelVar2 = nivelVar2; this.serie2 = null;
+            this.var1 = this.analizador.variable?this.analizador.variable.clona():null;
+            this.var2 = this.analizador.variable2?this.analizador.variable2.clona():null;
+            if (this.var1) {
+                promesas.push(this.var1.getSerieTiempo(this.t0, this.t1, this.objeto, this.analizador.mensajes));
+            }
             if (this.var2) {
-                let infoVar = window.geoportal.getInfoVarParaConsulta(this.var2, this.objeto);
-                this.analizador.mensajes.addOrigen(infoVar.variable.origen);
-                promesas.push(new Promise((resolve, reject) => {
-                    infoVar.capaQuery.resuelveConsulta("serieTiempo", {
-                        codigoVariable:infoVar.codigoVariable,
-                        lat:this.objeto.lat, lng:this.objeto.lng,
-                        levelIndex:this.nivelVar2,
-                        time0:this.t0, time1:this.t1
-                    }, (err, result) => {
-                        if (err) {
-                            this.analizador.mensajes.addError(err.toString());
-                            reject(err); 
-                            return;
-                        }
-                        this.analizador.mensajes.parse(result, infoVar.variable.nombre);
-                        if (!result.data.length) this.analizador.mensajes.addError(infoVar.variable.nombre + ": No hay datos para el período seleccionado");
-                        let serie = result.data.reduce((lista, punto) => {
-                            lista.push([punto.time, punto.value])
-                            return lista;
-                        }, [])                    
-                        resolve(serie);                    
-                    })
-                }));
+                promesas.push(this.var2.getSerieTiempo(this.t0, this.t1, this.objeto, this.analizador.mensajes));
             }
         }
         try {
@@ -131,10 +107,10 @@ class SerieTiempo extends ZCustomController {
             let yAxis = [];
             this.capas = [];
             if (this.var1) {
-                let variable = window.geoportal.getVariable(this.var1);
+                let variable = this.var1;
                 this.capas.push(variable);
                 titulo = variable.nombre;
-                if (variable.niveles && variable.niveles.length > 1) titulo += " [" + variable.niveles[this.nivelVar1].descripcion + "]";
+                if (variable.niveles && variable.niveles.length > 1) titulo += " [" + variable.niveles[variable.nivel].descripcion + "]";
                 series.push({
                     type:"area",
                     name:titulo,
@@ -144,7 +120,7 @@ class SerieTiempo extends ZCustomController {
                 yAxis.push({id:"primario", title:{text:variable.unidad}});
             }
             if (this.var2) {
-                let variable = window.geoportal.getVariable(this.var2);
+                let variable = this.var2;
                 this.capas.push(variable);
                 let requiereEjeSecundario = false;
                 if (series.length && yAxis[0].title.text != variable.unidad) {
@@ -155,14 +131,14 @@ class SerieTiempo extends ZCustomController {
                 }
                 if (!series.length) {
                     titulo = variable.nombre;
-                    if (variable.niveles && variable.niveles.length > 1) titulo += " [" + variable.niveles[this.nivelVar2].descripcion + "]";
+                    if (variable.niveles && variable.niveles.length > 1) titulo += " [" + variable.niveles[variable.nivel].descripcion + "]";
                 } else {
                     subtitulo = "v/s " + variable.nombre;
-                    if (variable.niveles && variable.niveles.length > 1) subtitulo += " [" + variable.niveles[this.nivelVar2].descripcion + "]";
+                    if (variable.niveles && variable.niveles.length > 1) subtitulo += " [" + variable.niveles[variable.nivel].descripcion + "]";
                 }                
                 series.push({
                     type:"spline",
-                    name:variable.nombre + (variable.niveles && variable.niveles.length > 1?variable.niveles[this.nivelVar2]:""),
+                    name:variable.nombre + (variable.niveles && variable.niveles.length > 1?variable.niveles[variable.nivel]:""),
                     data:this.serie2,
                     turboThreshold: 0,
                     yAxis:requiereEjeSecundario?"secundario":"primario"
@@ -171,7 +147,7 @@ class SerieTiempo extends ZCustomController {
             if (!this.grafico) {
                 let self = this;
                 let options = {
-                    title:{text:titulo},
+                    title:{text:this.objeto.nombre + ": " + titulo},
                     subtitle:subtitulo?{text:subtitulo}:undefined,
                     xAxis:{type:"datetime"},
                     yAxis:yAxis,
@@ -199,11 +175,11 @@ class SerieTiempo extends ZCustomController {
                         useHTML:true,
                         formatter:function()  {
                             let capa = self.capas[this.series.index];
+                            console.log("usando capa (consulta)", capa);
                             let nombre = capa.nombre,
                                 nombreNivel = (capa.niveles && capa.niveles.length > 1?capa.niveles[this.nivelVar2]:""),
                                 origen = window.geoportal.origenes[capa.origen],
-                                unidad = capa.unidad,
-                                icono = capa.urlIcono,
+                                icono = capa.icono,
                                 atributos = this.point.atributos
                             let html = "<div class='tooltip-contenido'>";
                             html += "<div class='tooltip-titulo'>" + nombre + "</div>";
@@ -217,30 +193,12 @@ class SerieTiempo extends ZCustomController {
                             html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
                             html += "</tr>";
                             
-                            /*
-                            let tiempo = moment.tz(this.x, window.timeZone);
-                            html += "<tr>";
-                            html += "<td class='icono-tooltip'><i class='fas fa-lg fa-clock'></i></td>";
-                            html += "<td class='propiedad-tooltip'>Tiempo:</td>";
-                            html += "<td class='valor-tooltip'>" + tiempo.format("DD/MMM/YYYY HH:mm") + "</td>";
-                            html += "</tr>";
-                            */
-
-                            let valor = window.geoportal.formateaValorVariable(capa, this.y) + " [" + unidad + "]";
+                            let valor = GeoPortal.round(this.y, capa.decimales).toLocaleString() + " [" + capa.unidad + "]";
                             html += "<tr>";
                             html += "<td class='icono-tooltip-invert'><img src='" + icono + "' width='14px' /></td>";
                             html += "<td class='propiedad-tooltip'>Valor:</td>";
                             html += "<td class='valor-tooltip'>" + valor + "</td>";
                             html += "</tr>";
-                            /*
-                            if (modelo) {
-                                html += "<tr>";
-                                html += "<td class='icono-tooltip'><i class='fas fa-lg fa-square-root-alt'></i></td>";
-                                html += "<td class='propiedad-tooltip'>Ejecución Modelo:</td>";
-                                html += "<td class='valor-tooltip'>" + modelo + "</td>";
-                                html += "</tr>";
-                            }
-                            */
                            if (atributos) {
                                 Object.keys(atributos).forEach(att => {
                                     let valor = atributos[att];
