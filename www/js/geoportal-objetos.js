@@ -151,28 +151,7 @@ class ObjetoGeoportal {
                     text = resultado.error; textColor = "orange";
                 } else {
                     text = o.valorFormateado; textColor = "white";
-                }
-                /*
-                let value = this.valoresObservados[idx];
-                let text, textColor;
-                if (value && typeof value == "object" && (value == "S/D" || value.value === undefined)) {
-                    text = "Sin Datos"; textColor = "orange";
-                } else if (value === null) {
-                    text = "... ?? ..."; textColor = "orange";
-                } else if (typeof value == "string") {
-                    text = value; textColor = "orange";
-                } else if (o.tipo == "capa") {
-                    let v = window.geoportal.formateaValorVariable(o.variable, value.value);
-                    text = v + " [" + o.variable.unidad + "]";
-                    textColor = "white";
-                } else if (o.tipo == "queryMinZ") {
-                    let dec = (o.query.variable.options && o.query.variable.options.decimals)?o.query.variable.options.decimals:2;
-                    let unit = (o.query.variable.options && o.query.variable.options.unit)?o.query.variable.options.unit:"s/u";
-                    let v = GeoPortal.round(value.value, dec).toLocaleString();
-                    text = v + " [" + unit + "]";
-                    textColor = "white";
-                }    
-                */            
+                }          
                 let txt = new Konva.Text({
                     x:x + 18, y:y + 4,
                     text:text,
@@ -223,7 +202,7 @@ class ObjetoGeoportal {
                     html += "<td class='valor-tooltip'>" + origen.nombre + "</td>";
                     html += "</tr>";
                     
-                    if (o.resultado && o.resultado.valor && o.resultado.atributos) {
+                    if (o.resultado && o.resultado.valor && o.resultado.valor.atributos) {
                         Object.keys(o.resultado.valor.atributos).forEach(att => {
                             let valor = o.resultado.valor.atributos[att];
                             let icono = "fa-tag";
@@ -241,7 +220,10 @@ class ObjetoGeoportal {
                             html += "<td class='propiedad-tooltip'>" + att + ":</td>";
                             html += "<td class='valor-tooltip'>" + valor + "</td>";
                             html += "</tr>";
-                        })
+                        });
+                        if (o.resultado.valor.atributos.realLng && o.resultado.valor.atributos.realLat) {
+                            window.geoportal.mapa.dibujaPuntoDatos(centroide.lat, centroide.lng, o.resultado.valor.atributos.realLat, o.resultado.valor.atributos.realLng);
+                        }
                     }
 
                     html += "</table>";
@@ -250,6 +232,7 @@ class ObjetoGeoportal {
                 });
                 background.on("mouseout", e => {
                     window.geoportal.hideTooltip();
+                    window.geoportal.mapa.limpiaPuntoDatos();
                 });                
             });
         }
@@ -296,7 +279,6 @@ class ObjetoGeoportal {
                 });
             } else if (o.tipo == "queryMinZ") {
                 let query = o.query;
-                console.log("query", query);
                 let p = query.variable.code.indexOf(".");
                 //let origen = window.geoportal.getOrigen(query.variable.code.substr(0,p));
                 this.mensajes.addOrigen(query.variable.code.substr(0,p));

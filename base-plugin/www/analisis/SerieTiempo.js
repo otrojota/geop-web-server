@@ -217,12 +217,15 @@ class SerieTiempo extends ZCustomController {
                                     html += "<td class='propiedad-tooltip'>" + att + ":</td>";
                                     html += "<td class='valor-tooltip'>" + valor + "</td>";
                                     html += "</tr>";
-                                })
+                                });
+                                if (atributos.realLng && atributos.realLat) {
+                                    window.geoportal.mapa.dibujaPuntoDatos(self.objeto.getCentroide().lat, self.objeto.getCentroide().lng, atributos.realLat, atributos.realLng, 3000);
+                                }
                             }
 
                             html += "</table>";
                             html += "</div>";
-                            html += "</div>";
+                            html += "</div>";                            
                             return html;
                         }
                     }                                    

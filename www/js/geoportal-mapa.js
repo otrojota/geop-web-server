@@ -595,4 +595,50 @@ class MapaGeoPortal {
             this.dibujaLeyendas()
         }, delay);
     }
+
+    dibujaPuntoDatos(fromLat, fromLng, toLat, toLng, delay) {
+        if (this.leyendaDatos) this.limpiaPuntoDatos();
+        let srcPoint = this.map.latLngToContainerPoint([fromLat, fromLng]);
+        let tgtPoint = this.map.latLngToContainerPoint([toLat, toLng]);
+        this.leyendaDatos = {
+            circle:new Konva.Circle({
+                x: tgtPoint.x,
+                y: tgtPoint.y,
+                radius: 15,
+                stroke: 'white',
+                strokeWidth: 2,
+                fill: 'blue',
+                opacity:0.5
+            }),
+            arrow:new Konva.Arrow({
+                x: srcPoint.x,
+                y: srcPoint.y,
+                points:[0,  0, tgtPoint.x - srcPoint.x, tgtPoint.y - srcPoint.y],
+                pointerLength: 4,
+                pointerWidth: 2,
+                stroke: 'white',
+                strokeWidth: 2,
+                opacity:0.5
+            })            
+        }
+        this.konvaLayerLeyendas.add(this.leyendaDatos.circle);
+        this.konvaLayerLeyendas.add(this.leyendaDatos.arrow);
+        this.konvaLayerLeyendas.draw();
+        if (delay) {
+            this.puntoDatosTimer = setTimeout(_ => {
+                this.puntoDatosTimer = null;
+                this.limpiaPuntoDatos()
+            }, delay);
+        }
+    }
+    limpiaPuntoDatos() {
+        if (this.limpiaPuntoDatos) {
+            clearTimeout(this.puntoDatosTimer);
+            this.puntoDatosTimer = null;
+        }
+        if (!this.leyendaDatos) return;
+        this.leyendaDatos.arrow.destroy();
+        this.leyendaDatos.circle.destroy();
+        this.konvaLayerLeyendas.draw();
+    }
 }
