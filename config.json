@@ -1,0 +1,87 @@
+{
+    "webServer":{
+        "http":{"port":8180}
+    },
+    "smtp_bak":{
+        "service":"gmail",
+        "auth":{"user":"geoportal.pucv@gmail.com", "pass":"GeoportalPomeo123"},
+        "from":"geoportal.pucv@gmail.com"
+    },
+    "smtp":{
+        "host":"smtp.vtr.net",
+        "port":587,
+        "secure":false,
+        "secureConnection": false,
+        "auth":{"user":"zonar@vtr.net", "pass":"Zonar.2012"},
+        "tls":{"rejectUnauthorized":false, "ciphers":"SSLv3"},
+        "from":"Equipo GEOPORTAL <zonar@vtr.net>"
+    },
+    "mongoDB":{
+        "url":"mongodb://localhost:27017",
+        "database":"geoportal"
+    },
+    "hereAPIKey":"eG2NCop0Fa_k1JUQUaiZvkt-pQKlSlYODS_UwKqaD6c",
+    "minZ":{
+        "url":"http://localhost:8191",
+        "token":"geop-public"
+    },
+    "proveedores":[{
+        "codigo":"gfs4",
+        "url":"http://localhost:8181",
+        "url_bak":"http://www.pomeo.cl:8083/gfs4"
+    }, {
+        "codigo":"ww3",
+        "url":"http://localhost:8187",
+        "url_bak":"http://www.pomeo.cl:8083/ww3"
+    }, {
+        "codigo":"servimet",
+        "url_bak":"http://localhost:8183",
+        "url":"http://www.pomeo.cl:8083/servimet"
+    }, {
+        "codigo":"fixed",
+        "url_bak":"http://localhost:8184",
+        "url":"http://www.pomeo.cl:8083/fixed"
+    }, {
+        "codigo":"huinay",
+        "url":"http://localhost:8186",
+        "url_bak":"http://www.pomeo.cl:8083/huinay"
+    }, {
+        "codigo":"bcn",
+        "url":"http://localhost:8188",
+        "url_bak":"http://www.pomeo.cl:8083/bcn"
+    }, {
+        "codigo":"fipafan2019",
+        "url":"http://localhost:8190",
+        "url_bak":"http://www.pomeo.cl:8083/fipafan2019"
+    }, {
+        "codigo":"copernicus",
+        "url":"http://localhost:8189",
+        "url_bak":"http://www.pomeo.cl:8083/copernicus"
+    }],
+    "plugins":["./base-plugin/BasePlugin.js", "./ow-plugin/OWPlugin.js"],
+    "grupos":[{
+        "codigo":"oceanografia", "nombre":"Oceanografía", "icono":"fas fa-water", "subgrupos":[{
+            "codigo":"olas", "nombre":"Oleaje", "icono":"fas fa-folder-open"
+        }, {
+            "codigo":"clorofila", "nombre":"Clorofila", "icono":"fas fa-folder-open"
+        }]
+    }, {
+        "codigo":"meteorologia", "nombre":"Meteorología", "icono":"fas fa-sun"
+    }, {
+        "codigo":"topografia", "nombre":"Topografía", "icono":"img/iconos/topografia.svg"
+    }, {
+        "codigo":"geologia", "nombre":"Geología", "icono":"fas fa-gem"
+    }, {
+        "codigo":"pesca-artesanal", "nombre":"Pesca Artesanal", "icono":"fas fa-fish"
+    }, {
+        "codigo":"deportes-nauticos", "nombre":"Deportes Náuticos", "icono":"fas fa-life-ring"
+    }, {
+        "codigo":"color-oceano", "nombre":"Color Océano", "icono":"fas fa-globe"
+    }, {
+        "codigo":"satelital", "nombre":"Información Satelital", "icono":"fas fa-satellite"
+    }, {
+        "codigo":"aux", "nombre":"POMeO - Capas Auxiliares", "icono":"img/iconos/auxiliary.svg"
+    }, {
+        "codigo":"cl-estaciones", "nombre":"Chile - Estaciones", "icono":"img/iconos/chile.svg"
+    }]
+}

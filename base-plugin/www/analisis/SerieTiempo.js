@@ -175,7 +175,6 @@ class SerieTiempo extends ZCustomController {
                         useHTML:true,
                         formatter:function()  {
                             let capa = self.capas[this.series.index];
-                            console.log("usando capa (consulta)", capa);
                             let nombre = capa.nombre,
                                 nombreNivel = (capa.niveles && capa.niveles.length > 1?capa.niveles[this.nivelVar2]:""),
                                 origen = window.geoportal.origenes[capa.origen],
