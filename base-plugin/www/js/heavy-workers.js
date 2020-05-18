@@ -71,7 +71,12 @@ async function getIsobandas(url, config, baseURL, min, max) {
         geoJSON.features.forEach(f => {
             let value = (f.properties.minValue + f.properties.maxValue) / 2;
             f.properties.value = value;
-            f.properties.color = escala.getColor(value);
+            let v = value;
+            if (config.escala.dinamica) {
+                if (v > config.escala.max) v = config.escala.max;
+                if (v < config.escala.min) v = config.escala.min;
+            }
+            f.properties.color = escala.getColor(v);
             f.properties.type = "isoband";
         });
         return {isobandas:geoJSON};

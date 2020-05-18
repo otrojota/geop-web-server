@@ -98,6 +98,8 @@ class MapaGeoPortal {
         // Objetos      
         let div = document.createElement("DIV");
         div.style["pointer-events"] = "all";
+        this.convaContainer = div;
+        
         this.konvaStage = new Konva.Stage({
             container:div,
             width:200,

@@ -112,7 +112,10 @@ class EsquemaURL extends EscalaGeoportal {
         if (v < 0) v = 0;
         if (v > 1) v = 1;
         */
-        if (v < 0 || v > 1) return "rgba(0,0,0,0)";
+        if (v < 0 || v > 1) {
+            console.warn("Valor " + valor + " fuera del rango [" + this.min + ", " + this.max + "]");
+            return "rgba(0,0,0,0)";
+        }
         let i = parseInt(this.rangos.length / 2);
         return this.busquedaBinaria(v, i, 0, this.rangos.length - 1);
     }

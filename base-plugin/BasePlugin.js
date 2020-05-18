@@ -9,6 +9,7 @@ class BasePlugin extends global.PluginGeoPortal {
             "js/visualizador-isolineas.js",
             "js/visualizador-isobandas.js",
             "js/visualizador-vectores.js",
+            "js/visualizador-puntos-con-datos.js",
             "js/visualizador-particulas.js",
             "js/visualizador-tiles.js",
             "js/analizador-serie-tiempo.js",
