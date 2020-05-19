@@ -277,8 +277,8 @@ class GeoPortal {
         return lista;
     }
 
-    showTooltip(x, y, contenido) {
-        this.panelCentral.showTooltip(x, y, contenido);
+    showTooltip(x, y, contenido, xWhenLeft) {
+        this.panelCentral.showTooltip(x, y, contenido, xWhenLeft);
     }
     hideTooltip() {
         this.panelCentral.hideTooltip();

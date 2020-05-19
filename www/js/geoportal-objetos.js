@@ -228,7 +228,7 @@ class ObjetoGeoportal {
 
                     html += "</table>";
                     html += "</div>";
-                    window.geoportal.showTooltip(x + 15 + txtWidth, y+7, html);
+                    window.geoportal.showTooltip(x + 15 + txtWidth, y+7, html, x-15);
                 });
                 background.on("mouseout", e => {
                     window.geoportal.hideTooltip();

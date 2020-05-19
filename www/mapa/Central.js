@@ -65,9 +65,16 @@ class Central extends ZCustomController {
         this.refrescaTiempo();
     }
 
-    showTooltip(x, y, contenido) {        
-        this.tooltip.pos = {left:x, top:y};
-        this.tooltip.$view.tooltip({title:$(contenido), trigger:"manual", placement:"right", html:true});
+    showTooltip(x, y, contenido, xWhenLeft) {       
+        let w = this.$view.innerWidth();
+        if (x < w / 2) { 
+            this.tooltip.pos = {left:x, top:y};
+            this.tooltip.$view.tooltip({title:$(contenido), trigger:"manual", placement:"right", html:true});
+        } else {
+            xWhenLeft = xWhenLeft === undefined?x - 100:xWhenLeft;
+            this.tooltip.pos = {left:xWhenLeft, top:y};
+            this.tooltip.$view.tooltip({title:$(contenido), trigger:"manual", placement:"left", html:true});
+        }
         this.tooltip.$view.tooltip("show");
     }
     hideTooltip() {

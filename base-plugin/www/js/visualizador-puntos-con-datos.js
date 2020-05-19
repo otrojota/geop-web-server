@@ -27,15 +27,16 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
         this.konvaLayer.destroyChildren();
         this.konvaLayer.draw();
         this.capa.resuelveConsulta("matrizRectangular", {
-            maxWidth:50, maxHeight:50
+            maxWidth:30, maxHeight:30
         }, (err, data) => {
             if (err) {
                 this.finishWorking();
                 this.mensajes.addError(err.toString());
                 console.error(err);
                 return;
-            }
+            }            
             console.log("data", data);
+            this.mensajes.parse(data, "Puntos con Datos");
             this.data = data;
             this.repinta();
         })
@@ -60,6 +61,8 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
                     fill:hayDatos?"red":undefined,
                     opacity : this.capa.opacidad / 100
                 });
+                circulo.lat = lat;
+                circulo.lng = lng;
                 circulo.on("mouseenter", _ => {
                     let html = "<div class='tooltip-titulo'>" + this.capa.nombre + "</div>";
                     html += "<hr class='my-1 bg-white' />";
@@ -68,12 +71,12 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
                     html += "<tr>";
                     html += "<td class='icono-tooltip'><i class='fas fa-lg fa-tag'></i></td>";
                     html += "<td class='propiedad-tooltip'>Latitud:</td>";
-                    html += "<td class='valor-tooltip'>" + lat + "</td>";
+                    html += "<td class='valor-tooltip'>" + circulo.lat + "</td>";
                     html += "</tr>";
                     html += "<tr>";
                     html += "<td class='icono-tooltip'><i class='fas fa-lg fa-tag'></i></td>";
                     html += "<td class='propiedad-tooltip'>Longitud:</td>";
-                    html += "<td class='valor-tooltip'>" + lng + "</td>";
+                    html += "<td class='valor-tooltip'>" + circulo.lng + "</td>";
                     html += "</tr>";
                     if (hayDatos) {
                         html += "<hr class='my-1 bg-white' />";
@@ -85,7 +88,7 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
                     }
                     html += "</table>";
                     html += "</div>";
-                    window.geoportal.showTooltip(point.x + 15, point.y, html);
+                    window.geoportal.showTooltip(point.x + 15, point.y, html, point.x - 15);
                 });
                 circulo.on("mouseout", e => {
                     window.geoportal.hideTooltip();
