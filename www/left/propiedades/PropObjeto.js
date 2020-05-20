@@ -41,6 +41,20 @@ class PropObjeto extends ZCustomController {
         } else {
             this.edNombre.disable();
         }
+        if (this.objeto.properties) {
+            this.grupoPropiedades.show();
+            let html = Object.keys(this.objeto.properties).reduce((html, nombre) => {
+                return html += 
+                    `<tr>
+                        <td style="vertical-align:top;"><img src="img/iconos/info.svg" class="mr-2" style="height:16px;" /></td>
+                        <td class="text-muted small";">${nombre}</td>
+                        <td class="text-muted small";">${this.objeto.properties[nombre]}</td>
+                    </tr>`;
+            }, "");
+            this.contenedorPropiedades.html = "<table style='width:100%;'>" + html + "</table><hr class='my-1'/>";
+        } else {
+            this.grupoPropiedades.hide();
+        }
     }
 }
 ZVC.export(PropObjeto);

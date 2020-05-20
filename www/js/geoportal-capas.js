@@ -47,6 +47,12 @@ class Capa {
     get tipo() {return this.config.tipo}
     get codigo() {return this.config.codigo}
     get codigoProveedor() {return this.config.codigoProveedor}
+    get urlProveedor() {
+        if (this._urlProveedor) return this._urlProveedor;
+        let prov = window.geoportal.proveedores.find(p => p.codigo == this.codigoProveedor);
+        this._urlProveedor = prov.url;
+        return this._urlProveedor;
+    }
     get formatos() {return this.config.formatos}
     get niveles() {return this.config.niveles}
     get nivelInicial() {return this.config.nivelInicial}
@@ -475,7 +481,7 @@ class Capa {
             window.geoportal.mapa.callDibujaObjetos();
         });
     }
-    agregaGeoObjeto(f, geometry, estilo) {
+    agregaGeoObjeto(f, geometry, estilo) {        
         if (geometry.type == "Polygon" || geometry.type == "MultiPolygon") {
             this.objetos.push(new Poligonos(f, this, estilo));
         } else if (geometry.type == "LineString" || geometry.type == "MultiLineString") {
@@ -487,6 +493,15 @@ class Capa {
                 clone.geometry = g;
                 this.agregaGeoObjeto(clone, g, estilo);
             });
+        } else if (geometry.type == "Point") {
+            let config = {nombreEditable:false};
+            if (this.config.opciones.iconoEnMapa) {
+                config.iconoEnMapa = this.urlProveedor + "/" + this.config.opciones.iconoEnMapa;
+            }
+            let punto = new Punto({lng:geometry.coordinates[0], lat:geometry.coordinates[1]}, f.properties.nombre, config, f.properties.id);
+            punto.capa = this;
+            punto.properties = f.properties;
+            this.objetos.push(punto);
         } else {
             console.warn("Tipo de geometría '" + geometry.type + "' no soportado aún", f)
         }
