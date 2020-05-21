@@ -1,8 +1,20 @@
+const descTempos = {
+    "5m":"cada 5 minutos", "15m":"cada 15 minutos", "30m":"cada 30 minutos",
+    "1h":"por hora", "6h":"cada 6 horas", "12h":"cada 12 horas",
+    "1d":"diario", 
+    "1M":"mensual", "3M":"trimestral", "4M":"cuatrimestral", "6M":"semestral",
+    "1y":"anual"
+}
+const descAcums = {
+    "n":"nº muestras", "sum":"acumulado", "avg":"promedio", "min":"mínimo", "max":"máximo"
+}
+const nivelesTemporalidad = ["5m", "15m", "30m", "1h", "6h", "12h", "1d", "1M", "3M", "4M", "6M", "1y"];
+
 class ConsultaGeoportal {
     static fromItemArbol(item) {
         console.log("crea consulta desde", item);
         if (item.tipo == "queryMinZ") {
-            return new ConsultaGeoportal({
+            let q = {
                 tipo:"queryMinZ",
                 codigo:item.code,
                 nombre:item.label,
@@ -12,7 +24,19 @@ class ConsultaGeoportal {
                 filtroFijo:item.item.filtroFijo,
                 variable:item.item.variable,
                 dimensionAgrupado:item.item.dimensionAgrupado
-            })
+            };
+            let v = item.item.variable;
+            if (v.options && v.options.defQuery) {
+                let defQ = v.options.defQuery;
+                if (defQ.accum) q.acumulador = defQ.accum;
+                if (defQ.temporality) q.temporalidad = defQ.temporality;
+                if (defQ.filters) q.filtros = defQ.filters.reduce((list, f) => {
+                    list.push({ruta:f.path, valor:f.value});
+                    return list;
+                }, []);
+            }
+            console.log("creando query MinZ con", q);
+            return new ConsultaGeoportal(q)
         } else if (item.tipo == "capa") {
             let codigoVariable = item.capa.codigoProveedor + "." + item.code;
             let variable = window.geoportal.getVariable(codigoVariable);
@@ -38,6 +62,7 @@ class ConsultaGeoportal {
             s.acumulador = c.spec.acumulador;
             s.temporalidad = c.spec.temporalidad;
             s.filtroFijo = c.spec.filtroFijo;
+            s.filtros = c.spec.filtros;
             s.variable = c.spec.variable;
             s.dimensionAgrupado = c.spec.dimensionAgrupado;
         } else if (c.tipo == "capa") {
@@ -86,7 +111,11 @@ class ConsultaGeoportal {
     get nombre() {return this.spec.nombre}
     get icono() {return this.spec.icono}
     get variable() {return this.spec.variable}
-    get unidad() {return this.tipo == "capa"?this.variable.unidad:this.variable.options.unit}
+    get unidad() {
+        if (this.tipo == "capa") return this.variable.unidad;
+        if (this.acumulador == "n") return "Nº";
+        return this.variable.options.unit;
+    }
     get decimales() {return this.tipo == "capa"?this.variable.decimales:this.variable.options.decimals}
     get valorFormateado() {
         if (!this.resultado) return "??";
@@ -113,6 +142,7 @@ class ConsultaGeoportal {
     get acumulador() {return this.spec.acumulador}
     get temporalidad() {return this.spec.temporalidad}
     get filtroFijo() {return this.spec.filtroFijo || {}}
+    get filtros() {return this.spec.filtros || []}
     get dimensionAgrupado() {return this.spec.dimensionAgrupado}
 
     esIgualA(c) {
@@ -121,6 +151,7 @@ class ConsultaGeoportal {
         if (this.tipo == "queryMinZ") {
             if (this.codigo != c.codigo || this.acumulador != c.acumulador || this.temporalidad != c.temporalidad) return false;
             if (JSON.stringify(this.filtroFijo) != JSON.stringify(c.filtroFijo)) return false;
+            if (JSON.stringify(this.filtros) != JSON.stringify(c.filtros)) return false;
             return true;
         } else if (this.tipo == "capa") {
             if (this.codigo != c.codigo || this.nivel != c.nivel) return false;
@@ -172,6 +203,26 @@ class ConsultaGeoportal {
             </div>
             `;
         }
+        if (this.tipo == "queryMinZ") {
+            html += "<div class='row'>";
+            html += "  <div class='col-sm-5 pr-0'>";
+            html += "    <select id='edAcumulador" + this.id + "' class='custom-select custom-select-sm' style='font-size:80%'>";
+            html += Object.keys(descAcums).reduce((html, a) => {
+                return html + "<option value='" + a + "' " + (this.acumulador == a?" selected":"") + ">" + descAcums[a] + "</option>";
+            }, "");
+            html += "    </select>";
+            html += "  </div>";
+            html += "  <div class='col-sm-7 pl-1'>";
+            html += "    <select id='edTemporalidad" + this.id + "' class='custom-select custom-select-sm' style='font-size:80%'>";
+            let nivel = nivelesTemporalidad.indexOf(this.variable.temporality);
+            html += nivelesTemporalidad.slice(nivel).reduce((html, t) => {
+                return html + "<option value='" + t + "' " + (this.temporalidad == t?" selected":"") + ">" + descTempos[t] + "</option>";
+            }, "");
+            html += "    </select>";
+            html += "  </div>";
+
+            html += "</div>";
+        }
 
         return html;
     }
@@ -207,6 +258,19 @@ class ConsultaGeoportal {
                 this.refrescaNombreNivel(container, value);
                 if (listeners.onChange) listeners.onChange(this);
             });
+        } else if (this.tipo == "queryMinZ") {
+            let edAcumulador = container.find("#edAcumulador" + this.id);
+            edAcumulador.onchange = _ => {
+                console.log("Acumulador", edAcumulador.value);
+                this.spec.acumulador = edAcumulador.value;
+                if (listeners.onChange) listeners.onChange(this);
+            };
+            let edTemporalidad = container.find("#edTemporalidad" + this.id);
+            edTemporalidad.onchange = _ => {
+                console.log("Temporalidad", edTemporalidad.value);
+                this.spec.temporalidad = edTemporalidad.value;
+                if (listeners.onChange) listeners.onChange(this);
+            };
         }
         var borrador = container.find("#delVar" + this.id);
         if (borrador) {
@@ -247,11 +311,10 @@ class ConsultaGeoportal {
                 })
             });
         } else {
-            console.log("this", this);
             // Cambiar filtro fijo para usar objeto
             let ff = JSON.parse(JSON.stringify(this.filtroFijo));
             ff.valor = objeto.getCodigoDimension();
-            let query = {tipoQuery:"time-serie", filtroFijo:ff, variable:this.variable, acumulador:this.acumulador, temporalidad:this.temporalidad}
+            let query = {tipoQuery:"time-serie", filtroFijo:ff, filtros:this.filtros, variable:this.variable, acumulador:this.acumulador, temporalidad:this.temporalidad}
             if (mensajes) {
                 let p = this.variable.code.indexOf(".");
                 mensajes.addOrigen(this.variable.code.substr(0,p));
@@ -320,7 +383,7 @@ class ConsultaGeoportal {
             });
         } else {
             let {t0, t1, desc} = window.minz.normalizaTiempo(this.temporalidad, t);
-            let query = {tipoQuery:"period-summary", filtroFijo:this.filtroFijo, variable:this.variable, acumulador:this.acumulador}
+            let query = {tipoQuery:"period-summary", filtroFijo:this.filtroFijo, filtros:this.filtros, variable:this.variable, acumulador:this.acumulador}
             if (mensajes) {
                 let p = this.variable.code.indexOf(".");
                 mensajes.addOrigen(this.variable.code.substr(0,p));
@@ -352,7 +415,7 @@ class ConsultaGeoportal {
             throw "DimSerie aplica sólo a consultas tipo queryMinZ";
         } else {
             let {t0, t1, desc} = window.minz.normalizaTiempo(this.temporalidad, t);
-            let query = {tipoQuery:"dim-serie", dimensionAgrupado:this.dimensionAgrupado, variable:this.variable, acumulador:this.acumulador}
+            let query = {tipoQuery:"dim-serie", dimensionAgrupado:this.dimensionAgrupado, filtros:this.filtros, variable:this.variable, acumulador:this.acumulador}
             if (mensajes) {
                 let p = this.variable.code.indexOf(".");
                 mensajes.addOrigen(this.variable.code.substr(0,p));

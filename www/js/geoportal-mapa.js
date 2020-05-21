@@ -479,7 +479,7 @@ class MapaGeoPortal {
                                         leyendas = {objeto:obj, leyendas:[]};
                                         leyendasPorObjeto[obj.id] = leyendas;
                                     }
-                                    leyendas.leyendas.push({label:o.consulta.nombre, decimales:o.consulta.decimales, unidad:o.consulta.unidad, valor:dimValue.value?dimValue.value:"S/D"}); 
+                                    leyendas.leyendas.push({label:o.consulta.nombre, decimales:o.consulta.decimales, unidad:o.consulta.unidad, valor:dimValue.resultado?dimValue.resultado:"S/D"}); 
                                 }
                             })
                         }

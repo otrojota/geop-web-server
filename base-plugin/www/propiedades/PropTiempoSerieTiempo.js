@@ -46,8 +46,10 @@ class PropTiempoSerieTiempo extends ZCustomController {
                 tiempo.fromDate = TimeUtils.now.valueOf() - 24*60*60*1000;
                 tiempo.toDate = TimeUtils.now.valueOf();
             }
+            this.ignoraChange = true;
             this.edFromDate.value = TimeUtils.fromUTCMillis(tiempo.fromDate);
             this.edToDate.value = TimeUtils.fromUTCMillis(tiempo.toDate);
+            this.ignoraChange = false;
         }
     }
     refrescaTitulo() {
@@ -73,11 +75,13 @@ class PropTiempoSerieTiempo extends ZCustomController {
         await this.options.contenedor.refrescaPanelAnalisis();
     }
     async onEdFromDate_change() {
+        if (this.ignoraChange) return;
         this.analizador.config.tiempo.fromDate = this.edFromDate.value.valueOf();
         this.refrescaTitulo();
         await this.options.contenedor.refrescaPanelAnalisis();
     }
     async onEdToDate_change() {
+        if (this.ignoraChange) return;
         this.analizador.config.tiempo.toDate = this.edToDate.value.valueOf();
         this.refrescaTitulo();
         await this.options.contenedor.refrescaPanelAnalisis();

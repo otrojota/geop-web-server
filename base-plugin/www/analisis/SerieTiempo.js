@@ -18,6 +18,7 @@ class SerieTiempo extends ZCustomController {
         if (this.grafico) this.grafico.setSize(size.width, size.height);
     }
     async refresca(objeto) {
+        console.log("Serie Tiempo Refresca");
         this.options.contenedor.iniciaTrabajando();
         this.objeto = objeto;
         let cambioVar1 = false, cambioVar2 = false;
@@ -97,6 +98,7 @@ class SerieTiempo extends ZCustomController {
     }
 
     refrescaGrafico(recrear) {
+        console.log("refrescaGrafico:" + recrear);
         if (this.grafico && recrear) {
             this.divGrafico.html = "";
             this.grafico = null;

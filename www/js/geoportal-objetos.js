@@ -342,6 +342,7 @@ class Punto extends ObjetoGeoportal {
     }
     describe() {return this.nombre}
     getCentroide() {return {lat:this.lat, lng:this.lng}}
+    getCodigoDimension() {return this.properties?this.properties._codigoDimension:null}
 
     dibuja(konvaLayer, konvaLayerEfectos) {
         let map = window.geoportal.mapa.map;

@@ -584,8 +584,8 @@ class Capa {
             this.recalculandoValoresObservados = false;
             if (this.listenerFinishRecalculo) this.listenerFinishRecalculo(); 
             else {
-                if (this.recalculoListener) this.recalculoListener();
                 this.finalizoRecalculoValoresObservados();
+                if (this.recalculoListener) this.recalculoListener();
             }
             window.geoportal.mapa.callDibujaLeyendas();
         } catch(error) {
@@ -626,44 +626,7 @@ class Capa {
                             }
                         } catch(err) {
                             this.valoresObservados[pendiente.indiceObserva] = {value:err, observa:o};
-                        }
-                        /*
-                        let obj = pendiente.objeto;
-                        let codigoVariable = o.codigoVariable;
-                        let p = codigoVariable.indexOf("${codigo-objeto}");
-                        if (p > 0) {
-                            codigoVariable = codigoVariable.substr(0,p) + obj.codigo + codigoVariable.substr(p + 16);
-                        }
-                        let infoVar = window.geoportal.getInfoVarParaConsulta(codigoVariable, obj);
-                        let centroide = obj.getCentroide();
-                        let query = {
-                            lat:centroide.lat, lng:centroide.lng, time:window.geoportal.tiempo,
-                            levelIndex:o.nivel !== undefined?o.nivel:0,
-                            codigoVariable:infoVar.codigoVariable,
-                            metadataCompleta:true
-                        }
-                        let capa = infoVar.capaQuery;
-                        await new Promise(resolve => {
-                            capa.resuelveConsulta("valorEnPunto", query, (err, resultado) => {
-                                if (err) {
-                                    this.valoresObservados[pendiente.indiceObserva] = {value:err, observa:o};
-                                    //this.mensajes.addError(infoVar.variable.nombre + ": " + err.toString());
-                                } else if (resultado && (resultado.value === undefined || resultado.value === null)) {
-                                    // Mantener en nulo para no desplegar
-                                    this.valoresObservados[pendiente.indiceObserva] = null;
-                                } else {
-                                    this.valoresObservados[pendiente.indiceObserva] = {value:resultado, observa:o, objeto:obj};
-                                    let v = resultado.value;
-                                    if (o.colorear && !isNaN(v)) {
-                                        if (this.minObserva === undefined || v < this.minObserva) this.minObserva = v;
-                                        if (this.maxObserva === undefined || v > this.maxObserva) this.maxObserva = v;
-                                        this.valoresColorear[obj.id] = v;
-                                    }
-                                }
-                                resolve();
-                            });
-                        });  
-                        */                              
+                        }                         
                     }
                 } catch(error) {
                     console.error(error);

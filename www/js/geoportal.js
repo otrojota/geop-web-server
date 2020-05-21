@@ -117,6 +117,7 @@ class GeoPortal {
         return items;
     }
     async getArbolAgregarAMapa(formato, dataObject, codigoDimension, capa, sinCodigoObjeto) {
+        console.log("getArbol", formato, dataObject, codigoDimension, capa, sinCodigoObjeto);
         let grupos = this.getNivelAgregarGrupos(this.grupos, formato);
         let nodoDataObject = null;
         if (dataObject) {

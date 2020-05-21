@@ -244,25 +244,31 @@ class MinZClient {
         }
     }
     async query(query, startTime, endTime) {
+        console.log("startTime", moment.tz(startTime, window.timeZone).format("YYYY-MM-DD HH:mm"));
+        console.log("endTime", moment.tz(endTime, window.timeZone).format("YYYY-MM-DD HH:mm"));
         try {
             let filtro, resultado;
             switch (query.tipoQuery) {
                 case "period-summary":
                     filtro = {};
+                    if (query.filtros) query.filtros.forEach(f => this.construyeFiltro(filtro, f.ruta, f.valor));
                     if (query.filtroFijo) this.construyeFiltro(filtro, query.filtroFijo.ruta, query.filtroFijo.valor);
                     resultado = await this.queryPeriodSummary(query.variable.code, startTime, endTime, filtro);
+                    console.log("query", query, "resultado", resultado);
                     return this.extraeAcumulador(resultado, query.acumulador);
                 case "time-serie":
                     filtro = {};
+                    if (query.filtros) query.filtros.forEach(f => this.construyeFiltro(filtro, f.ruta, f.valor));
                     if (query.filtroFijo) this.construyeFiltro(filtro, query.filtroFijo.ruta, query.filtroFijo.valor);
                     resultado = await this.queryTimeSerie(query.variable.code, startTime, endTime, filtro, query.temporalidad);
-                    console.log("resultado", resultado);
+                    console.log("query", query, "resultado", resultado);
                     resultado.forEach(r => r.resultado = this.extraeAcumulador(r, query.acumulador));
                     return resultado;
                 case "dim-serie":
                     filtro = {};
+                    if (query.filtros) query.filtros.forEach(f => this.construyeFiltro(filtro, f.ruta, f.valor));
                     resultado = await this.queryDimSerie(query.variable.code, startTime, endTime, filtro, query.dimensionAgrupado);
-                    console.log("resultado", resultado);
+                    console.log("query", query, "resultado", resultado);
                     resultado.forEach(r => r.resultado = this.extraeAcumulador(r, query.acumulador));
                     return resultado;
                 default:
