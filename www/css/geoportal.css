@@ -251,6 +251,27 @@ body {
     text-shadow: 0 0 2px black;  
     z-index: 6000;  
 }
+.selector-tiempo {
+    position: absolute; 
+    width:250px; 
+    height: 42px; 
+}
+.item-selector-tiempo {
+    border-radius: 5px;
+    padding:2px;
+    background-color: rgba(0,0,0,0.4);
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+    font-size: 11px;
+    color: white;
+    text-shadow: 0 0 2px black;  
+    pointer-events: all;
+}
+.boton-selector-tiempo-activo {
+    color: lightskyblue;
+}
+.item-selector-tiempo-activo {
+    background-color: rgba(0,0,100,0.4);
+}
 
 .bootstrap-datetimepicker-widget {
     font-size: 90%;

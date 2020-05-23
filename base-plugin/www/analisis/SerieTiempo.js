@@ -18,7 +18,6 @@ class SerieTiempo extends ZCustomController {
         if (this.grafico) this.grafico.setSize(size.width, size.height);
     }
     async refresca(objeto) {
-        console.log("Serie Tiempo Refresca");
         this.options.contenedor.iniciaTrabajando();
         this.objeto = objeto;
         let cambioVar1 = false, cambioVar2 = false;
@@ -30,10 +29,33 @@ class SerieTiempo extends ZCustomController {
         let recrearGrafico = this.grafico?false:true;
         let tiempo = this.config.tiempo;
         if (tiempo.tipo == "relativo") {
-            let tPortal = TimeUtils.fromUTCMillis(window.geoportal.tiempo);
-            let t0 = tPortal + (tiempo.from * 24 * 60 * 60 * 1000);
-            let t1 = tPortal + ((tiempo.to + 1) * 24 * 60 * 60 * 1000) - 1; // fin del día
-            if (t0 != this.t0 || t1 != this.t1) {
+            let tPortal = TimeUtils.fromUTCMillis(window.geoportal.tiempo), t0, t1;
+            tPortal.hours(0); tPortal.minutes(0); tPortal.seconds(0); tPortal.milliseconds(0);
+            if (this.config.tiempo.temporalidad == "1d") {
+               t0 = tPortal.clone();
+               t0.date(t0.date() + tiempo.from);
+               t1 = tPortal.clone();
+               t1.date(t1.date() + tiempo.to + 1); t1.milliseconds(t1.milliseconds() - 1); // Fin del día anterior
+               t0 = t0.valueOf();
+               t1 = t1.valueOf();
+            } else if (this.config.tiempo.temporalidad == "1M") {
+                tPortal.date(1);
+                t0 = tPortal.clone();
+                t0.month(t0.month() + tiempo.from);
+                t1 = tPortal.clone();
+                t1.month(t1.month() + tiempo.to + 1); t1.milliseconds(t1.milliseconds() - 1); // Fin del día anterior
+                t0 = t0.valueOf();
+                t1 = t1.valueOf();
+            } else if (this.config.tiempo.temporalidad == "1y") {
+                tPortal.date(1); tPortal.month(0);
+                t0 = tPortal.clone();
+                t0.year(t0.year() + tiempo.from);
+                t1 = tPortal.clone();
+                t1.year(t1.year() + tiempo.to + 1); t1.milliseconds(t1.milliseconds() - 1); // Fin del día anterior
+                t0 = t0.valueOf();
+                t1 = t1.valueOf();
+             } else throw "temporalidad " + this.config.tiempo.temporalidad + " no está manejada en serie de tiempo";
+            if (t0 != this.t0 || t1 != this.t1) {                
                 this.t0 = t0;
                 this.t1 = t1;
                 cambioTiempo = true;
@@ -50,24 +72,25 @@ class SerieTiempo extends ZCustomController {
         let promesas = [];
         if (this.analizador.variable) {
             if (this.var1) {
-                if (this.analizador.variable.codigo != this.var1.codigo) recrearGrafico = true;
                 cambioVar1 = !this.analizador.variable.esIgualA(this.var1);
             } else {
-                cambioVar1 = true; recrearGrafico = true;
+                cambioVar1 = true;
             }
         } else {
-            cambioVar1 = true; recrearGrafico = true;
+            cambioVar1 = true;
         }
         if (this.analizador.variable2) {
             if (this.var2) {
-                if (this.analizador.variable2.codigo != this.var2.codigo) recrearGrafico = true;
                 cambioVar2 = !this.analizador.variable2.esIgualA(this.var2);
             } else {
-                cambioVar2 = true; recrearGrafico = true;
+                cambioVar2 = true;
             }
         } else {
-            cambioVar2 = true; recrearGrafico = true;
+            cambioVar2 = true;
         }
+        if (cambioVar1 || cambioVar2) recrearGrafico = true;
+
+        //console.log("cambio var1, var2, tiempo, posicion", cambioVar1, cambioVar2, cambioTiempo, cambioPosicion);
 
         if (cambioVar1 || cambioVar2 || cambioTiempo || cambioPosicion) {
             this.analizador.mensajes.clear();
@@ -84,21 +107,23 @@ class SerieTiempo extends ZCustomController {
             if (this.var2) {
                 promesas.push(this.var2.getSerieTiempo(this.t0, this.t1, this.objeto, this.analizador.mensajes));
             }
-        }
-        try {
-            let res = await Promise.all(promesas);    
-            this.serie1 = res[0];    
-            this.serie2 = res[1];
-            this.refrescaGrafico(recrearGrafico);
-        } catch(error) {
-            console.error(error);
-        } finally {
+            try {
+                let res = await Promise.all(promesas);    
+                this.serie1 = res[0];    
+                this.serie2 = res[1];
+                this.refrescaGrafico(recrearGrafico);
+            } catch(error) {
+                console.error(error);
+            } finally {
+                this.options.contenedor.finalizaTrabajando();
+            }
+        } else {
             this.options.contenedor.finalizaTrabajando();
         }
     }
 
     refrescaGrafico(recrear) {
-        console.log("refrescaGrafico:" + recrear);
+        //("refrescaGrafico:" + recrear);
         if (this.grafico && recrear) {
             this.divGrafico.html = "";
             this.grafico = null;

@@ -668,7 +668,6 @@ class Capa {
             this.escalaColorear = null;
         }
         this.colorea();
-        console.log("valoresObservados", this.valoresObservados);
     }
     async colorea() {
         if (this.recalculandoValoresObservados || this.cancelandoRecalculoValoresObservados) return; 

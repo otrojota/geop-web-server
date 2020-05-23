@@ -4,11 +4,6 @@ class AnalizadorSerieTiempo extends Analizador {
     }
     constructor(objeto, capa, config) {
         super("serie-tiempo", objeto, capa, config);
-        /*
-        if (!config.variable) config.variable = "gfs4.TMP_2M";
-        if (!config.nivelVariable) config.nivelVariable = 0;
-        if (!config.tiempo) config.tiempo = {tipo:"relativo", from:-2, to:4};
-        */
         console.log("creando analizador desde config", config);
         if (config.variable) {
             if (typeof config.variable == "string") {
@@ -18,6 +13,7 @@ class AnalizadorSerieTiempo extends Analizador {
             config.variable = ConsultaGeoportal.nuevaVariableCapa("gfs4.TMP_2M");
         }
         if (!config.tiempo) config.tiempo = {tipo:"relativo", from:-2, to:4};
+        if (!config.tiempo.temporalidad) config.tiempo.temporalidad = "1d";
     }
     get variable() {return this.config.variable}
     get variable2() {return this.config.variable2}

@@ -6,10 +6,9 @@ class Central extends ZCustomController {
         this.tiempoInicial = this.tiempoActual.clone().subtract(2, "days").startOf("day");
 
         this.$view = $(this.view);
-        this.edTiempoActual.$view = $(this.edTiempoActual.view);
         this.tooltip.$view = $(this.tooltip.view);
         this.panelTiempo.$view = $(this.panelTiempo.view);
-        this.panelTiempoActual.$view = $(this.panelTiempoActual.view);
+        this.selectorTiempo.$view = $(this.selectorTiempo.view);
         this.tiempoProgress.$view = $(this.tiempoProgress.view);
         this.tiempoAvance.$view = $(this.tiempoAvance.view);
 
@@ -17,28 +16,6 @@ class Central extends ZCustomController {
         $("body").append("<div id='poppers' style='z-index:6100;'></div>");
         this.poppers = $("body").find("#poppers");   
     
-        this.edTiempoActual.$view.datetimepicker({
-            timeZone:window.timeZone,
-            format:"DD/MMM/YYYY",
-            widgetPositioning: {horizontal: 'left', vertical: 'top'},
-            locale:"es",
-            date:this.tiempoActual
-        });
-        this.mostrandoCalendario = false;
-        this.edTiempoActual.$view.on("dp.show", _ => this.mostrandoCalendario = true);
-        this.edTiempoActual.$view.on("dp.hide", _ => this.mostrandoCalendario = false);
-        this.edTiempoActual.$view.on("dp.change", e => {
-            if (this.mostrandoCalendario) {
-                this.mostrandoCalendario = false;
-                this.tiempoActual = e.date.clone();
-                this.tiempoInicial = this.tiempoActual.clone().subtract(2, "days").startOf("day");
-                this.rebuildTime();
-                this.refrescaTiempo();
-                window.geoportal.setTiempo(this.tiempoActual.valueOf());
-            }
-        });
-        $(this.find("#cmdCalendar")).click(_ => this.edTiempoActual.$view.datetimepicker("toggle"));
-
         this.tooltipBase = $(this.panelTiempo.find("#tooltipBase"));
         this.tooltipBase.tooltip({title:"...", trigger:"manual", placement:"top", html:true});
         this.panelTiempo.$view.mouseenter(e => {   
@@ -57,12 +34,13 @@ class Central extends ZCustomController {
         this.panelTiempo.$view.click(e => {
             let x = e.clientX  - this.panelTiempo.$view.offset().left;
             this.tiempoActual = this.tiempoInicial.clone().add(24 * x / this.anchoDia, "hours").startOf("hour");
-            if (this.mostrandoCalendario) this.edTiempoActual.$view.datetimepicker("hide");
             this.refrescaTiempo();
             window.geoportal.setTiempo(this.tiempoActual.valueOf());
+            this.selectorTiempo.refresca();
         })
-        //this.tiempoActual = window.TimeUtils.now.startOf("hour");
+        this.tiempoActual = window.TimeUtils.now.startOf("hour");
         this.refrescaTiempo();
+        this.selectorTiempo.refresca();
     }
 
     showTooltip(x, y, contenido, xWhenLeft) {       
@@ -81,11 +59,20 @@ class Central extends ZCustomController {
         this.tooltip.$view.tooltip("dispose");
     }
 
-    refrescaTiempo() {        
+    onSelectorTiempo_change() {
+        this.tiempoActual = moment.tz(window.geoportal.tiempo, window.timeZone);
+        this.refrescaTiempo();
+    }
+    refrescaTiempo() {
+        let wMax = this.tiempoProgress.$view.width();
         let hh = this.tiempoActual.diff(this.tiempoInicial, "hours");
-        this.tiempoAvance.$view.css({width:(this.anchoDia / 24) * hh});
-        this.lblTiempoActual.text = this.tiempoActual.format("DD/MMM/YYYY HH:mm");
-        this.edTiempoActual.$view.datetimepicker("date", this.tiempoActual);
+        let w = (this.anchoDia / 24) * hh;
+        if (w > wMax - 50 || w < 20) {
+            this.tiempoInicial = this.tiempoActual.clone().subtract(2, "days").startOf("day");
+            this.rebuildTime();
+        } else {
+            this.tiempoAvance.$view.css({width:w});
+        }
     }
 
     doResize() {
@@ -93,7 +80,7 @@ class Central extends ZCustomController {
         let h = this.$view.innerHeight();
         let leftTiempo = 10;
         this.panelTiempo.$view.css({left:leftTiempo, top:h - this.panelTiempo.$view.height() - 19, width:w - leftTiempo - 10});
-        this.panelTiempoActual.$view.css({left:leftTiempo, top:h - this.panelTiempo.$view.height() - 48});
+        this.selectorTiempo.$view.css({left:leftTiempo, top:h - this.panelTiempo.$view.height() - 78});
         this.rebuildTime();
         this.cntPanelesFlotantes.size = {width:w, height:h};
         this.ajustaPanelesFlotantes();
@@ -104,7 +91,6 @@ class Central extends ZCustomController {
         let wMax = this.tiempoProgress.$view.width();
         let html = "";
         let t = moment.tz(this.tiempoInicial, window.timeZone);
-        t.locale("es");
         let w = 0;
         while (w + anchoDia < wMax) {
             html += "<div class='dia' style='position:absolute; left:" + w + "px; top:16px; width:" + anchoDia + "px; height:30px;'>" + t.format("dddd") + "<br />" + t.format("DD/MMM") + "</div>";
@@ -112,6 +98,9 @@ class Central extends ZCustomController {
             t.add(1, "days");
         }
         this.contenedorDias.html = html;
+        let hh = this.tiempoActual.diff(this.tiempoInicial, "hours");
+        w = (this.anchoDia / 24) * hh;
+        this.tiempoAvance.$view.css({width:w});
     }
 
     ajustaPanelesFlotantes() {

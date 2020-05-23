@@ -12,7 +12,6 @@ const nivelesTemporalidad = ["5m", "15m", "30m", "1h", "6h", "12h", "1d", "1M", 
 
 class ConsultaGeoportal {
     static fromItemArbol(item) {
-        console.log("crea consulta desde", item);
         if (item.tipo == "queryMinZ") {
             let q = {
                 tipo:"queryMinZ",
@@ -35,7 +34,6 @@ class ConsultaGeoportal {
                     return list;
                 }, []);
             }
-            console.log("creando query MinZ con", q);
             return new ConsultaGeoportal(q)
         } else if (item.tipo == "capa") {
             let codigoVariable = item.capa.codigoProveedor + "." + item.code;
@@ -140,7 +138,13 @@ class ConsultaGeoportal {
     get niveles() {return this.spec.variable.niveles}
     get codigo() {return this.spec.codigo}
     get acumulador() {return this.spec.acumulador}
-    get temporalidad() {return this.spec.temporalidad}
+    get temporalidad() {
+        if (this.tipo == "capa") {
+            return "1h";
+        } else {
+            return this.spec.temporalidad
+        }
+    }
     get filtroFijo() {return this.spec.filtroFijo || {}}
     get filtros() {return this.spec.filtros || []}
     get dimensionAgrupado() {return this.spec.dimensionAgrupado}
@@ -261,13 +265,11 @@ class ConsultaGeoportal {
         } else if (this.tipo == "queryMinZ") {
             let edAcumulador = container.find("#edAcumulador" + this.id);
             edAcumulador.onchange = _ => {
-                console.log("Acumulador", edAcumulador.value);
                 this.spec.acumulador = edAcumulador.value;
                 if (listeners.onChange) listeners.onChange(this);
             };
             let edTemporalidad = container.find("#edTemporalidad" + this.id);
             edTemporalidad.onchange = _ => {
-                console.log("Temporalidad", edTemporalidad.value);
                 this.spec.temporalidad = edTemporalidad.value;
                 if (listeners.onChange) listeners.onChange(this);
             };
@@ -322,14 +324,21 @@ class ConsultaGeoportal {
             return new Promise((resolve, reject) => {
                 window.minz.query(query, t0, t1)
                 .then(res => {
-                    console.log("res", res);
                     if (res === null || res === undefined) {
                         if (mensajes) mensajes.addError(this.variable.name + ": Sin Datos para el período");
                         this.resultado = {error:"Sin Datos para el Período"}
                         reject("Sin Datos para el Período");
                     } else {
                         let serie = res.reduce((serie, v) => {
-                            serie.push({x:v.time, y:v.resultado});
+                            let m = moment.tz(window.timeZone);
+                            m.year(v.localTime.year);
+                            m.month(v.localTime.month - 1);
+                            m.date(v.localTime.day);
+                            m.hour(v.localTime.hour);
+                            m.minute(v.localTime.minute);
+                            m.seconds(0);
+                            m.milliseconds(0);
+                            serie.push({x:m.valueOf(), y:v.resultado, atributos:{Tiempo:m.valueOf()}});
                             return serie;
                         }, []);
                         this.resultado = {tipo:"serieTiempo", valor:serie};

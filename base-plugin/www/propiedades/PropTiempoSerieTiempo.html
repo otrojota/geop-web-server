@@ -2,7 +2,7 @@
     <i id="imgAbierto" class="float-left far fa-minus-square mx-1 mt-1"></i>
     <div id="titulo" class="py-1 titulo-subpanel-propiedades">Fijar Tiempo</div>
 </div>
-<div id="contenido" class="contenido-subpanel-propiedades container-fluid">
+<div id="contenido" class="contenido-subpanel-propiedades container-fluid pb-4">
     <div class="row mt-1">
         <div class="col-4">
             <div class="etiqueta-subpanel-propiedades mb-0">Tiempo</div>
@@ -14,24 +14,32 @@
     <div id="tiempoRelativo">
         <div class="row mt-1">
             <div class="col-4">
+                <div class="etiqueta-subpanel-propiedades mb-0">Temporalidad</div>
+            </div>
+            <div class="col-8">
+                <select id="edTemporalidad" data-z-id-field="codigo" data-z-label-field="nombre" class="editor-subpanel-propiedades custom-select custom-select-sm"></select>
+            </div>
+        </div>
+        <div class="row mt-1">
+            <div class="col-4">
                 <div class="etiqueta-subpanel-propiedades mb-0">Desde</div>
             </div>
-            <div class="col-6">
+            <div class="col-5">
                 <input id="edFrom" type="number" class="editor-subpanel-propiedades form-control form-control-sm" data-z-autochange-delay="300"/>
             </div>
-            <div class="col-2 pl-0">
-                <div class="etiqueta-subpanel-propiedades mb-0">días</div>
+            <div class="col-3 pl-0">
+                <div id="unidadFrom" class="etiqueta-subpanel-propiedades mb-0">días</div>
             </div>
         </div>
         <div class="row mt-1">
             <div class="col-4">
                 <div class="etiqueta-subpanel-propiedades mb-0">Hasta</div>
             </div>
-            <div class="col-6">
+            <div class="col-5">
                 <input id="edTo" type="number" class="editor-subpanel-propiedades form-control form-control-sm" data-z-autochange-delay="300" />
             </div>
-            <div class="col-2 pl-0">
-                <div class="etiqueta-subpanel-propiedades mb-0">días</div>
+            <div class="col-3 pl-0">
+                <div id="unidadTo" class="etiqueta-subpanel-propiedades mb-0">días</div>
             </div>
         </div>
     </div>
@@ -41,7 +49,7 @@
                 <div class="etiqueta-subpanel-propiedades mb-0">Desde</div>
             </div>
             <div class="col-8">
-                <div id="edFromDate" data-z-component="common/DateTimeField"></div>
+                <div id="edFromDate" data-z-component="common/SelectorFecha"></div>
             </div>            
         </div>
         <div class="row mt-1">
@@ -49,7 +57,7 @@
                 <div class="etiqueta-subpanel-propiedades mb-0">Hasta</div>
             </div>
             <div class="col-8">
-                <div id="edToDate" data-z-component="common/DateTimeField"></div>
+                <div id="edToDate" data-z-component="common/SelectorFecha"></div>
             </div>            
         </div>
     </div>
