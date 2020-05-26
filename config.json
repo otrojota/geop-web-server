@@ -22,8 +22,8 @@
     },
     "hereAPIKey":"eG2NCop0Fa_k1JUQUaiZvkt-pQKlSlYODS_UwKqaD6c",
     "minZ":{
-        "url":"http://localhost:8191",
-        "url_bak":"http://www.pomeo.cl:8083/minz",
+        "url_bak":"http://localhost:8191",
+        "url":"http://www.pomeo.cl:8083/minz",
         "token":"geop-public"
     },
     "proveedores":[{
@@ -52,8 +52,8 @@
         "url":"http://www.pomeo.cl:8083/bcn"
     }, {
         "codigo":"fipafan2019",
-        "url":"http://localhost:8190",
-        "url_bak":"http://www.pomeo.cl:8083/fipa-fan-2019"
+        "url_bak":"http://localhost:8190",
+        "url":"http://www.pomeo.cl:8083/fipa-fan-2019"
     }, {
         "codigo":"copernicus",
         "url_bak":"http://localhost:8189",

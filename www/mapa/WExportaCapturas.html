@@ -1,0 +1,33 @@
+<div class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 id="title" class="modal-title">Exportar Capturas</h6>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">                    
+                    <div class="row">                        
+                        <div class="col-sm-4 ">
+                            <form class="border rounded mr-1 mb-1 p-2 form-inline">
+                                <label><small>Milisegundos entre Cuadros</small></label>
+                                <input id="edDelay" class="form-control form-control-sm" type="number" step="50" style="font-size: 80%; width:60px;">
+                                <button id="cmdAnima" type="button" class="ml-2 btn btn-inline btn-sm btn-primary">Animar<i class="fas fa-film ml-2"></i></button>
+                                <i id="working" class="fas fa-spin fa-spinner fa-2x ml-1"></i>
+                                <button id="cmdExporta" type="button" class="btn btn-sm btn-success mt-1">Exportar Animación<i class="fas fa-download ml-2"></i></button>
+                            </form>
+                            <div class="border rounded mr-1">
+                                <div id="contenedorTabla" style="height: 200px; overflow: auto;"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-8 border rounded text-center pt-2">
+                            <img id="preview" height="240px" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

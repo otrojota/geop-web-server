@@ -27,7 +27,7 @@ class VisualizadorShader extends VisualizadorCapa {
         this.canvas.style["backgroun-color"] = "blue";
         this.canvas.style.position = "absolute";
         div.appendChild(this.canvas);
-        this.panelShader = window.geoportal.mapa.creaPanelMapa(this.capa, "particulas" + parseInt(Math.random() * 10000), 5);
+        this.panelShader = window.geoportal.mapa.creaPanelMapa(this.capa, "shader" + parseInt(Math.random() * 10000), 5);
         this.panelShader.style.opacity = this.capa.config.opacidad / 100;
         this.capa.registraPanelMapa(this.panelShader);
 

@@ -42,9 +42,12 @@ class PropSerieTiempoVars extends ZCustomController {
             arbolItems:this.arbolAgregar,
             onSelecciona:consulta => {
                 this.analizador.config.variable = consulta;
-                this.refrescaVar1();
-                if (this.analizador.propTiempoListener) this.analizador.propTiempoListener();
-                this.options.contenedor.refrescaPanelAnalisis();
+                consulta.construyeDescripcionFiltros()
+                    .then(_ => {
+                        this.refrescaVar1();
+                        if (this.analizador.propTiempoListener) this.analizador.propTiempoListener();
+                        this.options.contenedor.refrescaPanelAnalisis();
+                    })
             },
             onElimina:_ => {
                 this.analizador.config.variable = null;
@@ -66,9 +69,12 @@ class PropSerieTiempoVars extends ZCustomController {
             arbolItems:this.arbolAgregar,
             onSelecciona:consulta => {
                 this.analizador.config.variable2 = consulta;
-                this.refrescaVar2();
-                if (this.analizador.propTiempoListener) this.analizador.propTiempoListener();
-                this.options.contenedor.refrescaPanelAnalisis();
+                consulta.construyeDescripcionFiltros()
+                    .then(_ => {
+                        this.refrescaVar2();
+                        if (this.analizador.propTiempoListener) this.analizador.propTiempoListener();
+                        this.options.contenedor.refrescaPanelAnalisis();
+                    })
             },
             onElimina:_ => {
                 this.analizador.config.variable2 = null;

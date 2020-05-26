@@ -407,3 +407,10 @@ body {
     -moz-box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
     box-shadow: 2px 2px 15px -4px rgba(0,0,0,0.75);
 }
+
+.item-exportar {
+    cursor:pointer;
+}
+.item-exportar:hover {
+    text-decoration: underline;
+}

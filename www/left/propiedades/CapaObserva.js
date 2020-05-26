@@ -57,8 +57,11 @@ class CapaObserva extends ZCustomController {
                 onSelecciona:consulta => {
                     this.capa.observa.forEach(o => o.colorear = false);
                     this.capa.observa.push({leyenda:true, colorear:true, consulta:consulta})
-                    this.refresca();
-                    this.capa.recalculaValoresObservados();
+                    consulta.construyeDescripcionFiltros()
+                        .then(_ => {
+                            this.refresca();
+                            this.capa.recalculaValoresObservados();        
+                        })
                 }
             });
         }

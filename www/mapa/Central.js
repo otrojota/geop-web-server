@@ -80,7 +80,7 @@ class Central extends ZCustomController {
         let h = this.$view.innerHeight();
         let leftTiempo = 10;
         this.panelTiempo.$view.css({left:leftTiempo, top:h - this.panelTiempo.$view.height() - 19, width:w - leftTiempo - 10});
-        this.selectorTiempo.$view.css({left:leftTiempo, top:h - this.panelTiempo.$view.height() - 78});
+        this.selectorTiempo.$view.css({left:leftTiempo, top:h - this.panelTiempo.$view.height() - 106});
         this.rebuildTime();
         this.cntPanelesFlotantes.size = {width:w, height:h};
         this.ajustaPanelesFlotantes();

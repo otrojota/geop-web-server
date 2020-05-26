@@ -181,6 +181,8 @@ class MinZClient {
             }
         });
     }
+
+    // Variables que se pueden filtrar por la dimensión
     async getVariablesFiltrables(codigoDimension) {
         try {
             let rutas = [];
@@ -195,13 +197,58 @@ class MinZClient {
         }
     }
 
+    // Lista de clasificadores desde una variable, siguiendo una ruta
+    describeRuta(variable, ruta) {
+        let retPath = [];
+        let dimOrVar = variable;
+        let path = ruta.split(".");
+        for (let i=0; i<path.length; i++) {
+            let pathElement = path[i];
+            let c = dimOrVar.classifiers.find(c => c.fieldName == pathElement)
+            if (!c) throw "No se encuentra la ruta " + pathElement + " desde " + dimOrVar.name;
+            dimOrVar = this.dimensiones.find(d => d.code == c.dimensionCode);
+            if (!dimOrVar) throw `No se encontró la dimension '${c.dimensionCode}' referenciada desde los clasificadores de '${dimOrVar.name}'`;
+            retPath.push(c);
+        }
+        return retPath;
+    }
+
     // Filas Dimensiones
     async getValorDimension(codigoDimension, codigoFila) {
         try {
-            console.log("get Valor dimension", codigoDimension, codigoFila);
             let f = await fetch(this.url + "/dim/" + codigoDimension + "/rows/" + codigoFila + "?token=" + this.token);
             if (f.status != 200) throw await f.text();
             else return await f.json();
+        } catch(error) {
+            throw error;
+        }
+    }
+    async getValores(codigoDimension, textFilter, filter, startRow, nRows, includeNames) {
+        try {
+            let url = this.url + "/dim/" + codigoDimension + "/rows?token=" + this.token;
+            if (textFilter) url += "&textFilter=" + encodeURIComponent(textFilter);
+            if (filter) url += "&filter=" + encodeURIComponent(JSON.stringify(filter));
+            if (startRow !== undefined && nRows !== undefined) url += "&startRow=" + startRow + "&nRows=" + nRows;
+            if (includeNames) url += "&includeNames=true";
+            let f = await fetch(url);
+            if (f.status != 200) throw await f.text();
+            else return await f.json();
+        } catch(error) {
+            throw error;
+        }
+    }
+    async cuentaValores(codigoDimension, textFilter, filter) {
+        try {
+            let url = this.url + "/dim/" + codigoDimension + "/rows?token=" + this.token;
+            if (textFilter) url += "&textFilter=" + encodeURIComponent(textFilter);
+            if (filter) url += "&filter=" + encodeURIComponent(JSON.stringify(filter));
+            url += "&count=true";
+            let f = await fetch(url);
+            if (f.status != 200) throw await f.text();
+            else {
+                let j = await f.json();
+                return j.n;
+            }
         } catch(error) {
             throw error;
         }
@@ -244,11 +291,11 @@ class MinZClient {
         }
     }
     async query(query, startTime, endTime) {
-        /*
+        
         console.log("minZ Query", query);
-        console.log("startTime", moment.tz(startTime, window.timeZone).format("YYYY-MM-DD HH:mm"));
-        console.log("endTime", moment.tz(endTime, window.timeZone).format("YYYY-MM-DD HH:mm"));
-        */
+        //console.log("startTime", moment.tz(startTime, window.timeZone).format("YYYY-MM-DD HH:mm"));
+        //console.log("endTime", moment.tz(endTime, window.timeZone).format("YYYY-MM-DD HH:mm"));
+        
         try {
             let filtro, resultado;
             switch (query.tipoQuery) {

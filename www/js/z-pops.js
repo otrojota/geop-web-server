@@ -11,7 +11,7 @@ class ZPop {
         if (!ZPop.nextId) ZPop.nextId = 1;
         if (!ZPop.actives) ZPop.actives = [];
         if (ZPop.checkingClicksOutside === undefined) ZPop.checkingClicksOutside = false;
-        if (!ZPop.docClickListener) {
+        if (!ZPop.docClickListener) {            
             ZPop.docClickListener = e => {
                 let clickInside = false;
                 ZPop.actives.forEach(zpop => {
@@ -22,7 +22,8 @@ class ZPop {
                     // Close all active ZPops
                     ZPop.actives.forEach(zpop => zpop.close());
                 }
-            }
+                return true;
+            }            
         }
 
         this.reference = reference;
@@ -33,7 +34,7 @@ class ZPop {
         this.closed = false;
         this.searchTimer = null;
         this.showingSearchResults = false;
-        this.searchCancelled = false;
+        this.searchCancelled = false;        
     }
 
     static addActive(zpop) {
@@ -56,14 +57,19 @@ class ZPop {
 
     show(items) {
         if (items) this.items = items;
-        let popsContainer = $("#pops-container");
-        if (!popsContainer.length) {
-            $(document.body).append("<div id='pops-container' style='position:absolute; left:0; top:0; pointer-events:none;'></div>");
+        let popsContainer;
+        if (!this.options.container) {
             popsContainer = $("#pops-container");
-        }
-        let w = window.innerWidth;
-        let h = window.innerHeight;
-        popsContainer.css({width:w + "px", height:h + "px", "pointer-events":"all"});        
+            if (!popsContainer.length) {
+                $(document.body).append("<div id='pops-container' style='position:absolute; left:0; top:0; pointer-events:none;'></div>");
+                popsContainer = $("#pops-container");
+            }
+            let w = window.innerWidth;
+            let h = window.innerHeight;
+            popsContainer.css({width:w + "px", height:h + "px", "pointer-events":"all"});   
+        } else {
+            popsContainer = $(this.options.container);
+        }     
 
         this.popId = "zpop_" + (ZPop.nextId++);
         let html = "<div id='" + this.popId + "' class='zpop' style='position:absolute; pointer-events:auto;'><i class='fas fa-spin fa-spinner ml-2 mt-2' /></div>";
@@ -229,8 +235,8 @@ class ZPop {
         let html = "<div id='sub-items'></div>";
         if (this.options.onSearch) {
             html += "<hr class='zpop-divider' />";
-            html += "<form class='form-inline zpop-search-container'>";
-            html += "<input type='text' placeholder='" + this.options.searchPlaceholder + "' class='form-control form-control-sm zpop-search' />";
+            html += "<form class='form-inline zpop-search-container' tabindex='0'>";
+            html += "<input type='text' tabindex='0' placeholder='" + this.options.searchPlaceholder + "' class='form-control form-control-sm zpop-search' />";
             html += "<i class='fas fa-search fa-lg float-right zpop-search-icon searcher'></i>";
             html += "<i class='fas fa-times fa-lg float-right zpop-search-icon clearer' style='color:gray; cursor:pointer; display:none;'></i>";
             html += "</form>";
@@ -268,6 +274,7 @@ class ZPop {
     schedulleSearch() {
         if (this.searchTimer) clearTimeout(this.searchTimer);
         this.searchTimer = setTimeout(_ => {
+            this.searchCancelled = false;
             this.searchTimer = null;
             this.doSearch()
         }, 300);

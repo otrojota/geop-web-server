@@ -38,8 +38,11 @@ class ObjetoObserva extends ZCustomController {
             arbolItems:this.arbolAgregar,
             onSelecciona:consulta => {
                 this.objeto.observa.push(consulta);
-                this.refresca();
-                this.objeto.recalculaValoresObservados();
+                consulta.construyeDescripcionFiltros()
+                        .then(_ => {
+                            this.refresca();
+                            this.objeto.recalculaValoresObservados();        
+                        })
             }
         });
         this.objeto.observa.forEach(o => {

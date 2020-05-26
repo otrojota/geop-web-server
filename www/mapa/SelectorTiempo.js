@@ -6,6 +6,7 @@ class SelectorTiempo extends ZCustomController {
         this.view.focusout = _ => this.limpiaItemActivo();
         this.view.onkeydown = e => this.keyDown(e.code, e);
         this.view.focus();
+        this.refrescaCapturas();
     }
     refresca() {
         if (this.timer) {
@@ -124,6 +125,10 @@ class SelectorTiempo extends ZCustomController {
             event.preventDefault();
             return;
         }
+        if (code == "Enter") {
+            this.captura();
+            return;
+        }
         if (code != "ArrowLeft" && code != "ArrowRight") return;
         let name = "on" + (code == "ArrowLeft"?"Pre":"Next");
         name += this.itemActivo + "_click";
@@ -138,6 +143,103 @@ class SelectorTiempo extends ZCustomController {
     muestraItemActivo() {
         this.limpiaItemActivo();
         this["item" + this.itemActivo].addClass("item-selector-tiempo-activo")
+    }
+
+    refrescaCapturas() {
+        if (!window.configCapturas) window.configCapturas = {tiempo:"DD/MMMM/YYYY HH:mm", titulo:"", fotos:[], delay:200};
+        console.log("capturas", window.configCapturas);
+        this.lblNCapturas.text = "[" + window.configCapturas.fotos.length + "]";        
+    }
+
+    captura() {
+        this.camara.addClass("boton-selector-tiempo-activo");
+        let div = document.querySelector("#main").querySelector("#mapa");
+        let timeText, titleText;
+        let ly = window.geoportal.mapa.konvaLayerLeyendas,
+            stage = window.geoportal.mapa.konvaStage;
+        let fmt = window.configCapturas.tiempo;
+        if (fmt) {
+            let st = TimeUtils.fromUTCMillis(window.geoportal.tiempo).format(fmt);
+            timeText = new Konva.Text({
+                x: 10,
+                y: stage.height() - 30,
+                text: st,
+                fontSize: 26,
+                fontFamily: 'Courier',
+                fontStyle: "bold",
+                fill: 'white',
+                stroke: 'black',
+                strokeWidth:1.5
+              });
+            ly.add(timeText);
+        }
+        if (window.configCapturas.titulo) {
+            titleText = new Konva.Text({
+                x: stage.width() - 10,
+                y: 6,
+                align: "right",
+                text: window.configCapturas.titulo,
+                fontSize: 32,
+                fontFamily: 'Courier',
+                fontStyle: "bold",
+                fill: 'white',
+                stroke: 'black',
+                strokeWidth:2
+            });
+            titleText.x(titleText.x() - titleText.width());
+            ly.add(titleText);
+        }
+        if (timeText || titleText) ly.draw();
+        html2canvas(div, {
+            useCORS:true,
+            removeContainer:false,
+            allowTaint:true,
+            backgroundColor:null,
+            logging:false
+        })
+            .then(canvas => {
+                console.log("canvas", canvas)
+                window.configCapturas.fotos.push({tiempo:window.geoportal.tiempo, canvas:canvas});
+                this.refrescaCapturas();
+                if (timeText) timeText.destroy();
+                if (titleText) titleText.destroy();
+                if (timeText || titleText) ly.draw();                
+                this.camara.removeClass("boton-selector-tiempo-activo");
+            });
+    }
+    onLblNCapturas_click() {this.menuCapturas()}
+    onCamara_click() {this.menuCapturas()}
+    onCaretCaptura_click() {this.menuCapturas()}
+    menuCapturas() {
+        let rows = [{
+            code:"capturar", label:"Capturar Imagen (enter)", icon:"fas fa-camera"
+        }, {
+            code:"exportar", label:"Exportar imágenes o animación", icon:"fas fa-film"
+        }, {
+            code:"limpiar", label:"Limpiar Capturas", icon:"fas fa-ban"
+        }, {
+            code:"sep", label:"-"
+        }, {
+            code:"configurar", label:"Configurar Etiquetas", icon:"fas fa-cogs"
+        }]
+        this.zpop = new ZPop(this.caretCaptura.view, rows,
+            {
+                vMargin:0, hMargin:6,
+                hPos:"right", vPos:"justify-top", 
+                onClick:(code, row) => {                        
+                    if (code == "capturar") this.captura();
+                    else if (code == "limpiar") {
+                        window.configCapturas.fotos = [];
+                        this.refrescaCapturas();
+                    } else if (code == "exportar") {
+                        this.showDialog("./WExportaCapturas", {}, null, _ => this.refrescaCapturas());
+                    } else if (code == "configurar") {
+                        this.showDialog("./WConfigCapturas");
+                    } 
+                    return true;
+                }
+            }
+        ).show();
     }
 }
 ZVC.export(SelectorTiempo);

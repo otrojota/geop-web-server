@@ -209,7 +209,7 @@ class GeoPortal {
                                     tipo:"queryMinZ",
                                     tipoQuery:tipoQuery,
                                     variable:item.item.variable,
-                                    filtroFijo:{ruta:item.item.ruta, valor:dataObject.getCodigoDimension()},
+                                    filtroFijo:{ruta:item.item.ruta, valor:(sinCodigoObjeto?"${codigo-objeto}":dataObject.getCodigoDimension())},
                                     temporalidad:item.item.variable.temporality,
                                     acumulador:"sum",
                                 }

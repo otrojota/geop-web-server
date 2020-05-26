@@ -31,6 +31,7 @@ async function createHTTPServer() {
     zServer.registerModule("plug", plugins);
     zServer.registerModule("usu", usuarios);
     
+    //app.use("/h2c-proxy", require('html2canvas-proxy')());
     app.use("/", express.static(__dirname + "/www"));
 
     loadedPlugins.forEach(p => {

@@ -59,8 +59,10 @@ class ConsultaGeoportal {
         if (c.tipo == "queryMinZ") {            
             s.acumulador = c.spec.acumulador;
             s.temporalidad = c.spec.temporalidad;
-            s.filtroFijo = c.spec.filtroFijo;
-            s.filtros = c.spec.filtros;
+            if (!c.spec.filtroFijo) c.spec.filtroFijo = {};
+            s.filtroFijo = JSON.parse(JSON.stringify(c.spec.filtroFijo));
+            if (!c.spec.filtros) c.spec.filtros = [];
+            s.filtros = JSON.parse(JSON.stringify(c.spec.filtros));
             s.variable = c.spec.variable;
             s.dimensionAgrupado = c.spec.dimensionAgrupado;
         } else if (c.tipo == "capa") {
@@ -146,7 +148,20 @@ class ConsultaGeoportal {
         }
     }
     get filtroFijo() {return this.spec.filtroFijo || {}}
-    get filtros() {return this.spec.filtros || []}
+    get filtros() {
+        if (!this.spec.filtros) this.spec.filtros = [];
+        return this.spec.filtros;
+    }
+    get allFiltros() {
+        let ret = [];
+        if (this.filtroFijo && this.filtroFijo.ruta) {
+            ret.push({filtro:this.filtroFijo, fijo:true});            
+        }
+        this.filtros.forEach(f => ret.push({
+            filtro:f, fijo:false
+        }))
+        return ret;
+    }
     get dimensionAgrupado() {return this.spec.dimensionAgrupado}
 
     esIgualA(c) {
@@ -224,8 +239,41 @@ class ConsultaGeoportal {
             }, "");
             html += "    </select>";
             html += "  </div>";
-
-            html += "</div>";
+            html += "</div>";  
+            if (this.descripcionAgrupador) {
+                html += `
+                    <div class="row mt-1">
+                        <div class="col">
+                            <i class="fas fa-columns mr-2 float-left mt-1"></i>
+                            <span>Agrupado por ${this.descripcionAgrupador}</span>
+                        </div>
+                    </div>`
+            }
+            let descFiltros = this.descripcionFiltros;
+            if (!descFiltros) {
+                console.warn("No se ha construido la descripción de filtros para la consulta");
+            } else {
+                if (!descFiltros.length) {
+                    html += `
+                    <div class="row mt-1">
+                        <div class="col">
+                            <i class="fas fa-filter mr-2 float-left mt-1"></i>
+                            <span class="filtro-${this.id} nombre-item" data-z-clickable="true"'>Aplicar Filtros</span>
+                            <i class="filtro-${this.id} fas fa-caret-right ml-1 float-right mt-1"></i>
+                        </div>
+                    </div>`
+                } else {
+                    html += "<ul style='padding-left:10px; margin-top:5px; margin-bottom:0; '>";
+                    html += descFiltros.reduce((html, f, i) => {
+                        html += "<li class='filtro-" + this.id + " nombre-item'>";
+                        if (!i) html += "Para ";
+                        else html += "y ";
+                        html += f.etiqueta + "</li>";
+                        return html;
+                    }, "")
+                    html += "</ul>";
+                }
+            }
         }
 
         return html;
@@ -237,9 +285,12 @@ class ConsultaGeoportal {
     registraListeners(container, listeners) {
         if (this.seleccionable && listeners.onSelecciona) {
             container.find("#nombreVar" + this.id).onclick =  _ => {
-                new ZPop(container.find("#caretVar" + this.id), listeners.arbolItems, {vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, onClick:(codigo, item) => {
-                    listeners.onSelecciona(ConsultaGeoportal.fromItemArbol(item));
-                }}).show();
+                new ZPop(container.find("#caretVar" + this.id), listeners.arbolItems, {
+                    vPos:"justify-top", hPos:"right", vMargin:-4, hMargin:5, 
+                    onClick:(codigo, item) => {
+                        listeners.onSelecciona(ConsultaGeoportal.fromItemArbol(item));
+                    }
+                }).show();
             }
         }
         if (this.tipo == "capa" && this.variable.niveles && this.variable.niveles.length > 1) {
@@ -273,6 +324,16 @@ class ConsultaGeoportal {
                 this.spec.temporalidad = edTemporalidad.value;
                 if (listeners.onChange) listeners.onChange(this);
             };
+            container.findAll(".filtro-" + this.id).forEach(element => {
+                element.onclick = _ => {
+                    container.showDialog("left/propiedades/WFiltrosMinZ", {consulta:this}, newConsulta => {
+                        this.spec.filtros = JSON.parse(JSON.stringify(newConsulta.spec.filtros));
+                        this.descripcionFiltros = newConsulta.descripcionFiltros;
+                        this.descripcionAgrupador = newConsulta.descripcionAgrupador;
+                        if (listeners.onChange) listeners.onChange(this);
+                    })
+                }
+            })
         }
         var borrador = container.find("#delVar" + this.id);
         if (borrador) {
@@ -282,6 +343,125 @@ class ConsultaGeoportal {
         }
     }
 
+    async describeFiltro(filtro) {
+        try {
+            let clasificadoresPath = window.minz.describeRuta(this.variable, filtro.ruta);
+            let st = clasificadoresPath.reduce((st, c) => {
+                if (st.length) st += " => ";
+                st += c.name;
+                return st;
+            }, "");
+            let etiquetaValor;
+            // Tomar datos del último clasificador para mostrar
+            if (filtro.valor && filtro.valor.startsWith("${codigo-objeto}")) {
+                st += " en mapa";
+                etiquetaValor = "Selección en Mapa";
+            } else {
+                let c = clasificadoresPath[clasificadoresPath.length - 1];            
+                let row = await window.minz.getValorDimension(c.dimensionCode, filtro.valor);            
+                let v = row?row.name:filtro.valor;
+                st += " igual a '" + v + "'";
+                etiquetaValor = v;
+            }
+            return {etiqueta:st, etiquetaValor};
+        } catch(error) {
+            console.error(error);
+            throw error;
+        }
+    }
+    async construyeDescripcionFiltros() {
+        try {
+            let ret = [];
+            if (this.tipo != "queryMinZ") throw "Consulta no es query MinZ";
+            if (this.filtroFijo && this.filtroFijo.ruta) {
+                let etiquetas = await this.describeFiltro(this.filtroFijo);
+                ret.push({
+                    etiqueta:etiquetas.etiqueta,
+                    etiquetaValor:etiquetas.etiquetaValor,
+                    fijo:true,
+                    ruta:this.filtroFijo.ruta,
+                    valor:this.filtroFijo.valor
+                });
+            }
+            for (let i=0; i<this.filtros.length; i++) {
+                let etiquetas = await this.describeFiltro(this.filtros[i]);
+                ret.push({
+                    etiqueta:etiquetas.etiqueta,
+                    etiquetaValor:etiquetas.etiquetaValor,
+                    fijo:false,
+                    ruta:this.filtros[i].ruta,
+                    valor:this.filtros[i].valor
+                });
+            }
+            this.descripcionFiltros = ret;
+            if (this.dimensionAgrupado) {
+                this.descripcionAgrupador = (await this.describeFiltro({ruta:this.dimensionAgrupado, valor:"${codigo-objeto}"})).etiqueta
+            } else {
+                this.descripcionAgrupador = null;
+            }
+        } catch(error) {
+            console.error(error);
+            this.descripcionFiltros = null;
+        }
+    }
+
+    construyeArbolFiltrosDesde(nodos, dimOVar, path0, x0, y0, subArbolHabilitado, max) {
+        if (max.x === undefined || x0 > max.x) max.x = x0;
+        let dimensiones = window.minz.dimensiones;
+        let y = y0;
+        for (let i=0; i<dimOVar.classifiers.length; i++) {
+            let c = dimOVar.classifiers[i];
+            let nodo = {
+                x:x0, y:y, clasificador:c, editable:subArbolHabilitado
+            }
+            if (max.y === undefined || y > max.y) max.y = y;
+            let path = path0 + (path0.length?".":"") + c.fieldName;
+            nodo.ruta = path;
+            let filtro = this.allFiltros.find(f => f.filtro.ruta == path);
+            if (filtro) {
+                nodo.filtro = filtro.filtro;
+                if (filtro.fijo) nodo.editable = false;
+                let desc = this.descripcionFiltros.find(f => f.ruta == path);
+                nodo.descripcionFiltro = desc;
+            } else if (subArbolHabilitado) {
+                // Si es parte de la ruta del filtro fijo, se deshabilita
+                if (this.allFiltros.find(f => f.fijo && f.filtro.ruta.startsWith(path))) {
+                    nodo.editable = false;
+                }
+            }
+            let dim = dimensiones.find(d => d.code == c.dimensionCode);
+            if (!dim) throw "No se encontró la dimensión '" + c.dimensionCode + "' desde " + dimOVar.name;
+            if (dim.classifiers && dim.classifiers.length) {
+                nodo.nodos = [];
+                y = this.construyeArbolFiltrosDesde(nodo.nodos, dim, path, x0 + 1, y, nodo.editable && !nodo.filtro, max);
+            } else {
+                y++;
+            }
+            nodos.push(nodo);
+        }
+        return y;
+    }
+    getArbolFiltros() {
+        let nodos = [], max = {x:undefined, y:undefined};
+        this.construyeArbolFiltrosDesde(nodos, this.variable, "", 1, 0, true, max);
+        return {max:max, nodos:nodos};
+    }
+
+    agregaFiltro(ruta, valor) {
+        // Eliminar filtros existentes en subarbol
+        this.filtros.filter(f => f.ruta.startsWith(ruta + ".")).forEach(f => this.eliminaFiltro(f));
+
+        this.filtros.push({ruta:ruta, valor:valor});        
+    }
+    eliminaFiltro(filtro) {
+        let idx = this.filtros.findIndex(f => f.ruta == filtro.ruta);
+        if (idx < 0) {
+            throw "No se encontró el filtro por " + filtro.ruta;
+        }
+        this.filtros.splice(idx, 1);
+    }
+
+    // Queries
     getSerieTiempo(t0, t1, objeto, mensajes) {
         this.resultado = null;
         if (this.tipo == "capa") {
