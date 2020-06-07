@@ -32,8 +32,8 @@
         "url":"http://www.pomeo.cl:8083/gfs4"
     }, {
         "codigo":"ww3",
-        "url_bak":"http://localhost:8187",
-        "url":"http://www.pomeo.cl:8083/ww3"
+        "url":"http://localhost:8187",
+        "url_bak":"http://www.pomeo.cl:8083/ww3"
     }, {
         "codigo":"servimet",
         "url_bak":"http://localhost:8183",
@@ -56,8 +56,8 @@
         "url":"http://www.pomeo.cl:8083/fipa-fan-2019"
     }, {
         "codigo":"copernicus",
-        "url_bak":"http://localhost:8189",
-        "url":"http://www.pomeo.cl:8083/copernicus"
+        "url":"http://localhost:8189",
+        "url_bak":"http://www.pomeo.cl:8083/copernicus"
     }],
     "plugins":["./base-plugin/BasePlugin.js", "./ow-plugin/OWPlugin.js"],
     "grupos":[{

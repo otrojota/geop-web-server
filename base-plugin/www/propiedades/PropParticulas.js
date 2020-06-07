@@ -32,8 +32,9 @@ class PropParticulas extends ZCustomController {
         if (!this.edNParticulas.view.noUiSlider) {
             noUiSlider.create(this.edNParticulas.view, {
                 start: this.visualizador.nParticulas,
-                step:1000,
-                range: {min: 1000,max: 50000}
+                step:5,
+                direction:"rtl",
+                range: {min: 50,max: 500}
             });
         }
         this.edNParticulas.view.noUiSlider.on("change", v => {
@@ -44,7 +45,7 @@ class PropParticulas extends ZCustomController {
             noUiSlider.create(this.edVelocidad.view, {
                 start: this.visualizador.velocidad,
                 step:0.05,
-                range: {min: 0.01,max: 20}
+                range: {min: 0.4,max: 2.5}
             });
         }
         this.edVelocidad.view.noUiSlider.on("change", v => {

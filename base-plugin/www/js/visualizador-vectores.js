@@ -129,13 +129,13 @@ class VisualizadorVectores extends VisualizadorCapa {
         this.konvaStage.height(size.y);
         let lng = this.data.lng0, lat = this.data.lat0;
         let n=0;
-        for (let iLat=0; iLat<this.data.resolution; iLat++) {
+        for (let iLat=0; iLat<this.data.nrows; iLat++) {
             lng = this.data.lng0;
-            for (let iLng=0; iLng<this.data.resolution; iLng++) {
+            for (let iLng=0; iLng<this.data.ncols; iLng++) {
                 let point = window.geoportal.mapa.map.latLngToContainerPoint([lat, lng]);
                 let m = this.magnitudes[n], u = this.data.data[2*n], v = this.data.data[2*n + 1];
                 if (m !== null) {
-                    let len = Math.min(size.x / this.data.resolution, size.y / this.data.resolution) * 1.0;
+                    let len = Math.min(size.x / this.data.ncols, size.y / this.data.nrows) * 1.0;
                     let angle = Math.atan2(u, v) * 180 / Math.PI;
                     let scale = 0.3 + 0.7 * (m -this.minMagnitud) / (this.maxMagnitud - this.minMagnitud);
                     if (isNaN(scale)) scale = 1;

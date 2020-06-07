@@ -4,13 +4,15 @@ class BasePlugin extends global.PluginGeoPortal {
     }
     getClientScripts() {
         return [
-            "js/wind-gl.js",
+            //"js/wind-gl.js",
             "js/base-plugin.js",
             "js/visualizador-isolineas.js",
             "js/visualizador-isobandas.js",
             "js/visualizador-vectores.js",
             "js/visualizador-puntos-con-datos.js",
-            "js/visualizador-particulas.js",
+            //"js/visualizador-particulas.js",
+            "js/visualizador-particulas2.js",
+            "js/windy-geoos.js",
             "js/visualizador-tiles.js",
             "js/analizador-serie-tiempo.js",
             "js/echarts.min.js",
