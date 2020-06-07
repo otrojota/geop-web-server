@@ -28,8 +28,8 @@
     },
     "proveedores":[{
         "codigo":"gfs4",
-        "url_bak":"http://localhost:8181",
-        "url":"http://www.pomeo.cl:8083/gfs4"
+        "url":"http://localhost:8181",
+        "url_bak":"http://www.pomeo.cl:8083/gfs4"
     }, {
         "codigo":"ww3",
         "url":"http://localhost:8187",
