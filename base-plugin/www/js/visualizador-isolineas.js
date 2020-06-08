@@ -94,6 +94,7 @@ class VisualizadorIsolineas extends VisualizadorCapa {
     }
     refresca2() {
         let min = this.preconsulta.min, max = this.preconsulta.max;
+        console.log("preconsulta", this.preconsulta);  
         if (min === max) throw "No hay datos";
         let step = this.config.step;
         if (this.config.autoStep || step === undefined) {
