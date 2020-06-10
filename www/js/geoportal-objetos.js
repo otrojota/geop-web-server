@@ -11,7 +11,7 @@ class ObjetoGeoportal {
     }
     static handleMouseClick(puntoMapa, puntoCanvas) {
         if (window.geoportal.agregandoObjeto == "punto") {
-            window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa, null, {nombreEditable:true}));
+            window.geoportal.mapa.agregaObjeto(new Punto(puntoMapa, null, {nombreEditable:true, coordenadasEditables:true}));
         } else if (window.geoportal.agregandoObjeto == "area") {
             window.geoportal.mapa.konvaLayerAgregando.destroyChildren();
             window.geoportal.mapa.konvaLayerAgregando.draw();
@@ -49,6 +49,7 @@ class ObjetoGeoportal {
         this.seleccionado = false;
         this.usaAnalisis = true;
         this.nombreEditable = config.nombreEditable;
+        this.coordenadasEditables = config.coordenadasEditables?true:false;
         this.objetoPadre = null;
         this.dragBoundFunc = null;
         this._capa = null;
@@ -57,13 +58,6 @@ class ObjetoGeoportal {
             height:260, width:300,
             configSubPaneles:{}
         }
-        /* Se mueve a la capa
-        this.configAnalisis = {
-            height:200, width:300,
-            analizador:"no-sobreescrito",
-            analizadores:{}
-        }
-        */
         this.mensajes = new MensajesGeoportal(this);
         this.observa = []; // {capa:capasDisponibles, nivel:0}
         this.valoresObservados = []; // indice de "observa"
@@ -312,22 +306,11 @@ class Punto extends ObjetoGeoportal {
         }
         let defaultConfig = {
             nombre:nombre,
-            movible:true, iconoEnMapa:null, nombreEditable:true
+            movible:true, iconoEnMapa:null, nombreEditable:true, coordenadasEditables:false
         }        
         let initialConfig = $.extend({}, defaultConfig, config?config:{});
         super(initialConfig, id?id:uuidv4());
         
-        /*
-        this.configAnalisis.analizador = "serie-tiempo";
-        this.configAnalisis.analizadores = {
-            "serie-tiempo":{
-                variable:"gfs4.TMP_2M",
-                nivelVariable:0,
-                tiempo:{tipo:"relativo", from:-2, to:4}
-            }
-        }
-        */
-
         this.tipo = "punto";
         this.lng = puntoMapa.lng;
         this.lat = puntoMapa.lat;
@@ -450,7 +433,6 @@ class Punto extends ObjetoGeoportal {
                     this.lat = latLng.lat;
                     this.lng = latLng.lng;
                     this.dragged = true;
-                    //window.pomeo.mapa.interactorChanging(this);
                 });
             }
             circle.on("mousedown", e => {
@@ -558,34 +540,17 @@ class Area extends ObjetoGeoportal {
         }
         let initialConfig = $.extend({}, defaultConfig, config?config:{});
         super(initialConfig, id?id:uuidv4());  
-        /*      
-        this.configAnalisis = {
-            analizador:"rect-area-3d",
-            height:300, width:260,
-            analizadores:{
-                "rect-area-3d":{
-                    variable:"fixed.BATIMETRIA_2019",
-                    nivelVariable:0,
-                    escalarLngLat:true,
-                    escalarZ:false, factorEscalaZ:10,
-                    escala:{
-                        dinamica:true,
-                        nombre:"Agua -> Tierra"
-                    }
-                }
-            }
-        };
-        */
+
         this.tipo = "area";
         let lngW = Math.min(p1.lng, p2.lng);
         let lngE = Math.max(p1.lng, p2.lng);
         let latN = Math.max(p1.lat, p2.lat);
         let latS = Math.min(p1.lat, p2.lat);
         this.objetos = [
-            new Punto({lng:lngW, lat:latN}, nombre + "-nw"),
-            new Punto({lng:lngE, lat:latN}, nombre + "-ne"),
-            new Punto({lng:lngW, lat:latS}, nombre + "-sw"),
-            new Punto({lng:lngE, lat:latS}, nombre + "-se")
+            new Punto({lng:lngW, lat:latN}, nombre + "-nw", {coordenadasEditables:true}),
+            new Punto({lng:lngE, lat:latN}, nombre + "-ne", {coordenadasEditables:true}),
+            new Punto({lng:lngW, lat:latS}, nombre + "-sw", {coordenadasEditables:true}),
+            new Punto({lng:lngE, lat:latS}, nombre + "-se", {coordenadasEditables:true})
         ];
         this.objetos.forEach(o => {
             o.objetoPadre = this

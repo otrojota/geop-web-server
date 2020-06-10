@@ -9,6 +9,7 @@ class Main extends ZCustomController {
         this.analisisOpen = false;
         this.hsplitAnalisis.hide();
         this.panelAnalisis.hide();
+        this.estadoAnalisis = "normal"; // max, min
         interact(this.hsplitAnalisis.view).draggable({
             startAxis:"y", lockAxis:"y",
             listeners:{
@@ -27,7 +28,7 @@ class Main extends ZCustomController {
                     }
                 }
             }            
-        });
+        }).styleCursor(false);
         Highcharts.setOptions({
             global:{
                 timezone:window.timeZone
@@ -64,6 +65,25 @@ class Main extends ZCustomController {
             }
         }
     }
+    onMinAnalisis_click() {
+        if (this.estadoAnalisis == "max") {
+            this.estadoAnalisis = "normal";
+        } else {
+            this.panelAnalisis.minimizado = true;
+            this.estadoAnalisis = "min";
+        }
+        this.doResize();
+    }
+    onMaxAnalisis_click() {
+        if (this.estadoAnalisis == "min") {
+            this.panelAnalisis.minimizado = false;
+            this.panelAnalisis.refresca();
+            this.estadoAnalisis = "normal";
+        } else {
+            this.estadoAnalisis = "max";
+        }
+        this.doResize();
+    }
     doResize() {
         let w = window.innerWidth;
         let h = window.innerHeight;
@@ -71,6 +91,25 @@ class Main extends ZCustomController {
         let altoAnalisis = this.panelAnalisis.capa?this.panelAnalisis.configAnalisis.height:80;
         if (altoAnalisis > h - 30) altoAnalisis = h-30;
         if (altoAnalisis < 30) altoAnalisis = 30;
+        if (this.analisisOpen) {
+            if (this.estadoAnalisis == "normal") {
+                this.minAnalisis.show();
+                this.maxAnalisis.show();
+            } else if (this.estadoAnalisis == "min") {
+                this.minAnalisis.hide();
+                this.maxAnalisis.show();
+                altoAnalisis = 6;
+            } else if (this.estadoAnalisis == "max") {
+                this.minAnalisis.show();
+                this.maxAnalisis.hide();
+                altoAnalisis = h - 55;
+            }
+            this.minAnalisis.pos = {left:w - 60, top:h - altoAnalisis - 22}
+            this.maxAnalisis.pos = {left:w - 30, top:h - altoAnalisis - 22}
+        } else {
+            this.minAnalisis.hide();
+            this.maxAnalisis.hide();
+        }
 
         if (this.leftOpen) {
             this.left.size = {width:leftWidth, height:h}

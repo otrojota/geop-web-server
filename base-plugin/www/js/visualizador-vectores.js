@@ -1,7 +1,7 @@
 class VisualizadorVectores extends VisualizadorCapa {
     constructor(capa, config) {
         let defaultConfig = {
-            resolucion:40,
+            resolucion:60,
             escala:{
                 dinamica:true,
                 nombre:"SAGA - 04"

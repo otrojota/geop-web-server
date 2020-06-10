@@ -27,7 +27,7 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
         this.konvaLayer.destroyChildren();
         this.konvaLayer.draw();
         this.capa.resuelveConsulta("matrizRectangular", {
-            maxWidth:30, maxHeight:30
+            maxWidth:50, maxHeight:50
         }, (err, data) => {
             if (err) {
                 this.finishWorking();
@@ -44,6 +44,7 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
     repinta() {
         this.konvaLayer.destroyChildren();
         this.finishWorking();
+        console.log("data", this.data);
         let lat = this.data.lat0, lng;
         let iRow = 0, iCol;
         while (iRow < this.data.nrows) {
@@ -56,13 +57,13 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
                     x: point.x,
                     y: point.y,
                     radius: 6,
-                    stroke: 'white',
+                    stroke: hayDatos?"red":'white',
                     strokeWidth: 2,
-                    fill:hayDatos?"red":undefined,
+                    //fill:hayDatos?"red":undefined,
                     opacity : this.capa.opacidad / 100
                 });
                 circulo.lat = lat;
-                circulo.lng = lng;
+                circulo.lng = lng;                
                 circulo.on("mouseenter", _ => {
                     let html = "<div class='tooltip-titulo'>" + this.capa.nombre + "</div>";
                     html += "<hr class='my-1 bg-white' />";
@@ -93,7 +94,7 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
                 circulo.on("mouseout", e => {
                     window.geoportal.hideTooltip();
                     window.geoportal.mapa.limpiaPuntoDatos();
-                });   
+                });                   
                 this.konvaLayer.add(circulo);
 
                 iCol++; lng += this.data.dx;
@@ -104,7 +105,8 @@ class VisualizadorPuntosConDatos extends VisualizadorCapa {
     }
 
     cambioOpacidadCapa(opacidad) {
-        this.panelPuntos.style.opacity = this.capa.opacidad / 100;
+        //this.panelPuntos.style.opacity = this.capa.opacidad / 100;
+        this.repinta();
     }
 
     /* Panel de Propiedades */

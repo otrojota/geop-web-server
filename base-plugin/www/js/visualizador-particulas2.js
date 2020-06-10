@@ -206,7 +206,7 @@ class VisualizadorParticulas2 extends VisualizadorCapa {
     }
 
     cambioOpacidadCapa(opacidad) {
-        this.panelVectores.style.opacity = this.capa.opacidad / 100;
+        this.panelParticulas.style.opacity = this.capa.opacidad / 100;
     }
 
     /* Panel de Propiedades */

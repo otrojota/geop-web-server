@@ -82,7 +82,7 @@ class PanelPropiedades extends ZCustomController {
                         this.item.configPanel.y = y;
                     }
                 }            
-            });
+            }).styleCursor(false);
             interact(this.view).resizable({
                 edges: { left: true, right: true, bottom: true, top: true },
                 modifiers: [

@@ -36,6 +36,18 @@ class Top extends ZCustomController {
     }
     onCmdZoomIn_click() {window.geoportal.mapa.zoomIn()}
     onCmdZoomOut_click() {window.geoportal.mapa.zoomOut()}
+    onIconoBuscar_click() {
+        this.edBuscarUbicacion.value = "";
+        this.onEdBuscarUbicacion_change();
+    }
+    muestraLupa() {
+        this.iconoBuscar.removeClass("fa-times");
+        this.iconoBuscar.addClass("fa-search");
+    }
+    muestraLimpiador() {
+        this.iconoBuscar.removeClass("fa-search");
+        this.iconoBuscar.addClass("fa-times");
+    }
     async onEdBuscarUbicacion_change() {
         if (this.ignoreNextChange) {
             this.ignoreNextChange = false;
@@ -48,14 +60,22 @@ class Top extends ZCustomController {
         }
 
         let filtro = this.edBuscarUbicacion.value.trim();
-        if (filtro.length < 4) return;
+        if (!filtro.length) {
+            this.muestraLupa();
+            return;
+        } else if (filtro.length < 4) {
+            this.muestraLimpiador();
+            return;
+        };
+        
         let pos = window.geoportal.mapa.map.getCenter();
-        this.iconoBuscar.addClass("fa-spin fa-spinner");
         this.iconoBuscar.removeClass("fa-search");
+        this.iconoBuscar.removeClass("fa-times");
+        this.iconoBuscar.addClass("fa-spin fa-spinner");
         
         this.buscador = zPost("busca.plc", {filtro:filtro, maxResults:10, lat:pos.lat, lng:pos.lng}, ubis => {
             this.iconoBuscar.removeClass("fa-spin fa-spinner");
-            this.iconoBuscar.addClass("fa-search");
+            this.muestraLimpiador();
             this.buscador = null;
             if (!ubis || !ubis.results || !ubis.results.length) return;
             let rows = ubis.results.map((l, i) => ({

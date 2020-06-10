@@ -152,7 +152,7 @@ class SelectorTiempo extends ZCustomController {
     }
 
     captura() {
-        this.camara.addClass("boton-selector-tiempo-activo");
+        this.camara.addClass("capturando-imagen");
         let div = document.querySelector("#main").querySelector("#mapa");
         let timeText, titleText;
         let ly = window.geoportal.mapa.konvaLayerLeyendas,
@@ -204,7 +204,7 @@ class SelectorTiempo extends ZCustomController {
                 if (timeText) timeText.destroy();
                 if (titleText) titleText.destroy();
                 if (timeText || titleText) ly.draw();                
-                this.camara.removeClass("boton-selector-tiempo-activo");
+                this.camara.removeClass("capturando-imagen");
             });
     }
     onLblNCapturas_click() {this.menuCapturas()}

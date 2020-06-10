@@ -269,6 +269,9 @@ body {
 .boton-selector-tiempo-activo {
     color: lightskyblue;
 }
+.capturando-imagen {
+    color: red;
+}
 .item-selector-tiempo-activo {
     background-color: rgba(0,0,100,0.4);
 }
@@ -413,4 +416,14 @@ body {
 }
 .item-exportar:hover {
     text-decoration: underline;
+}
+.boton-estado-analisis {
+    z-index: 7800;
+    width: 28px;
+    height: 28px;
+    padding:4px;
+    border-radius: 4px;
+    background-color: rgb(255,255,255);
+    filter:invert(1);
+    cursor: pointer;
 }

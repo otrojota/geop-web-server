@@ -115,13 +115,15 @@ class VisualizadorShader extends VisualizadorCapa {
         }
         window.geoportal.mapa.eliminaCapaMapa(this.lyShader);    
     }
+    limpia() {
+        const gl = this.gl;
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    }
     refresca() {
         super.refresca();
         this.startWorking(); 
         //this.canvas.getContext("2d").clearRect(0, 0, this.canvas.width, this.canvas.height);
-        const gl = this.gl;
-        gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
         this.capa.resuelveConsulta("matrizRectangular", {}, async (err, data) => {
             if (err) {                
                 this.finishWorking();
@@ -163,6 +165,7 @@ class VisualizadorShader extends VisualizadorCapa {
         this.canvas.width = this.canvas.clientWidth * pxRatio;
         this.canvas.height = this.canvas.clientHeight * pxRatio;
 
+        this.limpia();
         const gl = this.gl;
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.depthMask(false);
@@ -175,7 +178,7 @@ class VisualizadorShader extends VisualizadorCapa {
         let ctxColores = canvasColores.getContext("2d");
         let vertexPositions = [], indexes = [], vertexColors = [];
         let indicePunto = {};  // {iRow-iCol:int}
-        for (let iRow=data.nrows-1, lat=data.lat1; iRow>=0; iRow--, lat -= data.dy) {
+        for (let iRow=data.nrows-1, lat=data.lat1 - data.dy; iRow>=0; iRow--, lat -= data.dy) {
             for(let iCol=0,lng = data.lng0; iCol<data.ncols; iCol++, lng += data.dx) {
                 let key = iRow + "-" + iCol;
                 let v = data.rows[iRow][iCol];

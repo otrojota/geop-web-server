@@ -11,7 +11,8 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             flotante:false,
             height:280, width:300,
             configSubPaneles:{}
-        }       
+        }
+        console.log("creado isolineas con ", this.config);
     }
     static aplicaACapa(capa) {
         return capa.tipo == "raster" && capa.formatos.isolineas;

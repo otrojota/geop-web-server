@@ -9,6 +9,7 @@ class PanelAnalisis extends ZCustomController {
     }
 
     onThis_init() {
+        this.minimizado = false; // Seteado desde Main
         this.paneles = [];
         this.onRefrescado = null;
         this.rowAnalizador.pos = {left:0, top:0};
@@ -31,7 +32,7 @@ class PanelAnalisis extends ZCustomController {
                     }
                 }
             }            
-        });
+        }).styleCursor(false);
     }
     async crea() {
         await this.refresca();
@@ -43,8 +44,8 @@ class PanelAnalisis extends ZCustomController {
         this.capa = null;
     }
 
-    async refresca() {
-        // this.objeto = window.geoportal.capas.getGrupoActivo().itemActivo;
+    async refresca() {        
+        if (this.minimizado) return;
         let o = window.geoportal.capas.getGrupoActivo().itemActivo;
         if (o instanceof Capa) {
             this.capa = o;

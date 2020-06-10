@@ -22,6 +22,20 @@ class PropObjeto extends ZCustomController {
         this.options.contenedor.cambioNombre();
         window.geoportal.editoObjeto(this.objeto.tipo, this.objeto);
     }
+    onEdLatitud_change() {
+        let v = parseFloat(this.edLatitud.value);
+        if (isNaN(v)) return;
+        if (v < -89 || v > 89) return;
+        this.objeto.lat = v;
+        window.geoportal.mapa.movioObjeto(this.objeto);
+    }
+    onEdLongitud_change() {
+        let v = parseFloat(this.edLongitud.value);
+        if (isNaN(v)) return;
+        if (v < -180 || v > 180) return;
+        this.objeto.lng = v;
+        window.geoportal.mapa.movioObjeto(this.objeto);
+    }
     refresca() {
         if (this.config.abierto) {
             this.imgAbierto.removeClass("fa-plus-square");
@@ -40,6 +54,18 @@ class PropObjeto extends ZCustomController {
             this.edNombre.enable();
         } else {
             this.edNombre.disable();
+        }
+        if (tipo == "Punto") {
+            this.coordenadas.show();
+            console.log("punto", this.objeto);
+            this.edLatitud.value = this.objeto.lat;
+            this.edLongitud.value = this.objeto.lng;
+            if (!this.objeto.coordenadasEditables) {
+                this.edLatitud.disable();
+                this.edLongitud.disable();
+            }
+        } else {
+            this.coordenadas.hide();
         }
         if (this.objeto.properties) {
             this.grupoPropiedades.show();

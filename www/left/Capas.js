@@ -7,7 +7,7 @@ class Capas extends ZCustomController {
             this.refresca();
         });
         interact(this.hsplit.view).draggable({
-            startAxis:"y", lockAxis:"y",
+            startAxis:"y", lockAxis:"y",            
             listeners:{
                 move: e => {
                     this.panelPropiedades.height -= e.dy;
@@ -16,7 +16,7 @@ class Capas extends ZCustomController {
                     this.doResize();
                 }
             }            
-        });
+        }).styleCursor(false);
     }
     onThis_activated() {
         window.capasController = this;
