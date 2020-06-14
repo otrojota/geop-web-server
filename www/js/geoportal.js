@@ -257,7 +257,18 @@ class GeoPortal {
                     let code = r.variable.code;
                     let p = code.indexOf(".");
                     if (r.variable.code.substr(0,p) == codigoOrigen) {
-                        itemOrigen.items.push({tipo:"queryMinZ", code:r.variable.name + "->" + r.ruta, label:r.variable.name, icon:"img/iconos/dashboard.svg", item:r})
+                        let itemIcon = "img/iconos/dashboard.svg";
+                        if (r.variable.options && r.variable.options.icon) {
+                            if (r.variable.options.icon.startsWith("${")) {
+                                let p = r.variable.options.icon.indexOf("}");
+                                let codProveedor = r.variable.options.icon.substr(2, p - 2);
+                                let proveedor = this.getProveedor(codProveedor);
+                                itemIcon = proveedor.url + "/" + r.variable.options.icon.substr(p+1);
+                            } else {
+                                itemIcon = r.variable.options.icon;
+                            }
+                        }
+                        itemOrigen.items.push({tipo:"queryMinZ", code:r.variable.name + "->" + r.ruta, label:r.variable.name, icon:itemIcon, item:r})
                     }
                 })
             });

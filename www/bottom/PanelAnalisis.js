@@ -112,6 +112,7 @@ class PanelAnalisis extends ZCustomController {
         }
         let configAnalisis = this.configAnalisis.analizadores[definicionAnalizador.codigo];
         this.analizador = new (definicionAnalizador.clase)(this.objeto, this.capa, configAnalisis);
+        await this.analizador.init();
         await this.creaPaneles();
         await this.creaPanelAnalisis();
         await this.refrescaPaneles();

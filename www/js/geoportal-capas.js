@@ -32,6 +32,9 @@ class Capa {
             analizador:null,
             analizadores:{}
         }
+        if (config.opciones && config.opciones.configAnalisis) {
+            this.configAnalisis = config.opciones.configAnalisis;
+        }
         this.workingListeners = []; // {accion:"start"|"finish"|"refrescar", listener:function}
         this.objetos = null;
         this.mensajes = new MensajesGeoportal(this, this.origen);
@@ -735,6 +738,8 @@ class Analizador {
     }
 
     get config() {return this.capa.configAnalisis.analizadores[this.codigo]}
+
+    async init() {}
     
     getPanelesPropiedades() {
         console.error("getPanelesPropiedades no sobreescrito en Analizador");

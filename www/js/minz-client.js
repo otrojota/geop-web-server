@@ -163,7 +163,8 @@ class MinZClient {
     async getVariables() {
         if (this.variables) return this.variables;
         try {
-            this.variables = (await (await fetch(this.url + "/var/variables?token=" + this.token)).json());
+            let cache = Math.random() * 9999999999;
+            this.variables = (await (await fetch(this.url + "/var/variables?token=" + this.token + "&cache=" + cache)).json());
             return this.variables;
         } catch(error) {
             throw error;
