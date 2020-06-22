@@ -48,6 +48,7 @@ class Left extends ZCustomController {
         let h = this.view.clientHeight;
         this.tabs.view.style.height = (h - 2) + "px";
         this.opcionesLoader.view.style.height = (h - 2) + "px";
+        this.ayuda.view.style.setProperty("margin-top", (h - 330) + "px",  "important");
         if (this.opcionesLoader.content.doResize) this.opcionesLoader.content.doResize();
     }
     async activaOpcion(opcion) {
@@ -62,6 +63,9 @@ class Left extends ZCustomController {
                 break;
             case "capas":
                 controller = await this.opcionesLoader.load("./Capas");
+                break;
+            case "ayuda":
+                controller = await this.opcionesLoader.load("./Ayuda");
                 break;
         }
         this.doResize();

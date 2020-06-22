@@ -12,7 +12,6 @@ class VisualizadorIsolineas extends VisualizadorCapa {
             height:280, width:300,
             configSubPaneles:{}
         }
-        console.log("creado isolineas con ", this.config);
     }
     static aplicaACapa(capa) {
         return capa.tipo == "raster" && capa.formatos.isolineas;
@@ -95,7 +94,6 @@ class VisualizadorIsolineas extends VisualizadorCapa {
     }
     refresca2() {
         let min = this.preconsulta.min, max = this.preconsulta.max;
-        console.log("preconsulta", this.preconsulta);  
         if (min === max) throw "No hay datos";
         let step = this.config.step;
         if (this.config.autoStep || step === undefined) {

@@ -7,6 +7,10 @@ const defaults = {
 }
 
 class ZPop {
+    static closeAll() {
+        while (ZPop.actives.length) ZPop.actives[0].close();
+        ZPop.actives = [];
+    }
     constructor(reference, items, options) {
         if (!ZPop.nextId) ZPop.nextId = 1;
         if (!ZPop.actives) ZPop.actives = [];
@@ -19,13 +23,12 @@ class ZPop {
                     if (container.is(e.target) || container.has(e.target).length) clickInside = true;
                 });
                 if (!clickInside) {
-                    // Close all active ZPops
-                    ZPop.actives.forEach(zpop => zpop.close());
+                    ZPop.closeAll();
                 }
                 return true;
             }            
         }
-
+        
         this.reference = reference;
         this.items = items;
         this.options = $.extend(true, {}, defaults, options);
@@ -39,7 +42,7 @@ class ZPop {
 
     static addActive(zpop) {
         ZPop.actives.push(zpop);
-        if (!ZPop.checkingClicksOutside) {
+        if (!ZPop.checkClicksOutside) {
             setTimeout(_ => $(document).bind("click", ZPop.docClickListener), 0);
             ZPop.checkClicksOutside = true;
         }
@@ -50,12 +53,12 @@ class ZPop {
         if (!ZPop.actives.length && ZPop.checkClicksOutside) {
             $(document).unbind("click", ZPop.docClickListener);
             ZPop.checkClicksOutside = false;
-            $("#pops-container").css({"pointer-events":"none"});
         }
     }
 
 
     show(items) {
+        if (!this.isSubProp) ZPop.closeAll();
         if (items) this.items = items;
         let popsContainer;
         if (!this.options.container) {
@@ -66,7 +69,8 @@ class ZPop {
             }
             let w = window.innerWidth;
             let h = window.innerHeight;
-            popsContainer.css({width:w + "px", height:h + "px", "pointer-events":"all"});   
+            //popsContainer.css({width:w + "px", height:h + "px", "pointer-events":"all"});   
+            popsContainer.css({width:w + "px", height:h + "px"});   
         } else {
             popsContainer = $(this.options.container);
         }     
@@ -187,7 +191,11 @@ class ZPop {
         this.pop.find("#sub-items").find(".zpop-item-container").mouseenter(e => {
             this.pop.find("#sub-items").find(".zpop-item-container").removeClass("zpop-item-active");
             $(e.currentTarget).addClass("zpop-item-active");
-            let code = $(e.currentTarget).data("code");            
+            let code = $(e.currentTarget).data("code"); 
+            if (this.subPop) {
+                this.subPop.close();
+                this.subPop = null;
+            }
             let item = this.expandedItems.find(i => i.code == code);
             if (!item) return;
             if (item.items) {
@@ -209,6 +217,7 @@ class ZPop {
                         }
                     }
                 })
+                this.subPop.isSubProp = true;
                 this.subPop.show();
             } else {
                 if (this.options.onMouseEnter) {

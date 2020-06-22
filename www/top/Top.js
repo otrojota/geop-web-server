@@ -146,8 +146,8 @@ class Top extends ZCustomController {
             [{
                 code:"punto", icon:"img/iconos/punto.svg", label:"Agregar Punto"
             }, {
-                code:"ruta", icon:"img/iconos/ruta.svg", label:"Agregar Ruta"
-            }, {
+            //    code:"ruta", icon:"img/iconos/ruta.svg", label:"Agregar Ruta"
+            //}, {
                 code:"area", icon:"img/iconos/area.svg", label:"Agregar Área Rectangular"
             }],
             {

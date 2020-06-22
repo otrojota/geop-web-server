@@ -2,13 +2,6 @@ class PanelAgregar extends ZCustomController {
     onThis_init() {
         this.items = [];
     }
-    /*
-    refresca() {
-        console.log("refresca1!");
-        this.edBuscadorAgregar.value = "";
-        this.doBuscar();
-    }
-    */
 
     onEdBuscadorAgregar_change() {this.doBuscar()}
     onLimpiador_click() {
@@ -131,6 +124,7 @@ class PanelAgregar extends ZCustomController {
                     })
                     this.subPop.show();
                 }
+                return false;
             };
         });
         this.cntOpcionesAgregar.findAll(".agregar-item-container").forEach(cnt => {
