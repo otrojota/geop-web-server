@@ -33,5 +33,11 @@ class PrreferenciasGeoPortal {
         this.saveMapa()
         window.geoportal.mapa.cambioEtiquetas();
     }
+    get mapaCoordenadas() {return this.mapa.coordenadas}
+    set mapaCoordenadas(c) {
+        this.mapa.coordenadas = c; 
+        this.saveMapa()
+        window.geoportal.mapa.dibujaLeyendas();
+    }
 }
 window.geoportal.preferencias = new PrreferenciasGeoPortal();

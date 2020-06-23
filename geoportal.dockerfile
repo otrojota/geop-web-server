@@ -1,5 +1,5 @@
-# docker build -f geoportal.dockerfile -t otrojota/geoportal:web-server-0.59 .
-# docker push otrojota/geoportal:web-server-0.59
+# docker build -f geoportal.dockerfile -t otrojota/geoportal:web-server-0.62 .
+# docker push otrojota/geoportal:web-server-0.62
 #
 FROM node:12.3.1-alpine
 WORKDIR /opt/geoportal/geop-web-server

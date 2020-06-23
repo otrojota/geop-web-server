@@ -14,4 +14,49 @@
         <i id="imgLabels" class="far fa-check-square float-left fa-lg mr-2 ml-1 mt-1" data-z-clickable="true" style="cursor: pointer;"></i>
         <div id="lblLabels" class="small pt-1" data-z-clickable="true" style="cursor: pointer;">Mostrar Ubicaciones</div>
     </div>
+    <hr />
+    <div class="mt-2">
+        <i id="imgCoordenadas" class="far fa-check-square float-left fa-lg mr-2 ml-1 mt-1" data-z-clickable="true" style="cursor: pointer;"></i>
+        <div id="lblCoordenadas" class="small pt-1" data-z-clickable="true" style="cursor: pointer;">Mostrar Grilla de Coordenadas</div>
+    </div>
+    <div id="panelCoordenadas">
+        <label class="small mb-0 mt-2">Línea Principal</label>
+        <div class="input-group input-group-sm">
+            <div class="input-group-prepend">
+                <span class="input-group-text">
+                    <i class="fas fa-border-all"></i>
+                </span>
+            </div>
+            <select id="edEspaciado1" class="custom-select" data-z-id-field="valor" data-z-label-field="nombre">
+            </select>
+        </div>
+        <div class="row mt-2">
+            <div class="col-3"><label class="small mt-2">Estilo</label></div>
+            <div class="col-4">
+                <input id="edWidth1" type="number" step="0.5" min="0.5" max="10" class="form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+            </div>
+            <div class="col-5">
+                <input id="edColor1" type="color" class="form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+            </div>
+        </div>
+        <label class="small mb-0">Línea Secundaria</label>
+        <div class="input-group input-group-sm mt-1">
+            <div class="input-group-prepend">
+                <span class="input-group-text">
+                    <i class="fas fa-border-none"></i>
+                </span>
+            </div>
+            <select id="edEspaciado2" class="custom-select" data-z-id-field="valor" data-z-label-field="nombre">
+            </select>
+        </div>
+        <div id="panelEstilo2" class="row mt-2">
+            <div class="col-3"><label class="small mt-2">Estilo</label></div>
+            <div class="col-4">
+                <input id="edWidth2" type="number" step="0.5" min="0.5" max="10" class="form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+            </div>
+            <div class="col-5">
+                <input id="edColor2" type="color" class="form-control form-control-sm editor-subpanel-propiedades" data-z-autochange-delay="300" />
+            </div>
+        </div>
+    </div>
 </div>

@@ -65,6 +65,17 @@ const opMapasBase = [{
     }
 }];
 
+// workaround en https://github.com/konvajs/konva/issues/585
+const originalFillStroke = Konva.Context.prototype.fillStrokeShape;
+Konva.Context.prototype.fillStrokeShape = function(shape) {
+    if (shape instanceof Konva.Text) {
+        if (shape.getStrokeEnabled()) this._stroke(shape);
+        if (shape.getFillEnabled()) this._fill(shape);
+    } else {
+        originalFillStroke.call(this, shape);
+    }
+};
+
 class MapaGeoPortal {
     constructor(panelMapa) {
         this.panelMapa = panelMapa;
@@ -73,7 +84,7 @@ class MapaGeoPortal {
         this.map = L.map(panelMapa.id, {
             zoomControl:false, 
             attributionControl:false,
-            minZoom:3
+            minZoom:3, maxZoom:12
         }).setView([-33.034454, -71.592093], 6);
         this.map.on("moveend", _ => this.movioMapa());
         let mapDef = this.getMapa(window.geoportal.preferencias.mapa.mapaBase);
@@ -116,7 +127,7 @@ class MapaGeoPortal {
                 
         this.lyEfectos = new L.customLayer({
             container:div,
-            minZoom:0, maxZoom:18, opacity:1, visible:true, zIndex:1500,
+            minZoom:0, maxZoom:14, opacity:1, visible:true, zIndex:1500,
             pane:this.creaPanelMapa("efectos", "base", 0)
         })
         this.lyEfectos.on("layer-render", _ => {
@@ -125,7 +136,7 @@ class MapaGeoPortal {
 
         this.lyObjetos = new L.customLayer({
             container:div,
-            minZoom:0, maxZoom:18, opacity:1, visible:true, zIndex:1500,
+            minZoom:0, maxZoom:14, opacity:1, visible:true, zIndex:1500,
             pane:this.creaPanelMapa("objetos", "base", 1)
         })
         this.lyObjetos.on("layer-render", _ => {
@@ -134,7 +145,7 @@ class MapaGeoPortal {
 
         this.lyLeyendas = new L.customLayer({
             container:div,
-            minZoom:0, maxZoom:18, opacity:1, visible:true, zIndex:1501,
+            minZoom:0, maxZoom:14, opacity:1, visible:true, zIndex:1501,
             pane:this.creaPanelMapa("leyendas", "base", 1)
         })
         this.lyLeyendas.on("layer-render", _ => {
@@ -587,6 +598,7 @@ class MapaGeoPortal {
                 });
             }
         }
+        this.dibujaCoordenadas();
         this.konvaLayerLeyendas.draw();
     }
     callDibujaLeyendas(delay) {
@@ -643,4 +655,116 @@ class MapaGeoPortal {
         this.leyendaDatos.circle.destroy();
         this.konvaLayerLeyendas.draw();
     }
+
+    dibujaCoordenadas() {
+        if (!window.geoportal.preferencias.mapaCoordenadas || !window.geoportal.preferencias.mapaCoordenadas.mostrar) return;
+        let config = window.geoportal.preferencias.mapaCoordenadas;
+        let d1 = 1.0, d2 = 0.25;
+        let color1 = config.color1 || "black", color2 = config.color2 || "black";
+        let width1 = config.width1 || 1, width2 = config.width2 || 0.2;
+        let b = this.map.getBounds();
+        if (config.espaciado1 == "auto") {
+            let w = b.getEast() - b.getWest();
+            while (w / d1 > 14) {
+                d1 *= 2; d2 *= 2;
+            }
+            while (w / d1 < 4) {
+                d1 /= 2; d2 /= 2;
+            }
+            if (config.espaciado2 == -1) d2 = -1;
+        } else {
+            d1 = config.espaciado1;
+            d2 = config.espaciado2;
+        }
+        let lng0 = (parseInt(b.getWest() / d1) - 1) * d1;
+        let lng1 = (parseInt(b.getEast() / d1) + 1) * d1;
+        let lat0 = (parseInt(b.getSouth() / d1) - 1) * d1;
+        let lat1 = (parseInt(b.getNorth() / d1) + 1) * d1;
+        let lastLabelX = -100;
+        for (let lng =lng0; lng <= lng1; lng += d1) {
+            let p0 = this.map.latLngToContainerPoint([lat0, lng]);
+            let p1 = this.map.latLngToContainerPoint([lat1, lng]);
+            this.konvaLayerLeyendas.add(new Konva.Line({
+                points:[p0.x, p0.y, p1.x, p1.y],
+                stroke:color1, strokeWidth:width1,
+            }));
+            if (p0.x - lastLabelX > 50 && p0.x > 40) {
+                var lbl = new Konva.Text({
+                    x: p0.x, y:50,
+                    text: this.toDeg(lng, "lng"),
+                    fontSize: 14,
+                    fontFamily: 'Calibri',
+                    fontStyle:"bold",
+                    fill: 'black',
+                    stroke:"white",
+                    strokeWidth:2,
+                });
+                lbl.offsetX(lbl.width() / 2);
+                this.konvaLayerLeyendas.add(lbl);
+                lastLabelX = p0.x;
+            }
+            if (d2 > 0) {
+                let subLng = lng + d2;
+                while (subLng < lng + d1) {
+                    p0 = this.map.latLngToContainerPoint([lat0, subLng]);
+                    p1 = this.map.latLngToContainerPoint([lat1, subLng]);
+                    this.konvaLayerLeyendas.add(new Konva.Line({
+                        points:[p0.x, p0.y, p1.x, p1.y],
+                        stroke:color2, strokeWidth:width2,
+                        dash: [6, 2]
+                    }));
+                    subLng += d2;
+                }
+            }
+        }
+        for (let lat =lat0; lat <= lat1; lat += d1) {
+            let p0 = this.map.latLngToContainerPoint([lat, lng0]);
+            let p1 = this.map.latLngToContainerPoint([lat, lng1]);
+            this.konvaLayerLeyendas.add(new Konva.Line({
+                points:[p0.x, p0.y, p1.x, p1.y],
+                stroke:color1, strokeWidth:width1,
+            }));
+            if (p0.y > 50) {
+                var lbl = new Konva.Text({
+                    x: 12, y:p0.y,
+                    text: this.toDeg(lat, "lat"),
+                    fontSize: 14,
+                    fontFamily: 'Calibri',
+                    fontStyle:"bold",
+                    fill: 'black',
+                    stroke:"white",
+                    strokeWidth:2,
+                });
+                lbl.offsetY(lbl.height() / 2);
+                this.konvaLayerLeyendas.add(lbl);
+            }
+            if (d2 > 0) {
+                let subLat = lat + d2;
+                while (subLat < lat + d1) {
+                    p0 = this.map.latLngToContainerPoint([subLat, lng0]);
+                    p1 = this.map.latLngToContainerPoint([subLat, lng1]);
+                    this.konvaLayerLeyendas.add(new Konva.Line({
+                        points:[p0.x, p0.y, p1.x, p1.y],
+                        stroke:color2, strokeWidth:width2,
+                        dash: [6, 2]
+                    }));
+                    subLat += d2;
+                }
+            }
+        }
+    }
+
+    toDeg(dd, tipo) {
+        let dir = dd < 0
+          ? tipo == "lng" ? 'W' : 'S'
+          : tipo == "lat" ? 'E' : 'N';
+      
+        var absDd = Math.abs(dd);
+        var deg = absDd | 0;
+        var frac = absDd - deg;
+        var min = (frac * 60) | 0;
+        var sec = frac * 3600 - min * 60;
+        sec = Math.round(sec * 100) / 100;
+        return deg + "°" + (min<10?"0":"") + min + "'" + (sec<10?"0":"") + sec + '"' + dir;
+      }
 }
