@@ -481,7 +481,6 @@ class Punto extends ObjetoGeoportal {
         }
         if (!this.animation) {
             if (!this.selectedCircle) {
-                console.error("check animation sin selectedCircle .. agendando");
                 setTimeout(_ => this.checkAnimation(), 300);
                 return;
             }           

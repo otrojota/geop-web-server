@@ -147,7 +147,6 @@ class SelectorTiempo extends ZCustomController {
 
     refrescaCapturas() {
         if (!window.configCapturas) window.configCapturas = {tiempo:"DD/MMMM/YYYY HH:mm", titulo:"", fotos:[], delay:200};
-        console.log("capturas", window.configCapturas);
         this.lblNCapturas.text = "[" + window.configCapturas.fotos.length + "]";        
     }
 
@@ -198,7 +197,6 @@ class SelectorTiempo extends ZCustomController {
             logging:false
         })
             .then(canvas => {
-                console.log("canvas", canvas)
                 window.configCapturas.fotos.push({tiempo:window.geoportal.tiempo, canvas:canvas});
                 this.refrescaCapturas();
                 if (timeText) timeText.destroy();

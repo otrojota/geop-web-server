@@ -137,7 +137,8 @@ class ZPop {
         this.pop.remove();
         ZPop.removeActive(this);
         this.cancelSearch();
-        this.closed = true;        
+        this.closed = true;    
+        if (this.options.onClose) this.options.onClose();    
     }
     
     isImage(icon) {

@@ -50,11 +50,9 @@ class PanelAnalisis extends ZCustomController {
         if (o instanceof Capa) {
             this.capa = o;
             this.objeto = null;
-            console.log("PanelAnalisis refrescando desde capa", this.capa);
         } else if (o instanceof ObjetoGeoportal) {
             this.capa = o.capa;
             this.objeto = o;
-            console.log("PanelAnalisis refrescando desde objeto", this.objeto, " en capa", this.capa);
         }
         this.refrescaAnalizadores();
         this.doResize();
@@ -64,7 +62,6 @@ class PanelAnalisis extends ZCustomController {
         //let analizadores = window.geoportal.capas.getAnalizadoresAplicables(this.objeto);
         let analizadores = window.geoportal.capas.getAnalizadoresAplicables(this.objeto, this.capa);
         if (!this.configAnalisis.analizador || !analizadores.find(a => a.codigo == this.configAnalisis.analizador)) {
-            console.log("Buscando analiador default para el objeto seleccionado");
             // TODO: Agregar el caso de analizador para capa, sin objeto
             let analizador, configInicialAnalizador;
             if (this.objeto) {
@@ -77,10 +74,6 @@ class PanelAnalisis extends ZCustomController {
             if (!this.configAnalisis.analizadores[analizador]) {
                 this.configAnalisis.analizadores[analizador] = configInicialAnalizador;
             }
-            console.log("seteada configuracion inicial de analizador para la capa", this.configAnalisis);
-        } else if (this.objeto) {
-            // Caso que el objeto no soporta el analizador activo
-            let analizadoresObjeto = this.objeto.getAnalizadoresAplicables()
         }
         this.edAnalizador.setRows(analizadores, this.configAnalisis.analizador);
         await this.refrescaDetallesAnalizador();

@@ -126,6 +126,7 @@ class VisualizadorShader extends VisualizadorCapa {
         //this.canvas.getContext("2d").clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.capa.resuelveConsulta("matrizRectangular", {}, async (err, data) => {
             if (err) {                
+                this.limpia();
                 this.finishWorking();
                 this.mensajes.addError(err.toString());
                 console.error(err);

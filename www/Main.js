@@ -1,9 +1,9 @@
 const leftWidth = 340;
+const leftWidthColapsed = 70;
 const topHeight = 44;
 
 class Main extends ZCustomController {
     onThis_init() {
-        this.leftOpen = true;
         this.auxiliarOpen = false;
         this.auxiliar.hide();
         this.analisisOpen = false;
@@ -111,60 +111,37 @@ class Main extends ZCustomController {
             this.maxAnalisis.hide();
         }
 
-        if (this.leftOpen) {
-            this.left.size = {width:leftWidth, height:h}
-            this.left.show();
-            this.left.doResize();
-            this.top.pos = {left:leftWidth + 1, top:0};
-            this.top.size = {width:w - leftWidth - 1, height:topHeight}
-            this.mapa.pos = {left:leftWidth + 1, top:0};
-            this.central.pos = {left:leftWidth + 1, top:0};            
-            if (this.auxiliarOpen) {
-                this.auxiliar.pos = {left:leftWidth + 1, top:0};            
-                this.auxiliar.size = {width:w - leftWidth - 1, height:h}
-                this.auxiliar.doResize();
-            }
-            if (this.analisisOpen) {
-                this.mapa.size = {width:w - leftWidth - 1, height:h - altoAnalisis - 7}
-                this.central.size = {width:w - leftWidth - 1, height:h - altoAnalisis - 7}
-                this.hsplitAnalisis.pos = {left:leftWidth + 1, top:h - altoAnalisis - 6}
-                this.hsplitAnalisis.size = {width:w - leftWidth - 1, height:6}
-                this.panelAnalisis.pos = {left:leftWidth + 1, top:h - altoAnalisis}
-                this.panelAnalisis.size = {width:w - leftWidth - 1, height:altoAnalisis}
-            } else {
-                this.mapa.size = {width:w - leftWidth - 1, height:h}
-                this.central.size = {width:w - leftWidth - 1, height:h}                
-            }
-        } else {
-            this.left.hide();
-            this.auxiliarOpen = false;
-            this.auxiliar.hide();
-            this.top.pos = {left:0, top:0};
-            this.top.size = {width:w, height:topHeight}
-            this.mapa.pos = {left:0, top:0};
-            this.central.pos = {left:0, top:0};
-            if (this.analisisOpen) {
-                this.mapa.size = {width:w, height:h - altoAnalisis - 7}
-                this.central.size = {width:w, height:h - altoAnalisis - 7}
-                this.hsplitAnalisis.pos = {left:0, top:h - altoAnalisis - 6}
-                this.hsplitAnalisis.size = {width:w, height:6}
-                this.panelAnalisis.pos = {left:0, top:h - altoAnalisis}
-                this.panelAnalisis.size = {width:w, height:altoAnalisis}
-            } else {
-                this.mapa.size = {width:w, height:h}
-                this.central.size = {width:w, height:h}
-            }
+        const lw = this.left.colapsado?leftWidthColapsed:leftWidth;
+        this.left.size = {width:lw, height:h}
+        this.left.doResize();
+        this.top.pos = {left:lw + 1, top:0};
+        this.top.size = {width:w - lw - 1, height:topHeight}
+        this.mapa.pos = {left:lw + 1, top:0};
+        this.central.pos = {left:lw + 1, top:0};            
+        if (this.auxiliarOpen) {
+            this.auxiliar.pos = {left:lw + 1, top:0};            
+            this.auxiliar.size = {width:w - lw - 1, height:h}
+            this.auxiliar.doResize();
         }
+        if (this.analisisOpen) {
+            this.mapa.size = {width:w - lw - 1, height:h - altoAnalisis - 7}
+            this.central.size = {width:w - lw - 1, height:h - altoAnalisis - 7}
+            this.hsplitAnalisis.pos = {left:lw + 1, top:h - altoAnalisis - 6}
+            this.hsplitAnalisis.size = {width:w - lw - 1, height:6}
+            this.panelAnalisis.pos = {left:lw + 1, top:h - altoAnalisis}
+            this.panelAnalisis.size = {width:w - lw - 1, height:altoAnalisis}
+        } else {
+            this.mapa.size = {width:w - lw - 1, height:h}
+            this.central.size = {width:w - lw - 1, height:h}                
+        }
+        
         this.top.doResize();
         this.mapa.doResize();
         this.central.doResize();
         if (this.analisisOpen) this.panelAnalisis.doResize();
     }
 
-    onTop_alternaMenu() {
-        this.leftOpen = !this.leftOpen;
-        this.doResize();
-    }
+    onLeft_cambioEstado() {this.doResize()}
 
     async alternaAnalisis() {
         if (this.analisisOpen) {
@@ -207,12 +184,6 @@ class Main extends ZCustomController {
     }
     async movioObjeto(objeto) {
         await this.panelAnalisis.movioObjeto(objeto);
-    }
-
-    onLeft_aseguraVisible() {
-        if (!this.leftOpen) {
-            this.onTop_alternaMenu();
-        }
     }
 
     async cambioMensajesItem(idItem) {

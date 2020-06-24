@@ -20,7 +20,6 @@ class SerieTiempo extends ZCustomController {
     async refresca(objeto) {
         this.options.contenedor.iniciaTrabajando();
         this.objeto = objeto;
-        console.log("Refrescando serie de tiempo desde", this.objeto.configAnalisis.analizadores["serie-tiempo"]);
         let cambioVar1 = false, cambioVar2 = false;
         let cambioTiempo = false;
         let centroide = objeto.getCentroide();

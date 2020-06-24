@@ -14,11 +14,16 @@ class Sesion extends ZCustomController {
         //this.usuarioDeslogueado();
         this.triggerEvent("logout");
     }
-    usuarioLogueado() {
-        this.sesionLoader.load("./perfilUsuario/PerfilUsuario");
+    async usuarioLogueado() {
+        await this.sesionLoader.load("./perfilUsuario/PerfilUsuario");
+        this.doResize();
     }
-    usuarioDeslogueado() {
-        this.sesionLoader.load("./login/Login");
+    async usuarioDeslogueado() {
+        await this.sesionLoader.load("./login/Login");
+        this.doResize();
+    }
+    doResize() {
+        if (this.sesionLoader.content.doResize) this.sesionLoader.content.doResize();
     }
 }
 ZVC.export(Sesion);

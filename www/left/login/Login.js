@@ -1,5 +1,5 @@
 class Login extends ZCustomController {
-    async onThis_init() {
+    onThis_init() {
         this.alerta.hide();        
         this.view.onkeyup = e => {
             if (e.code == "Enter") this.onCmdLogin_click();
@@ -33,6 +33,17 @@ class Login extends ZCustomController {
         } catch(error) {
             this.alerta.text = error;
             this.alerta.show();
+        }
+    }
+
+    doResize() {
+        if (!this.logoFooter) return;
+        let h = this.view.parentElement.clientHeight;
+        if (h - 640 < 0) {
+            this.logoFooter.hide();    
+        } else {
+            this.logoFooter.show();  
+            this.logoFooter.view.style.setProperty("margin-top", (h - 640) + "px",  "important");
         }
     }
 }

@@ -57,7 +57,6 @@ class PropObjeto extends ZCustomController {
         }
         if (tipo == "Punto") {
             this.coordenadas.show();
-            console.log("punto", this.objeto);
             this.edLatitud.value = this.objeto.lat;
             this.edLongitud.value = this.objeto.lng;
             if (!this.objeto.coordenadasEditables) {

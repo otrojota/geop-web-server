@@ -326,6 +326,7 @@ class GeoPortal {
         this.agregandoObjeto = code;
         this.panelTop.iniciaAgregarObjeto(code);
         this.mapa.setCursorAgregandoObjeto();
+        setTimeout(_ => this.panelTop.activaOpcionMenu("cmdAgregarObjeto", true), 50);
     }
     cancelaAgregarObjeto() {
         if (this.agregandoObjeto) {            
@@ -337,12 +338,14 @@ class GeoPortal {
             window.geoportal.mapa.konvaLayerAgregando.destroyChildren();
             window.geoportal.mapa.konvaLayerAgregando.draw();
         }
+        this.panelTop.activaOpcionMenu("cmdAgregarObjeto", false)
     }
     finalizaAgregarObjeto(objeto) {
         this.agregandoObjeto = null;
         this.mapa.resetCursor();
         this.panelTop.agregoObjeto(objeto);
         this.mapa.callDibujaObjetos(100);
+        this.panelTop.activaOpcionMenu("cmdAgregarObjeto", false)
     }
     async objetoSeleccionado(objeto) {
         this.capas.getGrupoActivo().itemActivo = objeto;

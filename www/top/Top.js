@@ -1,3 +1,10 @@
+const coloresBordes = {
+    "cmdAgregarAMapa":"#1779ba",
+    "cmdCapasActivas":"#8f908f",
+    "cmdAgregarObjeto":"#65e394",
+    "cmdEstaciones":"#d67060"
+}
+
 class Top extends ZCustomController {
     onThis_init() {
         window.geoportal.panelTop = this;
@@ -6,13 +13,19 @@ class Top extends ZCustomController {
         this.mostrandoAgregarObjeto = false;        
         this.panelAgregarObjeto.hide();
     }
+    escondePanelAgregar() {
+        if (this.mostrandoAgregar) this.alternaPanelAgregar();
+    }
     alternaPanelAgregar() {
         this.mostrandoAgregar = !this.mostrandoAgregar;
         if (this.mostrandoAgregar) {
             this.panelAgregar.refresca();
             this.panelAgregar.show();
+            window.geoportal.panelTop.activaOpcionMenu("cmdAgregarAMapa", true)
+        } else {
+            this.panelAgregar.hide();
+            window.geoportal.panelTop.activaOpcionMenu("cmdAgregarAMapa", false)
         }
-        else this.panelAgregar.hide();
     }
     onPanelAgregar_alterna() {this.alternaPanelAgregar()}
     onCmdAgregarAMapa_click() {this.alternaPanelAgregar()}
@@ -30,9 +43,6 @@ class Top extends ZCustomController {
             this.centerM.view.style.left = (width / 2 - this.centerM.size.width / 2) + "px";
             this.centerM.view.style.top = this.leftM.size.height + "px";
         }
-    }
-    onCmdAlternaMenu_click() {
-        this.triggerEvent("alternaMenu");
     }
     onCmdZoomIn_click() {window.geoportal.mapa.zoomIn()}
     onCmdZoomOut_click() {window.geoportal.mapa.zoomOut()}
@@ -110,38 +120,10 @@ class Top extends ZCustomController {
             this.iconoBuscar.addClass("fa-search");
             this.buscador = null;
         })
-
-        /*
-        let ubis;
-        try {
-            ubis = await zPost("busca.plc", {filtro:filtro, maxResults:10, lat:pos.lat, lng:pos.lng});
-        } catch(err) {
-            console.error(err);
-        } finally {
-            this.iconoBuscar.removeClass("fa-spin fa-spinner");
-            this.iconoBuscar.addClass("fa-search");
-        }
-        if (!ubis || !ubis.results || !ubis.results.length) return;
-        let rows = ubis.results.map((l, i) => ({
-            code:i,
-            label:l.highlightedTitle + " - " + parseInt(l.distance / 1000) + "[km]",
-            icon:l.category == "city-town-village"?"img/iconos/ciudad.svg":"img/iconos/ubicacion.svg",
-            distancia:l.distance,
-            pos:l.position
-        }));
-        this.zpop = new ZPop(this.leftM.view, rows,
-            {
-                vMargin:2, hMargin:4, 
-                onClick:(code, row) => {
-                    window.geoportal.mapa.map.panTo(row.pos);
-                    return true;
-                }
-            }
-        ).show();
-        */
     }
 
     onCmdAgregarObjeto_click() {
+        this.escondePanelAgregar();
         this.zpop = new ZPop(this.cmdAgregarObjeto.view, 
             [{
                 code:"punto", icon:"img/iconos/punto.svg", label:"Agregar Punto"
@@ -155,9 +137,11 @@ class Top extends ZCustomController {
                 onClick:code => {
                     window.geoportal.iniciaAgregarObjeto(code);
                     return true;
-                }
+                },
+                onClose:_ => this.activaOpcionMenu("cmdAgregarObjeto", false)
             }
         ).show();
+        this.activaOpcionMenu("cmdAgregarObjeto", true)
     }
 
     async iniciaAgregarObjeto(tipo) {
@@ -177,10 +161,12 @@ class Top extends ZCustomController {
     }
 
     onCmdCapasActivas_click() {
+        this.escondePanelAgregar();
         window.geoportal.capas.seleccionaPanelCapas();
     }
 
     onCmdEstaciones_click() {
+        this.escondePanelAgregar();
         this.zpop = new ZPop(this.cmdEstaciones.view, geoportal.getCapasEstaciones(),
             {
                 vMargin:10, hMargin:-2, 
@@ -188,9 +174,20 @@ class Top extends ZCustomController {
                     console.log("agrega capa estaciones", code, item);
                     window.geoportal.capas.add(item.capa);
                     return true;
-                }
+                },
+                onClose:_ => this.activaOpcionMenu("cmdEstaciones", false)
             }
         ).show();
+        this.activaOpcionMenu("cmdEstaciones", true)
+    }
+
+    activaOpcionMenu(opcion, activar) {
+        let boton = this.find("#" + opcion);
+        if (activar) {
+            boton.style.setProperty("border-bottom", "2px solid " + coloresBordes[opcion]);
+        } else {
+            boton.style.removeProperty("border-bottom");
+        }
     }
 }
 ZVC.export(Top);

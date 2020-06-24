@@ -122,7 +122,7 @@ class PanelAgregar extends ZCustomController {
                             this.doClick(code, item);
                         }
                     })
-                    this.subPop.show();
+                    this.subPop.show();                    
                 }
                 return false;
             };

@@ -45,7 +45,6 @@ class PropTiempoSerieTiempo extends ZCustomController {
         }
         niveles.push({codigo:"1y", nombre:"Anual"});
         let tempo = this.analizador.config.tiempo.temporalidad;
-        console.log("tempo, defaut", tempo, nivelDefault)
         if (!tempo || !niveles.find(n => n.codigo == tempo)) {
             tempo = nivelDefault;
             this.analizador.config.tiempo.temporalidad = tempo;
@@ -84,7 +83,6 @@ class PropTiempoSerieTiempo extends ZCustomController {
                 tiempo.fromDate = TimeUtils.now.valueOf() - 24*60*60*1000;
                 tiempo.toDate = TimeUtils.now.valueOf();
             }
-            console.log("usando temporalidad", tiempo.temporalidad);
             this.edFromDate.temporalidad = tiempo.temporalidad;
             this.edFromDate.finPeriodo = false;
             this.edFromDate.titulo = "Inicio del Período";

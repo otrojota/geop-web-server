@@ -6,6 +6,25 @@ function uuidv4() {
 }
 
 class Capa {
+    static incWorking() {
+        if (Capa.nWorking === undefined) Capa.nWorking = 0;
+        if (!Capa.nWorking) {
+            //console.log("START WORKINIG");
+            window.geoportal.panelLeft.startWorking();
+        }
+        Capa.nWorking++;
+    }
+    static decWorking() {
+        Capa.nWorking--;
+        if (Capa.nWorking < 0) {
+            console.warn("Capa nWorking < 0");
+            Capa.nWorking = 0;
+        }
+        if (!Capa.nWorking) {
+            //console.log("FINISH WORKING");
+            window.geoportal.panelLeft.finishWorking();
+        }
+    }
     constructor(config) {
         this.id = uuidv4();
         this.config = JSON.parse(JSON.stringify(config));
@@ -82,10 +101,12 @@ class Capa {
         if (idx >= 0) this.workingListeners.splice(idx,1);
     }
     startWorking() {
+        if (!this.isWorking) Capa.incWorking();
         this.isWorking = true;
         this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())
     }
     finishWorking() {
+        if (this.isWorking) Capa.decWorking();
         this.isWorking = false;
         this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())
     }
@@ -709,10 +730,12 @@ class VisualizadorCapa {
         if (idx >= 0) this.workingListeners.splice(idx,1);
     }
     startWorking() {
+        if (!this.isWorking) Capa.incWorking();
         this.isWorking = true;
         this.workingListeners.filter(l => l.accion == "start").forEach(l => l.listener())
     }
     finishWorking() {
+        if (this.isWorking) Capa.decWorking();
         this.isWorking = false;
         this.workingListeners.filter(l => l.accion == "finish").forEach(l => l.listener())
     }

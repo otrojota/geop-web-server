@@ -84,7 +84,7 @@ class MapaGeoPortal {
         this.map = L.map(panelMapa.id, {
             zoomControl:false, 
             attributionControl:false,
-            minZoom:3, maxZoom:12
+            minZoom:2, maxZoom:12
         }).setView([-33.034454, -71.592093], 6);
         this.map.on("moveend", _ => this.movioMapa());
         let mapDef = this.getMapa(window.geoportal.preferencias.mapa.mapaBase);

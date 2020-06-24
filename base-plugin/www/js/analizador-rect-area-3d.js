@@ -3,6 +3,17 @@ class AnalizadorRectArea3D extends Analizador {
         return o instanceof Area;        
     }
     constructor(objeto, capa, config) {
+        if (!config.variable) {
+            config.variable = "fixed.BATIMETRIA_2019";
+            config.nivelVariable = 0;
+            config.escalarLngLat = true;
+            config.escalarZ = true;
+            config.factorEscalaZ = 10;
+            config.escala = {
+                dinamica:true,
+                nombre:"Agua -> Tierra"                                
+            }
+        }
         super("rect-area-3d", objeto, capa, config);
     }
 

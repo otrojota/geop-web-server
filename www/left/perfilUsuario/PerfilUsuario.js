@@ -34,5 +34,15 @@ class PerfilUsuario extends ZCustomController {
             this.triggerEvent("logout");    
         })
     }
+    doResize() {
+        let h = this.view.parentElement.clientHeight;
+        if (h - 450 < 0) {
+            this.logoFooter.hide();    
+        } else {
+            this.logoFooter.show();  
+            this.logoFooter.view.style.setProperty("margin-top", (h - 450) + "px",  "important");
+        }
+    }
+
 }
 ZVC.export(PerfilUsuario);

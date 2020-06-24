@@ -502,8 +502,10 @@ class ConsultaGeoportal {
                 mensajes.addOrigen(this.variable.code.substr(0,p));
             }
             return new Promise((resolve, reject) => {
+                Capa.incWorking();
                 window.minz.query(query, t0, t1)
                 .then(res => {
+                    Capa.decWorking();
                     if (res === null || res === undefined) {
                         if (mensajes) mensajes.addError(this.variable.name + ": Sin Datos para el período");
                         this.resultado = {error:"Sin Datos para el Período"}
@@ -526,6 +528,7 @@ class ConsultaGeoportal {
                     }
                 })
                 .catch(err => {
+                    Capa.decWorking();
                     this.resultado = {error:"Error: " + err}
                     if (mensajes) mensajes.addError(this.variable.name + ": " + err.toString());
                     reject("Error: " + err);
@@ -578,8 +581,10 @@ class ConsultaGeoportal {
                 mensajes.addOrigen(this.variable.code.substr(0,p));
             }
             return new Promise((resolve, reject) => {
+                Capa.incWorking();
                 window.minz.query(query, t0, t1)
                 .then(valor => {
+                    Capa.decWorking();
                     let atributos = {"Período":desc};
                     if (valor === null || valor === undefined) {
                         if (mensajes) mensajes.addError(this.variable.name + ": Sin Datos para el período");
@@ -591,6 +596,7 @@ class ConsultaGeoportal {
                     }
                 })
                 .catch(err => {
+                    Capa.decWorking();
                     this.resultado = {error:"Error: " + err}
                     if (mensajes) mensajes.addError(this.variable.name + ": " + err.toString());
                     reject("Error: " + err);
@@ -610,8 +616,10 @@ class ConsultaGeoportal {
                 mensajes.addOrigen(this.variable.code.substr(0,p));
             }
             return new Promise((resolve, reject) => {
+                Capa.incWorking();
                 window.minz.query(query, t0, t1)
                 .then(res => {
+                    Capa.decWorking();
                     let atributos = {"Período":desc};
                     if (res === null || res === undefined) {
                         if (mensajes) mensajes.addError(this.variable.name + ": Sin Datos para el período");
@@ -623,6 +631,7 @@ class ConsultaGeoportal {
                     }
                 })
                 .catch(err => {
+                    Capa.decWorking();
                     this.resultado = {error:"Error: " + err}
                     if (mensajes) mensajes.addError(this.variable.name + ": " + err.toString());
                     reject("Error: " + err);

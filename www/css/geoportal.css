@@ -15,7 +15,7 @@ body {
 
 .top-menu-left {
     background-color: #16232f;
-    width: 200px;
+    width: 165px;
     color:white;
     border-radius: 0px 0px 10px 0px;
     -moz-border-radius: 0px 0px 10px 0px;
@@ -78,8 +78,15 @@ body {
     font-size: 10px;    
     cursor: pointer;
 }
+.opcion-izquierda:hover {
+    opacity: 1;
+    font-weight: bold;
+}
 .opcion-izquierda img {
     opacity: 0.6;
+}
+.opcion-izquierda img:hover {
+    opacity: 1;
 }
 .opcion-izquierda.activa img {
     opacity: 1;
@@ -87,6 +94,7 @@ body {
 .opcion-izquierda.activa {
     color:rgb(61, 164, 233);
     opacity: 1;
+    font-weight: bold;
 }
 .opcion-izquierda div {
      margin-top:6px;
@@ -426,4 +434,11 @@ body {
     background-color: rgb(255,255,255);
     filter:invert(1);
     cursor: pointer;
+}
+.centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%, -50%);
 }
